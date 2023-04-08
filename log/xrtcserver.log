@@ -1,0 +1,159 @@
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/signaling_server.cpp:91): signaling server options:
+host: 127.0.0.1
+port: 9001
+worker_num: 2
+connection_timeout: 5000000
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 0
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 1
+INFO: 2023-04-08 18:10:41 [000:000][135344] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 0
+INFO: 2023-04-08 18:10:41 [000:000][135345] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 1
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/rtc_server.cpp:89): rtc server options:
+worker_num: 2
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/rtc_server.cpp:68): dtls enabled, key type: 1
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/rtc_base/openssl_key_pair.cc:38): Making key pair
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/rtc_base/openssl_key_pair.cc:91): Returning key pair
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/rtc_base/openssl_certificate.cc:59): Making certificate for WebRTC
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/rtc_base/openssl_certificate.cc:114): Returning certificate
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/rtc_server.cpp:72): rtc certificate: 
+-----BEGIN CERTIFICATE-----
+MIIBFTCBvaADAgECAgkA3sXp4brHgeEwCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwG
+V2ViUlRDMB4XDTIzMDQwNzEwMTA0MVoXDTI0MDQwNzEwMTA0MVowETEPMA0GA1UE
+AwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWsTu6fKiqeVSq828
+Aol6PxLsk4Ft6hnd7to2yVWLZWEhIIhvFNQaUNz7L8JDCjzc9uMQwMv7W5GPOvb5
+WLZsmjAKBggqhkjOPQQDAgNHADBEAiAWTq5m6mLSmYwkOTEIq4tXbwz68Krokn96
+l9GsQPF2DAIgEdgSIfsXFsXlEtkiuMJVk5bBdbT7wzGJzqmKE9XHO2s=
+-----END CERTIFICATE-----
+
+INFO: 2023-04-08 18:10:41 [000:000][135340] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 0
+INFO: 2023-04-08 18:10:41 [000:001][135340] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 18:10:41 [000:001][135340] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 1
+INFO: 2023-04-08 18:10:41 [000:001][135346] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 0
+INFO: 2023-04-08 18:10:41 [000:001][135340] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 18:10:41 [000:001][135347] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 1
+INFO: 2023-04-08 18:10:41 [000:001][135349] (src/server/rtc_server.cpp:146): rtc server event loop start
+INFO: 2023-04-08 18:10:41 [000:001][135348] (src/server/signaling_server.cpp:172): signaling server event loop run
+INFO: 2023-04-08 18:10:57 [016:322][135348] (src/server/signaling_server.cpp:53): accept new conn, fd: 24, ip: 127.0.0.1, port: 53750
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:243): signaling worker 0, receive fd: 24
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:305): signaling worker 0 receive read event, fd: 24
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:322): sock read data, len: 36
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:305): signaling worker 0 receive read event, fd: 24
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:322): sock read data, len: 61
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:383): receive body: {"cmdno":1,"uid":888,"stream_name":"666","audio":1,"video":1}
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:435): cmdno[1] uid[888] stream_name[666] auido[1] video[1] signaling server push request
+INFO: 2023-04-08 18:10:57 [016:322][135346] (src/server/rtc_worker.cpp:154): cmdno[1] uid[888] stream_name[666] audio[1] video[1] log_id[1412916211] rtc worker receive msg, worker_id: 0
+INFO: 2023-04-08 18:10:57 [016:322][135346] (src/ice/ice_transport_channel.cpp:13): ice transport channel created, transport_name: audio, component: 1
+INFO: 2023-04-08 18:10:57 [016:322][135346] (src/ice/ice_transport_channel.cpp:44): set ICE param,  transport_name: audio component: 1 ice ufrag: gI99 ice pwd: t0B3CWU0NulGYZA0y3kWx5tP
+INFO: 2023-04-08 18:10:57 [016:322][135346] (src/ice/udp_port.cpp:40): prepared socket address: 127.0.0.1:10256
+INFO: 2023-04-08 18:10:57 [016:322][135346] (src/server/rtc_worker.cpp:139): offer: v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE audio video
+a=msid-semantic: WMS
+m=audio 9 UDP/TLS/RTP/SAVPF 111
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:gI99
+a=ice-pwd:t0B3CWU0NulGYZA0y3kWx5tP
+a=fingerprint:sha-256 4F:89:A1:06:89:FB:77:54:2B:FD:24:19:3A:F6:F5:40:F5:79:7C:92:EF:5E:56:97:BD:D5:2A:7D:0C:B2:6F:90
+a=setupp:actpass
+a=mid:audio
+a=recvonly
+a=rtcp-mux
+a=rtpmap:111 opus/48000/2
+a=rtcp-fb:111 transport-cc
+a=fmtp:111minptime=10;useinbandfec=1
+m=video 9 UDP/TLS/RTP/SAVPF 107 99
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:gI99
+a=ice-pwd:t0B3CWU0NulGYZA0y3kWx5tP
+a=fingerprint:sha-256 4F:89:A1:06:89:FB:77:54:2B:FD:24:19:3A:F6:F5:40:F5:79:7C:92:EF:5E:56:97:BD:D5:2A:7D:0C:B2:6F:90
+a=setupp:actpass
+a=mid:video
+a=recvonly
+a=rtcp-mux
+a=rtpmap:107 H264/90000
+a=rtcp-fb:107 goog-remb
+a=rtcp-fb:107 transport-cc
+a=rtcp-fb:107 ccm fir
+a=rtcp-fb:107 nack
+a=rtcp-fb:107 nack pli
+a=fmtp:107level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01
+a=rtpmap:99 rtx/90000
+a=fmtp:99apt=107
+
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:158): response body: {"err_msg":"success","err_no":0,"offer":"v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE audio video\r\na=msid-semantic: WMS\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:gI99\r\na=ice-pwd:t0B3CWU0NulGYZA0y3kWx5tP\r\na=fingerprint:sha-256 4F:89:A1:06:89:FB:77:54:2B:FD:24:19:3A:F6:F5:40:F5:79:7C:92:EF:5E:56:97:BD:D5:2A:7D:0C:B2:6F:90\r\na=setupp:actpass\r\na=mid:audio\r\na=recvonly\r\na=rtcp-mux\r\na=rtpmap:111 opus/48000/2\r\na=rtcp-fb:111 transport-cc\r\na=fmtp:111minptime=10;useinbandfec=1\r\nm=video 9 UDP/TLS/RTP/SAVPF 107 99\r\nc=IN IP4 0.0.0.0\r\na=rtcp:9 IN IP4 0.0.0.0\r\na=ice-ufrag:gI99\r\na=ice-pwd:t0B3CWU0NulGYZA0y3kWx5tP\r\na=fingerprint:sha-256 4F:89:A1:06:89:FB:77:54:2B:FD:24:19:3A:F6:F5:40:F5:79:7C:92:EF:5E:56:97:BD:D5:2A:7D:0C:B2:6F:90\r\na=setupp:actpass\r\na=mid:video\r\na=recvonly\r\na=rtcp-mux\r\na=rtpmap:107 H264/90000\r\na=rtcp-fb:107 goog-remb\r\na=rtcp-fb:107 transport-cc\r\na=rtcp-fb:107 ccm fir\r\na=rtcp-fb:107 nack\r\na=rtcp-fb:107 nack pli\r\na=fmtp:107level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01\r\na=rtpmap:99 rtx/90000\r\na=fmtp:99apt=107\r\n"}
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:292): write finish, fd: 24, worker_id: 0
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:300): stop write event, fd: 24, worker_id: 0
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:305): signaling worker 0 receive read event, fd: 24
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:322): sock read data, len: -1
+INFO: 2023-04-08 18:10:57 [016:322][135344] (src/server/signaling_worker.cpp:339): close connection, fd: 24
+INFO: 2023-04-08 23:22:07 [000:000][14384] (src/server/signaling_server.cpp:91): signaling server options:
+host: 127.0.0.1
+port: 9001
+worker_num: 2
+connection_timeout: 5000000
+INFO: 2023-04-08 23:22:07 [000:000][14384] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 0
+INFO: 2023-04-08 23:22:07 [000:000][14384] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 1
+INFO: 2023-04-08 23:22:07 [000:001][14387] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 0
+INFO: 2023-04-08 23:22:07 [000:001][14388] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 1
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/server/rtc_server.cpp:89): rtc server options:
+worker_num: 2
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/server/rtc_server.cpp:68): dtls enabled, key type: 1
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/rtc_base/openssl_key_pair.cc:38): Making key pair
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/rtc_base/openssl_key_pair.cc:91): Returning key pair
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/rtc_base/openssl_certificate.cc:59): Making certificate for WebRTC
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/rtc_base/openssl_certificate.cc:114): Returning certificate
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/server/rtc_server.cpp:72): rtc certificate: 
+-----BEGIN CERTIFICATE-----
+MIIBFjCBvaADAgECAgkAtEr4QRcqN8AwCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwG
+V2ViUlRDMB4XDTIzMDQwNzE1MjIwN1oXDTI0MDQwNzE1MjIwN1owETEPMA0GA1UE
+AwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE5K06Owg8CTxlkR4G
+TbBe2xcV2mTSnqsSJwswzAF/DfMhoeGW1/Jz7/LesNKFPBvMrrZPGvWRfbOreKnU
+5nwVkTAKBggqhkjOPQQDAgNIADBFAiEAsh46QqEtlSSPblmhV8LnYAH4b9ecTNeE
+y1/d2YYgcJoCIDVKwBjvpMEgei5k09vTiyEM2gDkjE4ESx9FmIb7WFa0
+-----END CERTIFICATE-----
+
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 0
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 1
+INFO: 2023-04-08 23:22:07 [000:001][14389] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 0
+INFO: 2023-04-08 23:22:07 [000:001][14384] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 23:22:07 [000:001][14390] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 1
+INFO: 2023-04-08 23:22:07 [000:001][14391] (src/server/signaling_server.cpp:172): signaling server event loop run
+INFO: 2023-04-08 23:22:07 [000:001][14392] (src/server/rtc_server.cpp:146): rtc server event loop start
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/signaling_server.cpp:91): signaling server options:
+host: 127.0.0.1
+port: 9001
+worker_num: 2
+connection_timeout: 5000000
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 0
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/signaling_server.cpp:138): signaling server create worker, worker_id: 1
+INFO: 2023-04-08 23:28:30 [000:000][16173] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 0
+INFO: 2023-04-08 23:28:30 [000:000][16174] (src/server/signaling_worker.cpp:95): signaling worker event loop start, worker_id: 1
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/rtc_server.cpp:89): rtc server options:
+worker_num: 2
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/rtc_server.cpp:68): dtls enabled, key type: 1
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/rtc_base/openssl_key_pair.cc:38): Making key pair
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/rtc_base/openssl_key_pair.cc:91): Returning key pair
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/rtc_base/openssl_certificate.cc:59): Making certificate for WebRTC
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/rtc_base/openssl_certificate.cc:114): Returning certificate
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/rtc_server.cpp:72): rtc certificate: 
+-----BEGIN CERTIFICATE-----
+MIIBFjCBvaADAgECAgkA8QyQJZ/dPzQwCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwG
+V2ViUlRDMB4XDTIzMDQwNzE1MjgzMFoXDTI0MDQwNzE1MjgzMFowETEPMA0GA1UE
+AwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEufHx9hKkyxNw5BnB
+U6/ZE4dC/7UAyEvtQd3rFopo6Z40PilsPjT91V1a6on1kXobyALBZdFseal5NGtp
+C//1VzAKBggqhkjOPQQDAgNIADBFAiByFpLFavT5rDVFfo6IpWIlPCGQwe9coEW+
+mqToEwJZOAIhANayTYwT1ctvqs6gausp/TPR1XmQE6NixEsc0uOJblsW
+-----END CERTIFICATE-----
+
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 0
+INFO: 2023-04-08 23:28:30 [000:000][16169] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 23:28:30 [000:001][16169] (src/server/rtc_server.cpp:123): rtc server create worker, worker_id: 1
+INFO: 2023-04-08 23:28:30 [000:001][16175] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 0
+INFO: 2023-04-08 23:28:30 [000:001][16169] (src/base/network.cpp:29): gathered network interface: lo:127.0.0.1
+INFO: 2023-04-08 23:28:30 [000:001][16176] (src/server/rtc_worker.cpp:83): rtc worker event loop start, worker_id: 1
+INFO: 2023-04-08 23:28:30 [000:001][16177] (src/server/signaling_server.cpp:172): signaling server event loop run
+INFO: 2023-04-08 23:28:30 [000:001][16178] (src/server/rtc_server.cpp:146): rtc server event loop start

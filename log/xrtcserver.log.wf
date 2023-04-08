@@ -136,3 +136,4 @@ WARNING: 2023-04-08 17:21:34 [019:784][121640] (src/base/socket.cpp:199): connec
 WARNING: 2023-04-08 17:21:58 [043:330][121641] (src/base/socket.cpp:199): connection closed by peer, fd: 24
 WARNING: 2023-04-08 17:22:03 [048:694][121640] (src/base/socket.cpp:199): connection closed by peer, fd: 24
 WARNING: 2023-04-08 17:22:12 [001:890][121739] (src/base/socket.cpp:199): connection closed by peer, fd: 24
+WARNING: 2023-04-08 18:10:57 [016:322][135344] (src/base/socket.cpp:199): connection closed by peer, fd: 24

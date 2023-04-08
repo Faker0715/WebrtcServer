@@ -33,6 +33,7 @@ namespace xrtc {
         IceParameters _ice_params;
         int _socket = -1;
         rtc::SocketAddress _local_addr;
+        std::vector<Candidate> _candidates;
     };
 }
 

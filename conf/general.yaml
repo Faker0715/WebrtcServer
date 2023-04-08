@@ -5,5 +5,5 @@ log:
     log_level: verbose
     log_to_stderr: true
 ice:
-    min_port: 10256
+    min_port: 1025
     max_port: 65535
