@@ -1,0 +1,5 @@
+host: 127.0.0.1
+port: 9001
+worker_num: 2
+# 单位us
+connection_timeout: 5000000
