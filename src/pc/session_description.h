@@ -10,6 +10,7 @@
 #include <vector>
 #include "codec_info.h"
 #include "ice/ice_credentials.h"
+#include "ice/candidate.h"
 #include <rtc_base/ssl_fingerprint.h>
 #include <rtc_base/ssl_identity.h>
 #include <rtc_base/rtc_certificate.h>
@@ -60,10 +61,17 @@ namespace xrtc {
         void set_rtcp_mux(bool mux){
             _rtcp_mux = mux;
         }
+        void add_candidates(const std::vector<Candidate>& candidates){
+            _candidates = candidates;
+        }
+        const std::vector<Candidate>& candidates() const {
+            return _candidates;
+        }
     protected:
         std::vector<std::shared_ptr<CodecInfo>> _codecs;
         RtpDirection _direction;
         bool _rtcp_mux = true;
+        std::vector<Candidate> _candidates;
     };
 
     class AudioContentDescription : public MediaContentDescription {
@@ -130,6 +138,7 @@ namespace xrtc {
 
         bool is_bundle(const std::string& mid);
         std::string get_first_bundle_mid();
+        std::shared_ptr<MediaContentDescription> get_content(const std::string& mid);
         void add_content(std::shared_ptr<MediaContentDescription> content);
         void add_group(const ContentGroup& group);
         bool add_transport_info(const std::string& mid,const IceParameters& ice_param,

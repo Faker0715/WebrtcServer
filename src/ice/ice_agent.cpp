@@ -3,6 +3,7 @@
 //
 
 #include "ice_agent.h"
+#include "rtc_base/logging.h"
 #include <algorithm>
 
 namespace xrtc {
@@ -24,7 +25,9 @@ namespace xrtc {
             return true;
         }
         auto channel = new IceTransportChannel(el,_allocator,transport_name,component);
+        channel->signal_candidate_allocate_done.connect(this,&IceAgent::on_candidate_allocate_done);
         _channels.push_back(channel);
+
         return true;
     }
 
@@ -48,6 +51,10 @@ namespace xrtc {
         if(channel){
             channel->set_ice_params(ice_params);
         }
+    }
+
+    void IceAgent::on_candidate_allocate_done(IceTransportChannel *channel, const std::vector<Candidate>& candidates) {
+        signal_candidate_allocate_done(this,channel->transport_name(),channel->component(),candidates);
     }
 
 }

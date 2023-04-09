@@ -12,24 +12,32 @@
 #include "port_allocator.h"
 
 namespace xrtc {
-    class IceAgent {
+    class IceAgent : public sigslot::has_slots<> {
     public:
-        IceAgent(EventLoop *el,PortAllocator* allocator);
+        IceAgent(EventLoop *el, PortAllocator *allocator);
 
         ~IceAgent();
 
-        bool create_channel(EventLoop* el,const std::string& transport_name, IceCandidateComponent component);
+        bool create_channel(EventLoop *el, const std::string &transport_name, IceCandidateComponent component);
 
-        IceTransportChannel* get_channel(const std::string& transport_name, IceCandidateComponent component);
+        IceTransportChannel *get_channel(const std::string &transport_name, IceCandidateComponent component);
         void gathering_candidate();
-        void set_ice_params(const std::string& transport_name,IceCandidateComponent component, const IceParameters ice_params);
+
+        void set_ice_params(const std::string &transport_name, IceCandidateComponent component,
+                            const IceParameters ice_params);
+
+        sigslot::signal4<IceAgent *, const std::string &, IceCandidateComponent, const std::vector<Candidate> &> signal_candidate_allocate_done;
 
     private:
-        std::vector<IceTransportChannel*>::iterator _get_channel(const std::string& transport_name, IceCandidateComponent component);
+        std::vector<IceTransportChannel *>::iterator
+        _get_channel(const std::string &transport_name, IceCandidateComponent component);
+
+        void on_candidate_allocate_done(IceTransportChannel *channel, const std::vector<Candidate> &);
+
     private:
-        PortAllocator* _allocator;
+        PortAllocator *_allocator;
         EventLoop *_el;
-        std::vector<IceTransportChannel*> _channels;
+        std::vector<IceTransportChannel *> _channels;
     };
 }
 

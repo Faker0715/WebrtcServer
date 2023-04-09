@@ -3,3 +3,4 @@ cmake-build-release
 xrtcserver.srctrlbm
 xrtcserver.srctrldb
 xrtcserver.srctrlprj
+.idea

@@ -11,6 +11,9 @@
 #include "base/event_loop.h"
 #include "port_allocator.h"
 #include "ice_credentials.h"
+#include "candidate.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+
 namespace xrtc{
 class IceTransportChannel {
     public:
@@ -20,6 +23,7 @@ class IceTransportChannel {
     IceCandidateComponent component() const { return _component; }
     void set_ice_params(const IceParameters ice_params);
     void gathering_candidate();
+    sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
 private:
 
     EventLoop* _el;
@@ -27,6 +31,8 @@ private:
     IceCandidateComponent _component;
     PortAllocator* _allocator;
     IceParameters _ice_params;
+    std::vector<Candidate> _local_candidates;
+
 };
 }
 

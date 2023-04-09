@@ -69,6 +69,7 @@ namespace xrtc {
                 return "none";
         }
     }
+
     static void build_rtp_direction(std::shared_ptr<MediaContentDescription> content, std::stringstream &ss) {
         switch (content->direction()) {
             case RtpDirection::k_send_recv:
@@ -85,7 +86,14 @@ namespace xrtc {
                 break;
         }
     }
-
+    static void build_candidates(std::shared_ptr<MediaContentDescription> content, std::stringstream &ss) {
+        for(auto c:content->candidates()){
+            ss << "a=candidate:" << c.foundation << " " << c.component << " " <<
+            c.protocol << " " << c.priority << " " << c.address.HostAsURIString() << " " <<
+            c.port << " typ " << c.type <<
+            "\r\n";
+        }
+    }
     std::string SessionDescription::to_string() {
         std::stringstream ss;
         ss << "v=0\r\n";
@@ -114,7 +122,7 @@ namespace xrtc {
             ss << "m=" << content->mid() << " 9 " << k_media_protocol_dtls_sacpf << fmt << "\r\n";
             ss << "c=IN IP4 0.0.0.0\r\n";
             ss << "a=rtcp:9 IN IP4 0.0.0.0\r\n";
-
+            build_candidates(content, ss);
             auto transport_info = get_transport_info(content->mid());
             if (transport_info) {
                 ss << "a=ice-ufrag:" << transport_info->ice_ufrag << "\r\n";
@@ -194,25 +202,34 @@ namespace xrtc {
 
     bool SessionDescription::is_bundle(const std::string &mid) {
         auto content_group = _get_group_by_name("BUNDLE");
-        if(content_group.empty()){
+        if (content_group.empty()) {
             return false;
         }
-        for(auto group: content_group){
-             for(auto name: group->contents_names()) {
-                 if(name == mid){
-                     return true;
-                 }
-             }
+        for (auto group: content_group) {
+            for (auto name: group->contents_names()) {
+                if (name == mid) {
+                    return true;
+                }
+            }
         }
         return false;
     }
 
     std::string SessionDescription::get_first_bundle_mid() {
         auto content_group = _get_group_by_name("BUNDLE");
-        if(content_group.empty()){
+        if (content_group.empty()) {
             return "";
         }
         return content_group[0]->contents_names()[0];
+    }
+
+    std::shared_ptr<MediaContentDescription> SessionDescription::get_content(const std::string &mid) {
+        for (auto &content: _contents) {
+            if (content->mid() == mid) {
+                return content;
+            }
+        }
+        return nullptr;
     }
 
     bool ContentGroup::has_content_name(const std::string &content_name) {

@@ -36,8 +36,9 @@ namespace xrtc{
             int ret = port->create_ice_candidate(network,_allocator->min_port(),_allocator->max_port(),c);
             if(ret != 0)
                 continue;
+            _local_candidates.push_back(c);
         }
-
+        signal_candidate_allocate_done(this,_local_candidates);
     }
 
     void IceTransportChannel::set_ice_params(const IceParameters ice_params) {
