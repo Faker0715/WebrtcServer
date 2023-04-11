@@ -48,4 +48,11 @@ namespace xrtc{
         _ice_params = ice_params;
     }
 
+    void IceTransportChannel::set_remote_ice_params(const IceParameters ice_params) {
+        RTC_LOG(LS_INFO) << "set remote ICE param, "
+                         << " transport_name: " << _transport_name << " component: " << _component
+                         << " ice ufrag: " << ice_params.ice_ufrag << " ice pwd: " << ice_params.ice_pwd;
+        _remote_ice_params = ice_params;
+    }
+
 }

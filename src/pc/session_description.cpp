@@ -30,7 +30,7 @@ namespace xrtc {
 
     static void add_fmtp_line(std::shared_ptr<CodecInfo> codec, std::stringstream &ss) {
         if (!codec->codec_param.empty()) {
-            ss << "a=fmtp:" << codec->id;
+            ss << "a=fmtp:" << codec->id << " ";
             std::string data;
             for (auto &param: codec->codec_param) {
                 data += (";" + param.first + "=" + param.second);
@@ -38,6 +38,7 @@ namespace xrtc {
             data = data.substr(1);
             ss << data << "\r\n";
         }
+
     }
 
     static void build_rtp_map(std::shared_ptr<MediaContentDescription> content,
@@ -232,6 +233,11 @@ namespace xrtc {
         return nullptr;
     }
 
+    bool SessionDescription::add_transport_info(std::shared_ptr<TransportDescription> td) {
+        _transport_infos.push_back(td);
+        return true;
+    }
+
     bool ContentGroup::has_content_name(const std::string &content_name) {
         for (auto &content: _contents) {
             if (content == content_name) {
@@ -274,7 +280,10 @@ namespace xrtc {
         codec->feedback_param.push_back(FeedbackParam("nack", "pli"));
         codec->codec_param["level-asymmetry-allowed"] = "1";
         codec->codec_param["packetization-mode"] = "1";
-        codec->codec_param["profile-level-id"] = "42e01";
+
+        // 必须是42e01f
+        codec->codec_param["profile-level-id"] = "42e01f";
+
 
         // 打包成rtx重传
         auto rtx_codec = std::make_shared<VideoCodecInfo>();

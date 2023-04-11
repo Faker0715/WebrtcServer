@@ -27,6 +27,7 @@ struct RtcMsg {
     int err_no = 0;
     void* certifcate = nullptr;
 
+    std::string stream_type;
 };
 
 } // namespace xrtc

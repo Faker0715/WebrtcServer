@@ -22,6 +22,7 @@ class IceTransportChannel {
     std::string transport_name() const { return _transport_name; }
     IceCandidateComponent component() const { return _component; }
     void set_ice_params(const IceParameters ice_params);
+    void set_remote_ice_params(const IceParameters ice_params);
     void gathering_candidate();
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
 private:
@@ -31,6 +32,7 @@ private:
     IceCandidateComponent _component;
     PortAllocator* _allocator;
     IceParameters _ice_params;
+    IceParameters _remote_ice_params;
     std::vector<Candidate> _local_candidates;
 
 };

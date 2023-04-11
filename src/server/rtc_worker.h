@@ -56,6 +56,7 @@ private:
     void _stop();
     void _process_rtc_msg();
     void _process_push(std::shared_ptr<RtcMsg> msg);
+    void _process_answer(std::shared_ptr<RtcMsg> msg);
 
 private:
     RtcServerOptions _options;
@@ -69,6 +70,7 @@ private:
     std::thread* _thread = nullptr;
     LockFreeQueue<std::shared_ptr<RtcMsg>> _q_msg;
     std::unique_ptr<RtcStreamManager> _rtc_stream_mgr;
+
 };
 
 } // namespace xrtc

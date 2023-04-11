@@ -168,8 +168,6 @@ namespace xrtc {
     void SignalingWorker::_add_reply(TcpConnection *c, const rtc::Slice &reply) {
         c->reply_list.push_back(reply);
         _el->start_io_event(c->io_watcher, c->fd, EventLoop::WRITE);
-
-
     }
 
     void SignalingWorker::_process_rtc_msg() {
@@ -394,7 +392,7 @@ namespace xrtc {
                                 << ", log_id: " << xh->log_id;
             return -1;
         }
-
+        int ret = 0;
         int cmdno;
         try {
             cmdno = root["cmdno"].asInt();
@@ -407,12 +405,80 @@ namespace xrtc {
         switch (cmdno) {
             case CMDNO_PUSH:
                 return _process_push(cmdno, c, root, xh->log_id);
+            case CMDNO_ANSWER:
+                // 这里是不需要等待返回结果的 因为这里是算调用了算成功
+                ret = _process_answer(cmdno,c,root,xh->log_id);
+                break;
             default:
+                ret = -1;
+                RTC_LOG(LS_WARNING) << "unknown cmdno: " << cmdno << ", log_id: " << xh->log_id;
                 break;
         }
 
+        // 返回处理结果
+        char* buf = (char*) zmalloc(XHEAD_SIZE + MAX_RES_BUF);
+        xhead_t *res_xh = (xhead_t *) buf;
+        memcpy(res_xh,xh, header.size());
+        Json::Value res_root;
+        if(ret == 0){
+            res_root["err_no"] = 0;
+            res_root["err_msg"] = "success";
+        }else{
+            res_root["err_no"] = -1;
+            res_root["err_msg"] = "process error";
+        }
+        Json::StreamWriterBuilder write_builder;
+        // 不会缩进
+        write_builder.settings_["indentation"] = "";
+
+        std::string json_data = Json::writeString(write_builder, res_root);
+        RTC_LOG(LS_INFO) << "response body: " << json_data;
+
+        res_xh->body_len = json_data.size();
+        snprintf(buf+XHEAD_SIZE,MAX_RES_BUF,"%s",json_data.c_str());
+
+
+        rtc::Slice reply(buf,XHEAD_SIZE + res_xh->body_len);
+        _add_reply(c,reply);
+
         return 0;
     }
+
+    int SignalingWorker::_process_answer(int cmdno, TcpConnection *c,
+                                       const Json::Value &root, uint32_t log_id) {
+        uint64_t uid;
+        std::string stream_name;
+        std::string answer;
+        std::string stream_type;
+
+        try {
+            uid = root["uid"].asUInt64();
+            stream_name = root["stream_name"].asString();
+            answer = root["answer"].asString();
+            stream_type = root["type"].asString();
+
+        } catch (Json::Exception e) {
+            RTC_LOG(LS_WARNING) << "parse json body error: " << e.what()
+                                << "log_id: " << log_id;
+            return -1;
+        }
+
+        RTC_LOG(LS_INFO) << "cmdno[" << cmdno << "] uid[" << uid
+                         << "] stream_name[" << stream_name
+                         << "] answer[" << answer
+                         << "] stream_type[" << stream_type<< "] signaling server answer request";
+
+        std::shared_ptr<RtcMsg> msg = std::make_shared<RtcMsg>();
+        msg->cmdno = cmdno;
+        msg->uid = uid;
+        msg->stream_name = stream_name;
+
+        msg->sdp = answer;
+        msg->stream_type = stream_type;
+        msg->log_id = log_id;
+        return g_rtc_server->send_rtc_msg(msg);
+    }
+
 
     int SignalingWorker::_process_push(int cmdno, TcpConnection *c,
                                        const Json::Value &root, uint32_t log_id) {
@@ -449,6 +515,8 @@ namespace xrtc {
         msg->fd = c->fd;
         return g_rtc_server->send_rtc_msg(msg);
     }
+
+
 
     int SignalingWorker::notify_new_conn(int fd) {
         _q_conn.produce(fd);

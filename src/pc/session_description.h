@@ -114,7 +114,7 @@ namespace xrtc {
             return _contents;
         }
         void add_content_name(const std::string& content_name);
-        bool has_content_name(const std::string &content_name);
+        bool has_content_name(const std::string& content_name);
     private:
         std::string _semantics;
         std::vector<std::string> _contents;
@@ -145,6 +145,7 @@ namespace xrtc {
                                 rtc::RTCCertificate* certificate);
         std::vector<const ContentGroup*>  _get_group_by_name(const std::string& name) const;
         std::shared_ptr<TransportDescription> get_transport_info(const std::string &mid);
+        bool add_transport_info(std::shared_ptr<TransportDescription> td);
         const std::vector<std::shared_ptr<MediaContentDescription>>& contents() const{
             return _contents;
         }
