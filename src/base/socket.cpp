@@ -23,6 +23,7 @@
 #include <rtc_base/logging.h>
 
 #include "base/socket.h"
+#include <sys/ioctl.h>
 
 namespace xrtc {
 
@@ -79,10 +80,10 @@ namespace xrtc {
     }
 
     int create_udp_socket(int family) {
-        int sock = socket(family,SOCK_DGRAM,0);
+        int sock = socket(family, SOCK_DGRAM, 0);
         if (-1 == sock) {
-            RTC_LOG(LS_WARNING) << "create udp socket error: " <<strerror(errno)
-                                << ", error: " <<errno ;
+            RTC_LOG(LS_WARNING) << "create udp socket error: " << strerror(errno)
+                                << ", error: " << errno;
             return -1;
         }
         return sock;
@@ -219,16 +220,16 @@ namespace xrtc {
 
     int sock_bind(int sock, struct sockaddr *addr, socklen_t len, int min_port, int max_port) {
         int ret = -1;
-        if(0 == min_port && 0 == max_port){
-            ret = bind(sock,addr,len);
-        }else{
-            struct sockaddr_in* addr_in = (struct sockaddr_in*)addr;
-            for(int port = min_port;port <= max_port && ret != 0; port++){
+        if (0 == min_port && 0 == max_port) {
+            ret = bind(sock, addr, len);
+        } else {
+            struct sockaddr_in *addr_in = (struct sockaddr_in *) addr;
+            for (int port = min_port; port <= max_port && ret != 0; port++) {
                 addr_in->sin_port = htons(port);
-                ret = bind(sock,addr,len);
+                ret = bind(sock, addr, len);
             }
         }
-        if(ret != 0){
+        if (ret != 0) {
             RTC_LOG(LS_WARNING) << "sock bind failed, error: " << strerror(errno)
                                 << ", errno: " << errno;
         }
@@ -238,19 +239,50 @@ namespace xrtc {
     int sock_get_address(int sock, char *ip, int *port) {
         struct sockaddr_in addr_in;
         socklen_t len = sizeof(sockaddr);
-        int ret = getsockname(sock,(struct sockaddr*)&addr_in,&len);
-        if(ret != 0){
+        int ret = getsockname(sock, (struct sockaddr *) &addr_in, &len);
+        if (ret != 0) {
             RTC_LOG(LS_WARNING) << "sock get address failed, error: " << strerror(errno)
                                 << ", errno: " << errno;
             return -1;
         }
-        if(ip){
-           strcpy(ip,inet_ntoa(addr_in.sin_addr));
+        if (ip) {
+            strcpy(ip, inet_ntoa(addr_in.sin_addr));
         }
-        if(port){
+        if (port) {
             *port = ntohs(addr_in.sin_port);
         }
         return 0;
+    }
+
+    int sock_recv_from(int sock, char *buf, size_t size,
+                       struct sockaddr* addr, socklen_t addrlen) {
+        int received = recvfrom(sock, buf, size, 0, addr, &addrlen);
+        if (received < 0) {
+            if (EAGAIN == errno) {
+                received = 0;
+            } else {
+                RTC_LOG(LS_WARNING) << "recv from error: "
+                                    << strerror(errno)
+                                    << ", errno: " << errno;
+                return -1;
+            }
+        } else if (0 == received) {
+            RTC_LOG(LS_WARNING) << "recv from error: " << strerror(errno)
+                                << ", errno: " << errno;
+            return -1;
+        }
+
+        return received;
+    }
+
+    int64_t sock_get_recv_timestamp(int sock) {
+        struct timeval time;
+        int ret = ioctl(sock, SIOCGSTAMP_OLD, &time);
+        if(ret != 0){
+            return -1;
+        }
+        return time.tv_sec*1000000 + time.tv_usec;
+
     }
 
 

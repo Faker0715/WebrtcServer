@@ -45,6 +45,11 @@ namespace xrtc{
         }
         _local_addr.SetIP(network->ip());
         _local_addr.SetPort(port);
+        _async_socket = std::make_unique<AsyncUdpSocket>(_el,_socket);
+
+        _async_socket->signal_read_packet.connect(this,&UDPPort::on_read_packet);
+
+
         RTC_LOG(LS_INFO) << "prepared socket address: " << _local_addr.ToString();
         c.component = _component;
         c.protocol = "udp";
@@ -59,6 +64,20 @@ namespace xrtc{
 
 
         return 0;
+    }
+
+    void UDPPort::on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr,
+                                 int64_t ts) {
+        std::unique_ptr<StunMessage> stun_msg;
+        bool res = get_stun_message(buf,size,&stun_msg);
+        RTC_LOG(LS_WARNING) << "====res: " << res;
+    }
+
+    bool UDPPort::get_stun_message(const char *buf, size_t len, std::unique_ptr<StunMessage> *out_msg) {
+        if(!StunMessage::vaildate_fingerprint(buf,len)){
+            return false;
+        }
+        return true;
     }
 
 }

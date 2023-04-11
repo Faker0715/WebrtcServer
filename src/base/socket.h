@@ -21,7 +21,6 @@
 #define  __BASE_SOCKET_H_
 
 #include <sys/socket.h>
-
 namespace xrtc {
 
 int create_tcp_server(const char* addr, int port);
@@ -34,6 +33,8 @@ int sock_read_data(int sock, char* buf, size_t len);
 int sock_write_data(int sock, const char* buf, size_t len);
 int sock_bind(int sock,struct sockaddr* addr, socklen_t len,int min_port,int max_port);
 int sock_get_address(int sock,char* ip,int* port);
+int sock_recv_from(int sock,char* buf,size_t size,struct sockaddr* addr,socklen_t addrlen);
+int64_t sock_get_recv_timestamp(int sock);
 } // namespace xrtc
 
 #endif  //__BASE_SOCKET_H_
