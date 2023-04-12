@@ -7,6 +7,8 @@
 #include "base/socket.h"
 #include <rtc_base/crc32.h>
 #include <rtc_base/buffer.h>
+#include <rtc_base/string_encode.h>
+
 namespace xrtc {
 
     UDPPort::UDPPort(xrtc::EventLoop *el, const std::string &transport_name, xrtc::IceCandidateComponent component,
@@ -82,10 +84,47 @@ namespace xrtc {
         }
         rtc::ByteBufferReader buf(data, len);
         std::unique_ptr<StunMessage> stun_msg = std::make_unique<StunMessage>();
-        if(!stun_msg->read(&buf) || buf.Length() != 0) {
+        if (!stun_msg->read(&buf) || buf.Length() != 0) {
             return false;
         }
+        if (STUN_BINDING_REQUEST == stun_msg->type()) {
+            if (!stun_msg->get_byte_string(STUN_ATTR_USERNAME) ||
+                !stun_msg->get_byte_string(STUN_ATTR_MESSAGE_INTEGRITY)) {
+                // todo: 发送错误响应
+                return true;
+            }
+            std::string local_ufrag;
+            std::string remote_ufrag;
+            if (!_parse_stun_username(stun_msg.get(), &local_ufrag, &remote_ufrag) ||
+                //可能会被别人篡改
+                local_ufrag != _ice_params.ice_ufrag) {
+                return true;
+            }
+            if(stun_msg->validate_message_integrity(_ice_params.ice_pwd) != StunMessage::IntegrityStatus::k_integtity_ok){
+                return true;
+            }
+        }
 
+        return true;
+    }
+
+    bool UDPPort::_parse_stun_username(StunMessage *stun_msg, std::string *local_ufrag, std::string *remote_ufrag) {
+        local_ufrag->clear();
+        remote_ufrag->clear();
+        const StunByteStringAttribute *attr = stun_msg->get_byte_string(STUN_ATTR_USERNAME);
+        if (!attr) {
+            return false;
+        }
+        // RFRAG:LFRAG
+        std::string username = attr->get_string();
+        std::vector<std::string> fields;
+        rtc::split(username, ':', &fields);
+        if (fields.size() != 2) {
+            return false;
+        }
+        *local_ufrag = fields[0];
+        *remote_ufrag = fields[1];
+        RTC_LOG(LS_WARNING) << "local_urfrag: " << *local_ufrag << ", remote_ufrag: " << *remote_ufrag;
         return true;
     }
 

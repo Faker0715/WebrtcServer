@@ -5,7 +5,7 @@
 #include "stun.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/crc32.h"
-
+#include "rtc_base/message_digest.h"
 namespace xrtc {
     // 占用12个字节
     const char EMPTY_TRANSACTION_ID[] = "000000000000";
@@ -43,6 +43,7 @@ namespace xrtc {
         if (!buf) {
             return false;
         }
+        _buffer.assign(buf->Data(), buf->Length());
         if (!buf->ReadUInt16(&_type)) {
             return false;
         }
@@ -84,7 +85,7 @@ namespace xrtc {
                 return false;
             }
 
-            std::unique_ptr<StunAttribute> attr = _create_attribute(attr_type, attr_length);
+            std::unique_ptr<StunAttribute> attr(_create_attribute(attr_type, attr_length));
 
             if (!attr) {
                 if (attr_length % 4 != 0) {
@@ -106,9 +107,157 @@ namespace xrtc {
         return true;
     }
 
-    std::unique_ptr<StunAttribute> StunMessage::_create_attribute(uint16_t type, uint16_t length) {
-        return std::unique_ptr<StunAttribute>();
+
+    StunAttributeValueType StunMessage::get_attribute_value_type(int type) {
+        switch (type) {
+            case STUN_ATTR_USERNAME:
+                return STUN_VALUE_BYTE_STRING;
+            case STUN_ATTR_MESSAGE_INTEGRITY:
+                return STUN_VALUE_BYTE_STRING;
+            default:
+                return STUN_VALUE_UNKNOWN;
+        }
+    }
+
+    StunAttribute *StunMessage::_create_attribute(uint16_t type, uint16_t length) {
+        StunAttributeValueType value_type = get_attribute_value_type(type);
+
+        if (STUN_VALUE_UNKNOWN != value_type) {
+            return StunAttribute::create(value_type, type, length, this);
+        }
+        return nullptr;
+    }
+
+    const StunByteStringAttribute *StunMessage::get_byte_string(uint16_t type) {
+        return static_cast<const StunByteStringAttribute *>(_get_attribute(type));
+    }
+
+    const StunAttribute *StunMessage::_get_attribute(uint16_t type) {
+        for (auto &attr: _attrs) {
+            if (attr->type() == type) {
+                return attr.get();
+            }
+        }
+        return nullptr;
+    }
+
+    bool StunMessage::_validate_message_integrity_of_type(uint16_t mi_attr_type,
+                                                          size_t mi_attr_size,
+                                                          const char *data,
+                                                          size_t size,
+                                                          const std::string &password) {
+        if (size % 4 != 0 || size < k_stun_header_size) {
+            return false;
+        }
+        uint16_t length = rtc::GetBE16(&data[2]);
+        if (length + k_stun_header_size != size) {
+            return false;
+        }
+        // 查找MI属性的位置
+        size_t current_pos = k_stun_header_size;
+        bool has_message_integrity = false;
+        while (current_pos + k_stun_attribute_header_size <= size) {
+            uint16_t attr_type = rtc::GetBE16(&data[current_pos]);
+            uint16_t attr_length = rtc::GetBE16(&data[current_pos + sizeof(attr_type)]);
+            if (attr_type == mi_attr_type) {
+                has_message_integrity = true;
+                break;
+            }
+            current_pos += k_stun_attribute_header_size + attr_length;
+            if (attr_length % 4 != 0) {
+                current_pos += (4 - (attr_length % 4));
+            }
+        }
+        if(!has_message_integrity){
+            return false;
+        }
+        size_t mi_pos = current_pos;
+        std::unique_ptr<char> temp_data(new char[mi_pos]);
+        memcpy(temp_data.get(),data,mi_pos);
+
+        if (size > current_pos + k_stun_attribute_header_size + mi_attr_size) {
+            size_t extra_pos = mi_pos + k_stun_attribute_header_size + mi_attr_size;
+            size_t extra_size = size - extra_pos;
+            size_t adjust_new_len = size - extra_size - k_stun_header_size;
+            rtc::SetBE16(temp_data.get() + 2, adjust_new_len);
+        }
+
+        char hmac[k_stun_message_integrity_size];
+        size_t ret = rtc::ComputeHmac(rtc::DIGEST_SHA_1, password.c_str(),
+                                      password.length(), temp_data.get(), current_pos, hmac,
+                                      sizeof(hmac));
+
+        if (ret != k_stun_message_integrity_size) {
+            return false;
+        }
+
+        return memcmp(data + mi_pos + k_stun_attribute_header_size, hmac, mi_attr_size)
+               == 0;
+
+    }
+
+    StunMessage::IntegrityStatus StunMessage::validate_message_integrity(const std::string &password) {
+        _password = password;
+        if (get_byte_string(STUN_ATTR_MESSAGE_INTEGRITY)) {
+            if (_validate_message_integrity_of_type(STUN_ATTR_MESSAGE_INTEGRITY,
+                                                    k_stun_message_integrity_size,
+                                                    _buffer.c_str(), _buffer.length(),
+                                                    password)
+                    ) {
+                _integrity = IntegrityStatus::k_integtity_ok;
+            } else {
+                _integrity = IntegrityStatus::k_integtity_bad;
+            }
+        } else {
+            _integrity = IntegrityStatus::k_no_integrity;
+        }
+        return _integrity;
     }
 
     StunMessage::~StunMessage() = default;
+
+    StunAttribute::StunAttribute(uint16_t type, uint16_t length) : _type(type), _length(length) {
+
+    }
+
+    void StunAttribute::comsume_padding(rtc::ByteBufferReader *buf) {
+        int remain = length() % 4;
+        if (remain > 0) {
+            buf->Consume(4 - remain);
+        }
+    }
+
+    StunAttribute *
+    StunAttribute::create(StunAttributeValueType value_type, uint16_t type, uint16_t length, void *owner) {
+        switch (value_type) {
+            case STUN_VALUE_BYTE_STRING:
+                return new StunByteStringAttribute(type, length);
+            default:
+                return nullptr;
+        }
+    }
+
+
+    StunAttribute::~StunAttribute() = default;
+
+
+    StunByteStringAttribute::StunByteStringAttribute(uint16_t type, uint16_t length) : StunAttribute(type, length) {
+
+    }
+
+    StunByteStringAttribute::~StunByteStringAttribute() {
+        if (_bytes) {
+            delete[] _bytes;
+            _bytes = nullptr;
+        }
+    }
+
+    bool StunByteStringAttribute::read(rtc::ByteBufferReader *buf) {
+        _bytes = new char[length()];
+        if (!buf->ReadBytes(_bytes, length())) {
+            return false;
+        }
+        comsume_padding(buf);
+        return true;
+    }
 }
