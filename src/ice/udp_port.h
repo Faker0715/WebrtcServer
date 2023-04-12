@@ -28,7 +28,13 @@ namespace xrtc {
 
         int create_ice_candidate(Network *network, int min_port, int max_port, Candidate &c);
 
-        bool get_stun_message(const char* buf,size_t len,std::unique_ptr<StunMessage>* out_msg);
+        bool get_stun_message(const char* data,size_t len,const rtc::SocketAddress& addr,
+                              std::unique_ptr<StunMessage>* out_msg,
+                              std::string* out_username);
+
+        std::string to_string();
+        void send_binding_error_response(StunMessage* stun_msg,const rtc::SocketAddress& addr,
+                                                  int err_code, const std::string& reason);
     private:
 
         void on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr, int64_t ts);

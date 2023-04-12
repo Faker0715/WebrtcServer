@@ -73,15 +73,20 @@ namespace xrtc {
 
     void UDPPort::on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr,
                                  int64_t ts) {
+        std::string remote_ufrag;
         std::unique_ptr<StunMessage> stun_msg;
-        bool res = get_stun_message(buf, size, &stun_msg);
+        bool res = get_stun_message(buf, size, addr,&stun_msg,&remote_ufrag);
         RTC_LOG(LS_WARNING) << "====res: " << res;
     }
 
-    bool UDPPort::get_stun_message(const char *data, size_t len, std::unique_ptr<StunMessage> *out_msg) {
+    bool UDPPort::get_stun_message(const char *data, size_t len,
+                                   const rtc::SocketAddress& addr,
+                                   std::unique_ptr<StunMessage> *out_msg,
+                                   std::string* out_username) {
         if (!StunMessage::vaildate_fingerprint(data, len)) {
             return false;
         }
+        out_username->clear();
         rtc::ByteBufferReader buf(data, len);
         std::unique_ptr<StunMessage> stun_msg = std::make_unique<StunMessage>();
         if (!stun_msg->read(&buf) || buf.Length() != 0) {
@@ -90,7 +95,9 @@ namespace xrtc {
         if (STUN_BINDING_REQUEST == stun_msg->type()) {
             if (!stun_msg->get_byte_string(STUN_ATTR_USERNAME) ||
                 !stun_msg->get_byte_string(STUN_ATTR_MESSAGE_INTEGRITY)) {
-                // todo: 发送错误响应
+                RTC_LOG(LS_WARNING) << to_string() << ": recevied " << stun_method_to_string(stun_msg->type())
+                << " without username or message integrity from" << addr.ToString();
+                send_binding_error_response(stun_msg.get(),addr,STUN_ERROR_BAD_REQUEST,STUN_ERROR_REASON_BAD_REQUEST);
                 return true;
             }
             std::string local_ufrag;
@@ -98,13 +105,21 @@ namespace xrtc {
             if (!_parse_stun_username(stun_msg.get(), &local_ufrag, &remote_ufrag) ||
                 //可能会被别人篡改
                 local_ufrag != _ice_params.ice_ufrag) {
+                RTC_LOG(LS_WARNING) << to_string() << ": recevied " << stun_method_to_string(stun_msg->type())
+                                    << " with bad local_ufrag " << local_ufrag << " from " <<  addr.ToString();
+                send_binding_error_response(stun_msg.get(),addr,STUN_ERROR_UNAUTHORIZED,STUN_ERROR_REASON_UNAUTHORIZED);
                 return true;
             }
             if(stun_msg->validate_message_integrity(_ice_params.ice_pwd) != StunMessage::IntegrityStatus::k_integtity_ok){
+                RTC_LOG(LS_WARNING) << to_string() << ": recevied " << stun_method_to_string(stun_msg->type())
+                                    << " with bad M-I from " << addr.ToString();
+                send_binding_error_response(stun_msg.get(),addr,STUN_ERROR_UNAUTHORIZED,STUN_ERROR_REASON_UNAUTHORIZED);
                 return true;
             }
+            *out_username = remote_ufrag;
         }
 
+        *out_msg = std::move(stun_msg);
         return true;
     }
 
@@ -128,4 +143,14 @@ namespace xrtc {
         return true;
     }
 
+    std::string UDPPort::to_string() {
+        std::stringstream ss;
+        ss << "Port[" << this << ":" << _transport_name << ":" << _component
+            << ":" << _ice_params.ice_ufrag << ":" << _ice_params.ice_pwd << ":" << _local_addr.ToString() << "]";
+        return ss.str();
+    }
+    void UDPPort::send_binding_error_response(StunMessage* stun_msg,const rtc::SocketAddress& addr,
+                                              int err_code, const std::string& reason){
+
+    }
 }

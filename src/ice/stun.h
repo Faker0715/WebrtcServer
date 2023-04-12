@@ -29,6 +29,13 @@ namespace xrtc {
         STUN_VALUE_UINT32 = 1,
         STUN_VALUE_BYTE_STRING
     };
+    enum StunErrorCode{
+        STUN_ERROR_BAD_REQUEST = 400,
+        STUN_ERROR_UNAUTHORIZED = 401,
+    };
+    extern const char STUN_ERROR_REASON_BAD_REQUEST[];
+    extern const char STUN_ERROR_REASON_UNAUTHORIZED[];
+    std::string stun_method_to_string(int type);
     class StunByteStringAttribute;
     class StunAttribute;
     class StunMessage {
