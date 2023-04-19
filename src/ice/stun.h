@@ -34,6 +34,11 @@ namespace xrtc {
         STUN_VALUE_UINT32 = 1,
         STUN_VALUE_BYTE_STRING
     };
+    enum StunAddressFamily{
+        STUN_ADDRESS_UNDEF = 0,
+        STUN_ADDRESS_IPV4 = 1,
+        STUN_ADDRESS_IPV6 = 2,
+    };
     enum StunErrorCode{
         STUN_ERROR_BAD_REQUEST = 400,
         STUN_ERROR_UNAUTHORIZED = 401,
@@ -80,10 +85,11 @@ namespace xrtc {
         IntegrityStatus validate_message_integrity(const std::string& password);
         StunAttributeValueType get_attribute_value_type(int type);
         bool read(rtc::ByteBufferReader* buf);
+        bool write(rtc::ByteBufferWriter* buf);
         void add_attribute(std::unique_ptr<StunAttribute> attr);
         const StunByteStringAttribute* get_byte_string(uint16_t type);
         const StunUInt32Attribute* get_uint32(uint16_t type);
-
+        bool _add_message_integrity_of_type(uint16_t attr_type,uint16_t attr_size,const char* key,size_t len);
     private:
         StunAttribute* _create_attribute(uint16_t type, uint16_t length);
         const StunAttribute* _get_attribute(uint16_t type);
@@ -106,7 +112,8 @@ namespace xrtc {
     public:
         int type() const { return _type; }
         size_t length() const { return _length; }
-
+        void set_type(uint16_t type) { _type = type; }
+        void set_length(uint16_t length) { _length = length; }
         virtual ~StunAttribute();
         static StunAttribute* create(StunAttributeValueType value_type,
                                            uint16_t type,
@@ -114,6 +121,7 @@ namespace xrtc {
                                            void* owner);
 
         virtual bool read(rtc::ByteBufferReader* buf) = 0;
+        virtual bool write(rtc::ByteBufferWriter* buf) = 0;
     protected:
         StunAttribute(uint16_t type,uint16_t length);
         void comsume_padding(rtc::ByteBufferReader* buf);
@@ -123,9 +131,15 @@ namespace xrtc {
     };
     class StunAddressAttribute : public StunAttribute{
     public:
+        static const size_t SIZE_UNDEF = 0;
+        static const size_t SIZE_IPV4 = 8;
+        static const size_t SIZE_IPV6 = 20;
         StunAddressAttribute(uint16_t type, const rtc::SocketAddress& address);
         ~StunAddressAttribute() override{};
         bool read(rtc::ByteBufferReader* buf) override;
+        bool write(rtc::ByteBufferWriter* buf) override;
+        void set_address(const rtc::SocketAddress& address);
+        StunAddressFamily family();
     private:
         rtc::SocketAddress _address;
     };
@@ -133,6 +147,7 @@ namespace xrtc {
     public:
         StunXorAddressAttribute(uint16_t type, const rtc::SocketAddress& addr);
         ~StunXorAddressAttribute() override{};
+        bool write(rtc::ByteBufferWriter* buf) override;
     };
     class StunUInt32Attribute:public StunAttribute{
     public:
@@ -144,6 +159,7 @@ namespace xrtc {
             return _bits;
         }
         bool read(rtc::ByteBufferReader* buf) override;
+        bool write(rtc::ByteBufferWriter* buf) override;
     private:
         uint32_t _bits;
     };
@@ -151,11 +167,16 @@ namespace xrtc {
     class StunByteStringAttribute: public StunAttribute{
     public:
         StunByteStringAttribute(uint16_t type, uint16_t length);
+        StunByteStringAttribute(uint16_t type,const std::string& str);
         ~StunByteStringAttribute() override;
         bool read(rtc::ByteBufferReader* buf) override;
+        bool write(rtc::ByteBufferWriter* buf) override;
         std::string get_string() const{
             return std::string(_bytes,length());
         }
+        void copy_bytes(const char *bytes, size_t len);
+    private:
+        void _set_bytes(char *bytes);
     private:
         char* _bytes = nullptr;
 
