@@ -125,6 +125,8 @@ namespace xrtc {
                 return STUN_VALUE_BYTE_STRING;
             case STUN_ATTR_MESSAGE_INTEGRITY:
                 return STUN_VALUE_BYTE_STRING;
+            case STUN_ATTR_PRIORITY:
+                return STUN_VALUE_UINT32;
             default:
                 return STUN_VALUE_UNKNOWN;
         }
@@ -225,6 +227,10 @@ namespace xrtc {
         return _integrity;
     }
 
+    const StunUInt32Attribute *StunMessage::get_uint32(uint16_t type) {
+        return static_cast<const StunUInt32Attribute *>(_get_attribute(type));;
+    }
+
     StunMessage::~StunMessage() = default;
 
     StunAttribute::StunAttribute(uint16_t type, uint16_t length) : _type(type), _length(length) {
@@ -243,6 +249,8 @@ namespace xrtc {
         switch (value_type) {
             case STUN_VALUE_BYTE_STRING:
                 return new StunByteStringAttribute(type, length);
+            case STUN_VALUE_UINT32:
+                return new StunUInt32Attribute(type);
             default:
                 return nullptr;
         }
@@ -270,5 +278,19 @@ namespace xrtc {
         }
         comsume_padding(buf);
         return true;
+    }
+
+    bool StunUInt32Attribute::read(rtc::ByteBufferReader *buf) {
+        if(length() != SIZE || !buf->ReadUInt32(&_bits)){
+            return false;
+        }
+        return true;
+    }
+
+    StunUInt32Attribute::StunUInt32Attribute(uint16_t type): StunAttribute(type,SIZE),_bits(0) {
+
+    }
+    StunUInt32Attribute::StunUInt32Attribute(uint16_t type,uint32_t value): StunAttribute(type,SIZE),_bits(value) {
+
     }
 }

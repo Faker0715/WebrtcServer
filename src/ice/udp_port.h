@@ -33,6 +33,9 @@ namespace xrtc {
                               std::string* out_username);
 
         std::string to_string();
+
+        sigslot::signal4<UDPPort*,const rtc::SocketAddress&,StunMessage*,const std::string&> signal_unknown_address;
+
         void send_binding_error_response(StunMessage* stun_msg,const rtc::SocketAddress& addr,
                                                   int err_code, const std::string& reason);
     private:

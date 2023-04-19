@@ -13,9 +13,11 @@
 #include "ice_credentials.h"
 #include "candidate.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "udp_port.h"
 
 namespace xrtc{
-class IceTransportChannel {
+    class UDPPort;
+class IceTransportChannel: public sigslot::has_slots<>{
     public:
     IceTransportChannel(EventLoop* el, PortAllocator* allocator,const std::string& transport_name, IceCandidateComponent component);
     virtual ~IceTransportChannel();
@@ -24,7 +26,11 @@ class IceTransportChannel {
     void set_ice_params(const IceParameters ice_params);
     void set_remote_ice_params(const IceParameters ice_params);
     void gathering_candidate();
+    std::string to_string();
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
+private:
+    void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
+                             const std::string &remote_ufrag);
 private:
 
     EventLoop* _el;

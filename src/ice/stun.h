@@ -22,6 +22,7 @@ namespace xrtc {
     enum StunAttributeValue{
         STUN_ATTR_USERNAME = 0x0006,
         STUN_ATTR_FINGERPRINT = 0x8028,
+        STUN_ATTR_PRIORITY = 0x0024,
         STUN_ATTR_MESSAGE_INTEGRITY = 0x0008,
     };
     enum StunAttributeValueType{
@@ -37,6 +38,7 @@ namespace xrtc {
     extern const char STUN_ERROR_REASON_UNAUTHORIZED[];
     std::string stun_method_to_string(int type);
     class StunByteStringAttribute;
+    class StunUInt32Attribute;
     class StunAttribute;
     class StunMessage {
     public:
@@ -48,20 +50,22 @@ namespace xrtc {
         };
         StunMessage();
         ~StunMessage();
-        int type(){
+        int type() const {
             return _type;
         }
         size_t length() const{
             return _length;
         }
+        const std::string& transaction_id() const{
+            return _transaction_id;
+        }
         static bool vaildate_fingerprint(const char* data,size_t len);
         IntegrityStatus validate_message_integrity(const std::string& password);
         StunAttributeValueType get_attribute_value_type(int type);
         bool read(rtc::ByteBufferReader* buf);
+
         const StunByteStringAttribute* get_byte_string(uint16_t type);
-
-
-
+        const StunUInt32Attribute* get_uint32(uint16_t type);
 
     private:
         StunAttribute* _create_attribute(uint16_t type, uint16_t length);
@@ -85,6 +89,7 @@ namespace xrtc {
     public:
         int type() const { return _type; }
         size_t length() const { return _length; }
+
         virtual ~StunAttribute();
         static StunAttribute* create(StunAttributeValueType value_type,
                                            uint16_t type,
@@ -102,7 +107,15 @@ namespace xrtc {
     class StunUInt32Attribute:public StunAttribute{
     public:
         static const size_t SIZE = 4;
-
+        StunUInt32Attribute(uint16_t type);
+        StunUInt32Attribute(uint16_t type, uint32_t value);
+        ~StunUInt32Attribute() override{};
+        uint32_t value() const{
+            return _bits;
+        }
+        bool read(rtc::ByteBufferReader* buf) override;
+    private:
+        uint32_t _bits;
     };
 
     class StunByteStringAttribute: public StunAttribute{
