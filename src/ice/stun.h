@@ -5,6 +5,8 @@
 #include <memory>
 #include <vector>
 #include <rtc_base//byte_buffer.h>
+#include "rtc_base/socket_address.h"
+
 #ifndef XRTCSERVER_STUN_H
 #define XRTCSERVER_STUN_H
 
@@ -18,11 +20,13 @@ namespace xrtc {
     const size_t k_stun_message_integrity_size = 20;
     enum StunMessageType{
         STUN_BINDING_REQUEST = 0x0001,
+        STUN_BINDING_RESPONSE = 0x0101,
     };
     enum StunAttributeValue{
         STUN_ATTR_USERNAME = 0x0006,
         STUN_ATTR_FINGERPRINT = 0x8028,
         STUN_ATTR_PRIORITY = 0x0024,
+        STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,
         STUN_ATTR_MESSAGE_INTEGRITY = 0x0008,
     };
     enum StunAttributeValueType{
@@ -55,6 +59,17 @@ namespace xrtc {
         int type() const {
             return _type;
         }
+        void set_type(uint16_t type){
+            _type = type;
+        }
+        void set_length(uint16_t length){
+            _length = length;
+        }
+        void set_transaction_id(const std::string& transaction_id){
+            _transaction_id = transaction_id;
+        }
+        bool add_message_integrity(const std::string& password);
+        bool add_fingerprint();
         size_t length() const{
             return _length;
         }
@@ -65,7 +80,7 @@ namespace xrtc {
         IntegrityStatus validate_message_integrity(const std::string& password);
         StunAttributeValueType get_attribute_value_type(int type);
         bool read(rtc::ByteBufferReader* buf);
-
+        void add_attribute(std::unique_ptr<StunAttribute> attr);
         const StunByteStringAttribute* get_byte_string(uint16_t type);
         const StunUInt32Attribute* get_uint32(uint16_t type);
 
@@ -105,6 +120,19 @@ namespace xrtc {
     private:
         uint16_t _type;
         uint16_t _length;
+    };
+    class StunAddressAttribute : public StunAttribute{
+    public:
+        StunAddressAttribute(uint16_t type, const rtc::SocketAddress& address);
+        ~StunAddressAttribute() override{};
+        bool read(rtc::ByteBufferReader* buf) override;
+    private:
+        rtc::SocketAddress _address;
+    };
+    class StunXorAddressAttribute : public StunAddressAttribute{
+    public:
+        StunXorAddressAttribute(uint16_t type, const rtc::SocketAddress& addr);
+        ~StunXorAddressAttribute() override{};
     };
     class StunUInt32Attribute:public StunAttribute{
     public:

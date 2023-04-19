@@ -84,13 +84,15 @@ namespace xrtc {
         remote_candidate.type = PRFLX_PORT_TYPE;
         RTC_LOG(LS_INFO) << "create peer reflexive candidate: " << remote_candidate.to_string();
 
-        IceConnection* conn = port->create_connection(_el,remote_candidate);;
+        IceConnection* conn = port->create_connection(remote_candidate);;
         if(!conn){
             port->send_binding_error_response(msg,addr,STUN_ERROR_SERVER_ERROR,STUN_ERROR_REASON_SERVER_ERROR);
             RTC_LOG(LS_WARNING) << to_string() << ": create connection failed, remote_addr: " << addr.ToString();
             return;
         }
         RTC_LOG(LS_INFO) << to_string() << ": create connection success, remote_addr: " << addr.ToString();
+        // after buidl connection , handle request
+        conn->handle_stun_binding_request(msg);
     }
 
     std::string IceTransportChannel::to_string() {

@@ -6,6 +6,7 @@
 #include "rtc_base/byte_order.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/message_digest.h"
+
 namespace xrtc {
     // 占用12个字节
     const char EMPTY_TRANSACTION_ID[] = "000000000000";
@@ -13,7 +14,8 @@ namespace xrtc {
     extern const char STUN_ERROR_REASON_BAD_REQUEST[] = "Bad request";
     extern const char STUN_ERROR_REASON_UNAUTHORIZED[] = "Unauthorized";
     extern const char STUN_ERROR_REASON_SERVER_ERROR[] = "Server error";
-    std::string stun_method_to_string(int type){
+
+    std::string stun_method_to_string(int type) {
         switch (type) {
             case STUN_BINDING_REQUEST:
                 return "BINDING REQUEST";
@@ -22,6 +24,7 @@ namespace xrtc {
 
         }
     }
+
     StunMessage::StunMessage() : _type(0), _length(0), _transaction_id(EMPTY_TRANSACTION_ID) {
 
     }
@@ -181,12 +184,12 @@ namespace xrtc {
                 current_pos += (4 - (attr_length % 4));
             }
         }
-        if(!has_message_integrity){
+        if (!has_message_integrity) {
             return false;
         }
         size_t mi_pos = current_pos;
         std::unique_ptr<char> temp_data(new char[mi_pos]);
-        memcpy(temp_data.get(),data,mi_pos);
+        memcpy(temp_data.get(), data, mi_pos);
 
         if (size > current_pos + k_stun_attribute_header_size + mi_attr_size) {
             size_t extra_pos = mi_pos + k_stun_attribute_header_size + mi_attr_size;
@@ -229,6 +232,23 @@ namespace xrtc {
 
     const StunUInt32Attribute *StunMessage::get_uint32(uint16_t type) {
         return static_cast<const StunUInt32Attribute *>(_get_attribute(type));;
+    }
+
+    bool StunMessage::add_message_integrity(const std::string &password) {
+        return true;
+    }
+
+    bool StunMessage::add_fingerprint() {
+        return false;
+    }
+
+    void StunMessage::add_attribute(std::unique_ptr<StunAttribute> attr) {
+        size_t attr_len = attr->length();
+        if(attr_len % 4){
+            attr_len += 4 - (attr_len % 4);
+        }
+        _length += attr_len;
+        _attrs.push_back(std::move(attr));
     }
 
     StunMessage::~StunMessage() = default;
@@ -281,16 +301,32 @@ namespace xrtc {
     }
 
     bool StunUInt32Attribute::read(rtc::ByteBufferReader *buf) {
-        if(length() != SIZE || !buf->ReadUInt32(&_bits)){
+        if (length() != SIZE || !buf->ReadUInt32(&_bits)) {
             return false;
         }
         return true;
     }
 
-    StunUInt32Attribute::StunUInt32Attribute(uint16_t type): StunAttribute(type,SIZE),_bits(0) {
+    StunUInt32Attribute::StunUInt32Attribute(uint16_t type) : StunAttribute(type, SIZE), _bits(0) {
 
     }
-    StunUInt32Attribute::StunUInt32Attribute(uint16_t type,uint32_t value): StunAttribute(type,SIZE),_bits(value) {
+
+    StunUInt32Attribute::StunUInt32Attribute(uint16_t type, uint32_t value) : StunAttribute(type, SIZE), _bits(value) {
+
+    }
+
+    StunAddressAttribute::StunAddressAttribute(uint16_t type, const rtc::SocketAddress &address) : StunAttribute(type,
+                                                                                                                 0) {
+//       set_address(address);
+
+    }
+
+    bool StunAddressAttribute::read(rtc::ByteBufferReader *buf) {
+        return true;
+    }
+
+    StunXorAddressAttribute::StunXorAddressAttribute(uint16_t type, const rtc::SocketAddress &addr)
+            : StunAddressAttribute(type, addr) {
 
     }
 }

@@ -69,9 +69,20 @@ namespace xrtc {
 
         return 0;
     }
-
+    IceConnection* UDPPort::get_connection(const rtc::SocketAddress& addr){
+        auto iter = _connections.find(addr);
+        return iter == _connections.end() ? nullptr : iter->second;
+    }
     void UDPPort::on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr,
                                  int64_t ts) {
+
+        if(IceConnection * conn = get_connection(addr)) {
+            conn->on_read_packet(buf,size,ts);
+            return;
+        }
+
+
+
         std::string remote_ufrag;
         std::unique_ptr<StunMessage> stun_msg;
         bool res = get_stun_message(buf, size, addr, &stun_msg, &remote_ufrag);
@@ -168,14 +179,16 @@ namespace xrtc {
 
     }
 
-    IceConnection *UDPPort::create_connection(EventLoop *el, const Candidate &remote_candidate) {
-         IceConnection* conn = new IceConnection(el, this, remote_candidate);
+    IceConnection *UDPPort::create_connection(const Candidate &remote_candidate) {
+         IceConnection* conn = new IceConnection(_el, this, remote_candidate);
          auto ret = _connections.insert(std::make_pair(conn->remote_candidate().address,conn));
+
          if(!ret.second && ret.first->second != conn){
              RTC_LOG(LS_WARNING) << to_string() << ": create connection failed on "
               << "an existing remote address, adr: " << conn->remote_candidate().address.ToString();
               ret.first->second = conn;
-             return nullptr;
+              // todo
+
          }
          return conn;
     }
