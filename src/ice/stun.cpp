@@ -10,9 +10,9 @@ namespace xrtc {
     // 占用12个字节
     const char EMPTY_TRANSACTION_ID[] = "000000000000";
     const size_t STUN_FINGERPRINT_XOR_VALUE = 0x5354554e;
-
     extern const char STUN_ERROR_REASON_BAD_REQUEST[] = "Bad request";
     extern const char STUN_ERROR_REASON_UNAUTHORIZED[] = "Unauthorized";
+    extern const char STUN_ERROR_REASON_SERVER_ERROR[] = "Server error";
     std::string stun_method_to_string(int type){
         switch (type) {
             case STUN_BINDING_REQUEST:

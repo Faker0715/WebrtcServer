@@ -70,6 +70,7 @@ namespace xrtc {
             RTC_LOG(LS_WARNING)
             << to_string() << ": priority not found in the" << " binding request message, remote_addr: "
             << addr.ToString();
+            port->send_binding_error_response(msg,addr,STUN_ERROR_BAD_REQUEST,STUN_ERROR_REASON_BAD_REQUEST);
             return;
         }
         uint32_t remote_priority = priority_attr->value();
@@ -82,6 +83,14 @@ namespace xrtc {
         remote_candidate.password = _remote_ice_params.ice_pwd;
         remote_candidate.type = PRFLX_PORT_TYPE;
         RTC_LOG(LS_INFO) << "create peer reflexive candidate: " << remote_candidate.to_string();
+
+        IceConnection* conn = port->create_connection(_el,remote_candidate);;
+        if(!conn){
+            port->send_binding_error_response(msg,addr,STUN_ERROR_SERVER_ERROR,STUN_ERROR_REASON_SERVER_ERROR);
+            RTC_LOG(LS_WARNING) << to_string() << ": create connection failed, remote_addr: " << addr.ToString();
+            return;
+        }
+        RTC_LOG(LS_INFO) << to_string() << ": create connection success, remote_addr: " << addr.ToString();
     }
 
     std::string IceTransportChannel::to_string() {

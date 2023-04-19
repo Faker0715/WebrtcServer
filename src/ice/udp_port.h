@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 #include "base/event_loop.h"
 #include "ice_def.h"
 #include "ice_credentials.h"
@@ -15,9 +16,12 @@
 #include "rtc_base/socket_address.h"
 #include "base/async_udp_socket.h"
 #include "stun.h"
+#include "ice_connection.h"
 
 namespace xrtc {
 
+    class IceConnection;
+    typedef std::map<rtc::SocketAddress,IceConnection*> AddressMap;
     class UDPPort : public sigslot::has_slots<> {
 
     public:
@@ -38,6 +42,7 @@ namespace xrtc {
 
         void send_binding_error_response(StunMessage* stun_msg,const rtc::SocketAddress& addr,
                                                   int err_code, const std::string& reason);
+        IceConnection* create_connection(EventLoop* el,const Candidate& candidate);
     private:
 
         void on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr, int64_t ts);
@@ -51,6 +56,7 @@ namespace xrtc {
         rtc::SocketAddress _local_addr;
         std::unique_ptr<AsyncUdpSocket> _async_socket;
         std::vector<Candidate> _candidates;
+        AddressMap _connections;
     };
 }
 

@@ -167,4 +167,18 @@ namespace xrtc {
                                               int err_code, const std::string &reason) {
 
     }
+
+    IceConnection *UDPPort::create_connection(EventLoop *el, const Candidate &remote_candidate) {
+         IceConnection* conn = new IceConnection(el, this, remote_candidate);
+         auto ret = _connections.insert(std::make_pair(conn->remote_candidate().address,conn));
+         if(!ret.second && ret.first->second != conn){
+             RTC_LOG(LS_WARNING) << to_string() << ": create connection failed on "
+              << "an existing remote address, adr: " << conn->remote_candidate().address.ToString();
+              ret.first->second = conn;
+             return nullptr;
+         }
+         return conn;
+    }
+
+
 }
