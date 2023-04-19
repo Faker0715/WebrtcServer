@@ -104,7 +104,7 @@ namespace xrtc {
                                    const rtc::SocketAddress &addr,
                                    std::unique_ptr<StunMessage> *out_msg,
                                    std::string *out_username) {
-        if (!StunMessage::vaildate_fingerprint(data, len)) {
+        if (!StunMessage::validate_fingerprint(data, len)) {
             return false;
         }
         out_username->clear();
@@ -134,7 +134,7 @@ namespace xrtc {
                 return true;
             }
             if (stun_msg->validate_message_integrity(_ice_params.ice_pwd) !=
-                StunMessage::IntegrityStatus::k_integtity_ok) {
+                StunMessage::IntegrityStatus::k_integrity_ok) {
                 RTC_LOG(LS_WARNING) << to_string() << ": recevied " << stun_method_to_string(stun_msg->type())
                                     << " with bad M-I from " << addr.ToString();
                 send_binding_error_response(stun_msg.get(), addr, STUN_ERROR_UNAUTHORIZED,
