@@ -291,7 +291,7 @@ namespace xrtc {
         _attrs.push_back(std::move(attr));
     }
 
-    bool StunMessage::write(rtc::ByteBufferWriter *buf) {
+    bool StunMessage::write(rtc::ByteBufferWriter *buf) const {
         if (!buf) {
             return false;
         }

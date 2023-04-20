@@ -20,10 +20,13 @@ namespace xrtc {
         void on_read_packet(const char* buf, size_t len,int64_t ts);
         void handle_stun_binding_request(StunMessage* stun_msg);
         void send_stun_binding_response(StunMessage* stun_msg);
+        void send_response_message(const StunMessage &msg);
     private:
         EventLoop* _el;
         UDPPort* _port;
         Candidate _remote_candidate;
+
+        std::string to_string();
     };
 }
 

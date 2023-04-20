@@ -12,6 +12,9 @@ namespace xrtc{
         if(EventLoop::READ & events){
             udp_socket->recv_data();
         }
+        if(EventLoop::WRITE&events){
+            udp_socket->send_data();
+        }
     }
     AsyncUdpSocket::AsyncUdpSocket(EventLoop *el, int socket):_el(el),_socket(socket),_buf(new char[MAX_BUF_SIZE]),_size(MAX_BUF_SIZE) {
         _socket_watcher = _el->create_io_event(async_udp_socket_io_cb, this);
@@ -43,6 +46,26 @@ namespace xrtc{
             inet_ntop(AF_INET,&addr.sin_addr,ip,sizeof(ip));
             rtc::SocketAddress remote_addr(ip,port);
             signal_read_packet(this,_buf,len,remote_addr,ts);
+        }
+    }
+
+    int AsyncUdpSocket::send_to(const char *data, size_t size, const rtc::SocketAddress &addr) {
+         return _add_udp_packet(data,size,addr);
+    }
+    int AsyncUdpSocket::_add_udp_packet(const char* data,size_t size,
+                                        const rtc::SocketAddress& addr){
+        UdpPacketData* packet = new UdpPacketData(data,size,addr);
+        _udp_packet_list.push_back(packet);
+        _el->start_io_event(_socket_watcher,_socket,EventLoop::WRITE);
+        return size;
+    }
+
+    void AsyncUdpSocket::send_data() {
+        while(!_udp_packet_list.empty()){
+
+        }
+        if(_udp_packet_list.empty()){
+            _el->stop_io_event(_socket_watcher,_socket,EventLoop::WRITE);
         }
     }
 }

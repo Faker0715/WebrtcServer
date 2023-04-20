@@ -193,5 +193,12 @@ namespace xrtc {
          return conn;
     }
 
+    int UDPPort::send_to(const char *buf, size_t len, const rtc::SocketAddress &addr) {
+        if(!_async_socket){
+            return -1;
+        }
+        return _async_socket->send_to(buf,len,addr);
+    }
+
 
 }
