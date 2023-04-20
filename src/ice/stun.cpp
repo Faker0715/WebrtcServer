@@ -22,6 +22,8 @@ namespace xrtc {
                 return "BINDING REQUEST";
             case STUN_BINDING_RESPONSE:
                 return "BINDING RESPONSE";
+            case STUN_BINDING_ERROR_RESPONSE:
+                return "BINDING ERROR RESPONSE";
             default:
                 return "Unknown<" + std::to_string(type) + ">";
 
@@ -347,6 +349,10 @@ namespace xrtc {
         }
     }
 
+    std::unique_ptr<StunErrorCodeAttribute> StunAttribute::create_error_code() {
+        return std::make_unique<StunErrorCodeAttribute>(STUN_ATTR_ERROR_CODE,StunErrorCodeAttribute::MIN_SIZE);
+    }
+
 
     StunAttribute::~StunAttribute() = default;
 
@@ -536,4 +542,35 @@ namespace xrtc {
 
         return true;
     }
+
+
+    // error code
+    const uint16_t StunErrorCodeAttribute::MIN_SIZE = 4;
+    StunErrorCodeAttribute::StunErrorCodeAttribute(uint16_t type, uint16_t length):
+            StunAttribute(type, length),_class(0),_number(0) {
+
+    }
+
+    void StunErrorCodeAttribute::set_code(int code) {
+        _class = code / 100;
+        _number = code % 100;
+    }
+
+    void StunErrorCodeAttribute::set_reason(const std::string &reason) {
+        _reason = reason;
+        set_length(MIN_SIZE + _reason.size());
+    }
+
+    bool StunErrorCodeAttribute::read(rtc::ByteBufferReader *buf) {
+        return false;
+    }
+
+    bool StunErrorCodeAttribute::write(rtc::ByteBufferWriter *buf) {
+        buf->WriteUInt32(_class << 8 | _number);
+        buf->WriteString(_reason);
+        write_padding(buf);
+        return true;
+    }
+
+
 }

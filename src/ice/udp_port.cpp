@@ -176,7 +176,29 @@ namespace xrtc {
 
     void UDPPort::send_binding_error_response(StunMessage *stun_msg, const rtc::SocketAddress &addr,
                                               int err_code, const std::string &reason) {
-
+        StunMessage response;
+        response.set_type(STUN_BINDING_ERROR_RESPONSE);
+        response.set_transaction_id(stun_msg->transaction_id());
+        auto error_attr = StunAttribute::create_error_code();
+        error_attr->set_code(err_code);
+        error_attr->set_reason(reason);
+        response.add_attribute(std::move(error_attr));
+        if(err_code != STUN_ERROR_BAD_REQUEST && err_code != STUN_ERROR_UNAUTHORIZED){
+            response.add_message_integrity(_ice_params.ice_pwd);
+        }
+        response.add_fingerprint();
+        rtc::ByteBufferWriter buf;
+        if(!response.write(&buf)){
+            return;
+        }
+        int ret = _async_socket->send_to(buf.Data(),buf.Length(),addr);
+        if(ret < 0){
+            RTC_LOG(LS_WARNING) << to_string() << " send " << stun_method_to_string(response.type())
+                << " error, ret=" << ret << " to=" << addr.ToString();
+        }else{
+            RTC_LOG(LS_INFO) << to_string() << " send " << stun_method_to_string(response.type())
+                << ", reason=" << reason << " to=" << addr.ToString();
+        }
     }
 
     IceConnection *UDPPort::create_connection(const Candidate &remote_candidate) {

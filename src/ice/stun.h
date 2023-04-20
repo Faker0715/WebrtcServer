@@ -21,10 +21,13 @@ namespace xrtc {
     enum StunMessageType{
         STUN_BINDING_REQUEST = 0x0001,
         STUN_BINDING_RESPONSE = 0x0101,
+        STUN_BINDING_ERROR_RESPONSE = 0x0111,
+
     };
     enum StunAttributeValue{
         STUN_ATTR_USERNAME = 0x0006,
         STUN_ATTR_FINGERPRINT = 0x8028,
+        STUN_ATTR_ERROR_CODE = 0x0009,
         STUN_ATTR_PRIORITY = 0x0024,
         STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,
         STUN_ATTR_MESSAGE_INTEGRITY = 0x0008,
@@ -51,6 +54,7 @@ namespace xrtc {
     class StunByteStringAttribute;
     class StunUInt32Attribute;
     class StunAttribute;
+    class StunErrorCodeAttribute;
     class StunMessage {
     public:
         enum class IntegrityStatus {
@@ -122,6 +126,7 @@ namespace xrtc {
         static StunAttribute* create(StunAttributeValueType value_type,
                                      uint16_t type, uint16_t length, void* owner);
 
+        static std::unique_ptr<StunErrorCodeAttribute> create_error_code();
         virtual bool read(rtc::ByteBufferReader* buf) = 0;
         virtual bool write(rtc::ByteBufferWriter* buf) = 0;
 
@@ -199,6 +204,23 @@ namespace xrtc {
     private:
         char* _bytes = nullptr;
 
+    };
+
+
+    class StunErrorCodeAttribute: public StunAttribute{
+    public:
+        static const uint16_t MIN_SIZE;
+        StunErrorCodeAttribute(uint16_t type,uint16_t length);
+        ~StunErrorCodeAttribute() override = default;
+
+        bool read(rtc::ByteBufferReader* buf) override;
+        bool write(rtc::ByteBufferWriter* buf) override;
+        void set_code(int code);
+        void set_reason(const std::string& reason);
+    private:
+        uint8_t _class;
+        uint8_t _number;
+        std::string _reason;
     };
 }
 
