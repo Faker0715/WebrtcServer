@@ -118,4 +118,9 @@ namespace xrtc {
 
     }
 
+    bool IceConnection::stable(int64_t now) const {
+
+        return false;
+    }
+
 }
