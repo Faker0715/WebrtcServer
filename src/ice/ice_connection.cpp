@@ -122,4 +122,17 @@ namespace xrtc {
         return false;
     }
 
+    void IceConnection::ping(int64_t now) {
+        ConnectionRequest* request = new ConnectionRequest(this);
+        _pings_since_last_response.push_back(SentPing(request->id(),now));
+
+    }
+
+    ConnectionRequest::ConnectionRequest(IceConnection *conn): StunRequest(new StunMessage()),_connections(conn) {
+
+    }
+
+    void ConnectionRequest::prepare(StunMessage *msg) {
+
+    }
 }

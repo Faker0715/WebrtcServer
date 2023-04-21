@@ -8,9 +8,20 @@
 #include "base/event_loop.h"
 #include "udp_port.h"
 #include "candidate.h"
+#include "stun_request.h"
 
 namespace xrtc {
     class UDPPort;
+    class IceConnection;
+    class ConnectionRequest: public StunRequest{
+    public:
+        ConnectionRequest(IceConnection* conn);
+    protected:
+        void prepare(StunMessage *msg) override;
+
+    private:
+        IceConnection* _connections;
+    };
     class IceConnection {
     public:
         enum WriteState{
@@ -18,6 +29,11 @@ namespace xrtc {
             STATE_WRITE_UNRELIABLE,
             STATE_WRITE_INIT,
             STATE_WRITE_TIMEOUT,
+        };
+        struct SentPing{
+            SentPing(const std::string& id,int64_t ts):id(id),sent_time(ts){}
+            std::string id;
+            int64_t sent_time;
         };
         IceConnection(EventLoop *el, UDPPort *port, const Candidate &remote_candidate);
 
@@ -37,6 +53,7 @@ namespace xrtc {
             return _write_state != STATE_WRITE_TIMEOUT;
         }
         bool stable(int64_t now) const;
+        void ping(int64_t now);
 
         std::string to_string();
         int64_t last_ping_sent() const { return _last_ping_sent; }
@@ -51,6 +68,8 @@ namespace xrtc {
         bool _receiving = false;
         int64_t _last_ping_sent = 0;
         int _num_pings_sent = 0;
+
+        std::vector<SentPing> _pings_since_last_response;
 
     };
 }

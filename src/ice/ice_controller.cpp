@@ -61,10 +61,11 @@ namespace xrtc{
             }
         }
         if(!has_pingable){
+            // 表示一轮结束 继续开启下一轮
             _unpinged_connections.insert(_pinged_connections.begin(),_pinged_connections.end());
             _pinged_connections.clear();
         }
-        IceConnection* find_conn = nullptr;;
+        IceConnection* find_conn = nullptr;
         for(auto conn : _unpinged_connections){
             // 找出最久没有发送ping请求的conn
             if(_more_pingable(conn,find_conn)){

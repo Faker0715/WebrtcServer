@@ -33,6 +33,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
     void _on_check_and_ping();
     friend void ice_ping_cb(EventLoop*,TimerWatcher*,void* data);
+    void _ping_connection(IceConnection *conn);
 
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
