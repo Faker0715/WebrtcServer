@@ -110,4 +110,12 @@ namespace xrtc {
         return ss.str();
     }
 
+    bool IceConnection::maybe_set_remote_ice_params(const IceParameters &ice_params) {
+        if(_remote_candidate.username == ice_params.ice_ufrag && _remote_candidate.password.empty()){
+            _remote_candidate.password = ice_params.ice_pwd;
+        }
+
+
+    }
+
 }

@@ -27,6 +27,7 @@ namespace xrtc {
         void handle_stun_binding_request(StunMessage* stun_msg);
         void send_stun_binding_response(StunMessage* stun_msg);
         void send_response_message(const StunMessage &msg);
+        bool maybe_set_remote_ice_params(const IceParameters& ice_params);
         bool writable() const { return _write_state == STATE_WRITABLE; }
         bool receving(){return _receiving;}
         bool weak(){

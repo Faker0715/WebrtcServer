@@ -9,7 +9,8 @@ namespace xrtc {
 #define PRFLX_PORT_TYPE "prflx"
     extern const int ICE_UFRAG_LENGTH;
     extern const int ICE_PWD_LENGTH;
-
+    extern const int WEAK_PING_INTERVAL;
+    extern const int STRONG_PING_INTERVAL;
     enum IceCandidateComponent {
         RTP = 1,
         RTCP = 2,

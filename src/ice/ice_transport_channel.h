@@ -31,6 +31,9 @@ class IceTransportChannel: public sigslot::has_slots<>{
     void gathering_candidate();
     std::string to_string();
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
+    void _on_check_and_ping();
+    friend void ice_ping_cb(EventLoop*,TimerWatcher*,void* data);
+
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                              const std::string &remote_ufrag);
@@ -48,6 +51,7 @@ private:
     std::vector<Candidate> _local_candidates;
     std::unique_ptr<IceController> _ice_controller;
     bool _start_pinging = false;
+    TimerWatcher* _ping_watcher = nullptr;
 
 
 };

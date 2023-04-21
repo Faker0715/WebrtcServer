@@ -8,6 +8,10 @@
 
 namespace xrtc {
 
+    void ice_ping_cb(EventLoop* , TimerWatcher* ,void* data){
+        IceTransportChannel* channel = (IceTransportChannel*)(data);
+        channel->_on_check_and_ping();
+    }
     IceTransportChannel::IceTransportChannel(EventLoop *el, PortAllocator *allocator, const std::string &transport_name,
                                              IceCandidateComponent component) : _el(el), _allocator(allocator),
                                                                                 _transport_name(transport_name),
@@ -15,11 +19,15 @@ namespace xrtc {
                                                                                 _ice_controller(new IceController(this)){
         RTC_LOG(LS_INFO)
         << "ice transport channel created, transport_name: " << _transport_name << ", component: " << _component;;
+        _ping_watcher = _el->create_timer(ice_ping_cb,this,true);
 
     }
 
     IceTransportChannel::~IceTransportChannel() {
-
+        if(_ping_watcher){
+            _el->delete_timer(_ping_watcher);
+            _ping_watcher = nullptr;
+        }
     }
 
     void IceTransportChannel::gathering_candidate() {
@@ -60,6 +68,12 @@ namespace xrtc {
                          << " transport_name: " << _transport_name << " component: " << _component
                          << " ice ufrag: " << ice_params.ice_ufrag << " ice pwd: " << ice_params.ice_pwd;
         _remote_ice_params = ice_params;
+
+        // 如果answer后到 需要给所有的connection设置remote ice ufrag和pwd
+        for (auto conn: _ice_controller->connections()) {
+            conn->maybe_set_remote_ice_params(ice_params);
+        }
+        _sort_connections_and_update_state();
     }
 
     void IceTransportChannel::_on_unknown_address(UDPPort *port,
@@ -108,6 +122,9 @@ namespace xrtc {
             RTC_LOG(LS_INFO) << to_string() << ": Have a pingable connection "
                 << "for the first time, starting to ping";
             // 启动定时器
+
+            _el->start_timer(_ping_watcher,WEAK_PING_INTERVAL * 1000);
+            _start_pinging = true;
         }
     }
     std::string IceTransportChannel::to_string() {
@@ -118,6 +135,11 @@ namespace xrtc {
 
     void IceTransportChannel::_add_connection(IceConnection *conn) {
         _ice_controller->add_connection(conn);
+    }
+
+    void IceTransportChannel::_on_check_and_ping() {
+        RTC_LOG(LS_WARNING) << "===_on_check_and_ping";
+
     };
 
 }
