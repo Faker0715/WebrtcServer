@@ -14,9 +14,12 @@
 #include "candidate.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "udp_port.h"
+#include "ice_controller.h"
+
 
 namespace xrtc{
     class UDPPort;
+    class IceController;
 class IceTransportChannel: public sigslot::has_slots<>{
     public:
     IceTransportChannel(EventLoop* el, PortAllocator* allocator,const std::string& transport_name, IceCandidateComponent component);
@@ -31,6 +34,9 @@ class IceTransportChannel: public sigslot::has_slots<>{
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                              const std::string &remote_ufrag);
+    void _sort_connections_and_update_state();
+    void _maybe_start_pinging();
+    void _add_connection(IceConnection* conn);
 private:
 
     EventLoop* _el;
@@ -40,6 +46,9 @@ private:
     IceParameters _ice_params;
     IceParameters _remote_ice_params;
     std::vector<Candidate> _local_candidates;
+    std::unique_ptr<IceController> _ice_controller;
+    bool _start_pinging = false;
+
 
 };
 }

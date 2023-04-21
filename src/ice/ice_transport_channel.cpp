@@ -11,7 +11,8 @@ namespace xrtc {
     IceTransportChannel::IceTransportChannel(EventLoop *el, PortAllocator *allocator, const std::string &transport_name,
                                              IceCandidateComponent component) : _el(el), _allocator(allocator),
                                                                                 _transport_name(transport_name),
-                                                                                _component(component) {
+                                                                                _component(component),
+                                                                                _ice_controller(new IceController(this)){
         RTC_LOG(LS_INFO)
         << "ice transport channel created, transport_name: " << _transport_name << ", component: " << _component;;
 
@@ -92,13 +93,31 @@ namespace xrtc {
         }
         RTC_LOG(LS_INFO) << to_string() << ": create connection success, remote_addr: " << addr.ToString();
         // after buidl connection , handle request
+        _add_connection(conn);
         conn->handle_stun_binding_request(msg);
+        _sort_connections_and_update_state();
     }
-
+    void IceTransportChannel::_sort_connections_and_update_state(){
+        _maybe_start_pinging();
+    }
+    void IceTransportChannel::_maybe_start_pinging(){
+        if(_start_pinging){
+            return;
+        }
+        if(_ice_controller->has_pingable_connection()){
+            RTC_LOG(LS_INFO) << to_string() << ": Have a pingable connection "
+                << "for the first time, starting to ping";
+            // 启动定时器
+        }
+    }
     std::string IceTransportChannel::to_string() {
         std::stringstream ss;
         ss << "Channel[" << this << ":" << _transport_name << ":" << _component << "]";
         return ss.str();
+    }
+
+    void IceTransportChannel::_add_connection(IceConnection *conn) {
+        _ice_controller->add_connection(conn);
     };
 
 }

@@ -13,6 +13,12 @@ namespace xrtc {
     class UDPPort;
     class IceConnection {
     public:
+        enum WriteState{
+            STATE_WRITABLE,
+            STATE_WRITE_UNRELIABLE,
+            STATE_WRITE_INIT,
+            STATE_WRITE_TIMEOUT,
+        };
         IceConnection(EventLoop *el, UDPPort *port, const Candidate &remote_candidate);
 
         ~IceConnection();
@@ -21,12 +27,22 @@ namespace xrtc {
         void handle_stun_binding_request(StunMessage* stun_msg);
         void send_stun_binding_response(StunMessage* stun_msg);
         void send_response_message(const StunMessage &msg);
+        bool writable() const { return _write_state == STATE_WRITABLE; }
+        bool receving(){return _receiving;}
+        bool weak(){
+            !(writable() && receving());
+        }
+        bool active(){
+            _write_state != STATE_WRITE_TIMEOUT;
+        }
+        std::string to_string();
     private:
         EventLoop* _el;
         UDPPort* _port;
         Candidate _remote_candidate;
+        WriteState _write_state = STATE_WRITE_INIT;
+        bool _receiving = false;
 
-        std::string to_string();
     };
 }
 
