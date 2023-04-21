@@ -97,7 +97,6 @@ namespace xrtc {
                          << stun_method_to_string(response.type())
                          << " success,addr=" << addr.ToString()
                          << ", id=" << rtc::hex_encode(response.transaction_id());
-
     }
 
 

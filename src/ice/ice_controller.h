@@ -6,6 +6,7 @@
 #define XRTCSERVER_ICE_CONTROLLER_H
 
 #include "ice_transport_channel.h"
+#include <set>
 
 namespace xrtc{
     class IceTransportChannel;
@@ -34,15 +35,18 @@ namespace xrtc{
         const IceConnection* _find_next_pingable_connection(int64_t last_ping_sent_ms);
         bool _is_connection_past_ping_interval(const IceConnection* conn, int64_t now);
         int _get_connection_ping_interval(const IceConnection* conn, int64_t now);
-
+        bool _more_pingable(IceConnection *conn1, IceConnection *conn2);
 
     private:
         IceTransportChannel* _ice_channel;
         IceConnection* _selected_connection = nullptr;
         std::vector<IceConnection*> _connections;
+        std::set<IceConnection*> _unpinged_connections;
+        std::set<IceConnection*> _pinged_connections;
 
     };
 }
+
 
 
 

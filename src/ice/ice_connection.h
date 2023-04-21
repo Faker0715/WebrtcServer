@@ -34,7 +34,7 @@ namespace xrtc {
             !(writable() && receving());
         }
         bool active(){
-            _write_state != STATE_WRITE_TIMEOUT;
+            return _write_state != STATE_WRITE_TIMEOUT;
         }
         bool stable(int64_t now) const;
 
