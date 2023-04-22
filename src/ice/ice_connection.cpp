@@ -125,14 +125,40 @@ namespace xrtc {
     void IceConnection::ping(int64_t now) {
         ConnectionRequest* request = new ConnectionRequest(this);
         _pings_since_last_response.push_back(SentPing(request->id(),now));
+        _requests.send(request);
+        _num_pings_sent++;
 
     }
 
-    ConnectionRequest::ConnectionRequest(IceConnection *conn): StunRequest(new StunMessage()),_connections(conn) {
+    const Candidate &IceConnection::local_candidate() const {
+        return _port->candidates()[0];
+    }
+
+
+    ConnectionRequest::ConnectionRequest(IceConnection *conn): StunRequest(new StunMessage()),_connection(conn) {
 
     }
 
     void ConnectionRequest::prepare(StunMessage *msg) {
+        msg->set_type(STUN_BINDING_REQUEST);
+        std::string username;
+        _connection->port()->create_stun_username(_connection->remote_candidate().username,&username);
+        msg->add_attribute(std::make_unique<StunByteStringAttribute>(STUN_ATTR_USERNAME,username));
+        //  不涉及角色冲突问题 就设置成0就可以了 否则就要随机一个数
+
+        msg->add_attribute(std::make_unique<StunUInt64Attribute>(STUN_ATTR_ICE_CONTROLLING,0));
+        msg->add_attribute(std::make_unique<StunByteStringAttribute>(STUN_ATTR_USE_CANDIDATE,0));
+
+        // priority
+        int type_pref = ICE_TYPE_PREFERENCE_PRFLX;
+        uint32_t prflx_priority = (type_pref << 24) |
+                (_connection->local_candidate().priority & 0x00FFFFFF);
+        msg->add_attribute(std::make_unique<StunUInt32Attribute>(STUN_ATTR_PRIORITY,prflx_priority));
+        msg->add_message_integrity(_connection->remote_candidate().password);
+        msg->add_fingerprint();
+
+
+
 
     }
 }

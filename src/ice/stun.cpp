@@ -281,7 +281,6 @@ namespace xrtc {
             return false;
         }
 
-
         size_t msg_len_for_crc32 = buf.Length() - k_stun_attribute_header_size -
                                    fingerprint_attr->length();
         uint32_t c = rtc::ComputeCrc32(buf.Data(), msg_len_for_crc32);
@@ -402,7 +401,7 @@ namespace xrtc {
         write_padding(buf);
         return true;
     }
-
+// UInt32
     bool StunUInt32Attribute::read(rtc::ByteBufferReader *buf) {
         if (length() != SIZE || !buf->ReadUInt32(&_bits)) {
             return false;
@@ -422,6 +421,28 @@ namespace xrtc {
         buf->WriteUInt32(_bits);
         return true;
     }
+
+    // UInt64
+    bool StunUInt64Attribute::read(rtc::ByteBufferReader *buf) {
+        if (length() != SIZE || !buf->ReadUInt64(&_bits)) {
+            return false;
+        }
+        return true;
+    }
+
+    StunUInt64Attribute::StunUInt64Attribute(uint16_t type) : StunAttribute(type, SIZE), _bits(0) {
+
+    }
+
+    StunUInt64Attribute::StunUInt64Attribute(uint16_t type, uint64_t value) : StunAttribute(type, SIZE), _bits(value) {
+
+    }
+
+    bool StunUInt64Attribute::write(rtc::ByteBufferWriter *buf) {
+        buf->WriteUInt64(_bits);
+        return true;
+    }
+
 
     StunAddressAttribute::StunAddressAttribute(uint16_t type, const rtc::SocketAddress &addr) : StunAttribute(type, 0) {
         set_address(addr);

@@ -35,7 +35,7 @@ namespace xrtc {
         IceCandidateComponent component() const { return _component; }
         const rtc::SocketAddress& local_addr() {return _local_addr;}
         int create_ice_candidate(Network *network, int min_port, int max_port, Candidate &c);
-
+        void create_stun_username(const std::string &remote_username, std::string *stun_attr_username);
         bool get_stun_message(const char* data,size_t len,const rtc::SocketAddress& addr,
                               std::unique_ptr<StunMessage>* out_msg,
                               std::string* out_username);
@@ -48,6 +48,12 @@ namespace xrtc {
                                                   int err_code, const std::string& reason);
         IceConnection* create_connection(const Candidate& candidate);
         int send_to(const char* buf,size_t len,const rtc::SocketAddress& addr);
+
+        const std::vector<Candidate>& candidates() {
+            return _candidates;
+        }
+
+
     private:
 
         void on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr, int64_t ts);

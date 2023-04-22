@@ -29,8 +29,10 @@ namespace xrtc {
         STUN_ATTR_FINGERPRINT = 0x8028,
         STUN_ATTR_ERROR_CODE = 0x0009,
         STUN_ATTR_PRIORITY = 0x0024,
+        STUN_ATTR_USE_CANDIDATE = 0x0025,
         STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,
         STUN_ATTR_MESSAGE_INTEGRITY = 0x0008,
+        STUN_ATTR_ICE_CONTROLLING = 0x802A
     };
     enum StunAttributeValueType{
         STUN_VALUE_UNKNOWN = 0,
@@ -188,6 +190,25 @@ namespace xrtc {
         uint32_t _bits;
     };
 
+    class StunUInt64Attribute:public StunAttribute{
+    public:
+        static const size_t SIZE = 8;
+
+        StunUInt64Attribute(uint16_t type);
+        StunUInt64Attribute(uint16_t type, uint64_t value);
+        ~StunUInt64Attribute() override{};
+        uint32_t value() const{
+            return _bits;
+        }
+        void set_value(uint64_t value){
+            _bits = value;
+        }
+
+        bool read(rtc::ByteBufferReader* buf) override;
+        bool write(rtc::ByteBufferWriter* buf) override;
+    private:
+        uint64_t _bits;
+    };
     class StunByteStringAttribute: public StunAttribute{
     public:
         StunByteStringAttribute(uint16_t type, uint16_t length);

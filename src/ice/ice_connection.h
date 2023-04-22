@@ -20,7 +20,7 @@ namespace xrtc {
         void prepare(StunMessage *msg) override;
 
     private:
-        IceConnection* _connections;
+        IceConnection* _connection;
     };
     class IceConnection {
     public:
@@ -39,6 +39,10 @@ namespace xrtc {
 
         ~IceConnection();
         const Candidate& remote_candidate() const { return _remote_candidate; }
+        const Candidate& local_candidate() const;
+
+        UDPPort* port() const { return _port; }
+
         void on_read_packet(const char* buf, size_t len,int64_t ts);
         void handle_stun_binding_request(StunMessage* stun_msg);
         void send_stun_binding_response(StunMessage* stun_msg);
@@ -71,6 +75,7 @@ namespace xrtc {
 
         std::vector<SentPing> _pings_since_last_response;
 
+        StunRequestManager _requests;
     };
 }
 
