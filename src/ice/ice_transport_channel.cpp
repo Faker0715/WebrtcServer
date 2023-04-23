@@ -8,6 +8,7 @@
 #include "rtc_base/time_utils.h"
 
 namespace xrtc {
+    const int PING_INTERVAL_DIFF = 5;
 
     void ice_ping_cb(EventLoop* , TimerWatcher* ,void* data){
         IceTransportChannel* channel = (IceTransportChannel*)(data);
@@ -139,7 +140,7 @@ namespace xrtc {
     }
 
     void IceTransportChannel::_on_check_and_ping() {
-        auto result = _ice_controller->select_connection_to_ping(_last_ping_sent_ms);
+        auto result = _ice_controller->select_connection_to_ping(_last_ping_sent_ms - PING_INTERVAL_DIFF);
         RTC_LOG(LS_WARNING) << "=============conn: " << result.conn << " ping_interval: " << result.ping_interval;
         if(result.conn){
             _ping_connection((IceConnection*)result.conn);

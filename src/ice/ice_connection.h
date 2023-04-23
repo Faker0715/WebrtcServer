@@ -22,7 +22,7 @@ namespace xrtc {
     private:
         IceConnection* _connection;
     };
-    class IceConnection {
+    class IceConnection: public sigslot::has_slots<>  {
     public:
         enum WriteState{
             STATE_WRITABLE,
@@ -64,6 +64,8 @@ namespace xrtc {
         int num_pings_sent() const {
             return _num_pings_sent;
         }
+    private:
+        void _on_stun_send_packet(StunRequest* request,const char* buf,size_t len);
     private:
         EventLoop* _el;
         UDPPort* _port;
