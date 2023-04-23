@@ -195,6 +195,9 @@ namespace xrtc {
         // 一旦ping收到ping response 就是可写入状态
         set_write_state(WriteState::STATE_WRITABLE);
 
+
+
+
     }
 
     void IceConnection::on_connection_request_response(ConnectionRequest *request, StunMessage *msg) {

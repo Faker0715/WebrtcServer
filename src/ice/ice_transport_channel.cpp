@@ -136,7 +136,18 @@ namespace xrtc {
     }
 
     void IceTransportChannel::_add_connection(IceConnection *conn) {
+        conn->signal_state_change.connect(this,&IceTransportChannel::_on_connection_state_change);
         _ice_controller->add_connection(conn);
+    }
+    void IceTransportChannel::_on_connection_state_change(IceConnection* conn){
+        // selected_connection 从空到非空
+        // selected_connection 中断了 选取备用的
+        // 切换到更优质connection
+        _maybe_switch_slected_connection(_ice_controller->sort_and_switch_connection());
+        _sort_connections_and_update_state();
+    }
+    void IceTransportChannel::_maybe_switch_slected_connection(IceConnection* conn){
+
     }
 
     void IceTransportChannel::_on_check_and_ping() {
