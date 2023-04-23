@@ -49,11 +49,11 @@ namespace xrtc {
         void handle_stun_binding_request(StunMessage* stun_msg);
         void send_stun_binding_response(StunMessage* stun_msg);
         void send_response_message(const StunMessage &msg);
-        bool maybe_set_remote_ice_params(const IceParameters& ice_params);
+        void maybe_set_remote_ice_params(const IceParameters& ice_params);
         bool writable() const { return _write_state == STATE_WRITABLE; }
-        bool receving(){return _receiving;}
+        bool receiving(){return _receiving;}
         bool weak(){
-            !(writable() && receving());
+            !(writable() && receiving());
         }
         bool active(){
             return _write_state != STATE_WRITE_TIMEOUT;
@@ -76,6 +76,8 @@ namespace xrtc {
         int64_t last_ping_sent() const { return _last_ping_sent; }
         int64_t last_received();
 
+        void set_selected(bool selected) { _selected = selected; }
+        bool selected() const { return _selected; }
         int num_pings_sent() const {
             return _num_pings_sent;
         }
@@ -83,7 +85,7 @@ namespace xrtc {
         void on_connection_error_request_response(ConnectionRequest* request,StunMessage* msg) ;
 
         void set_write_state(WriteState state);
-        void pirnt_pings_since_last_response(std::string& pings,size_t max);
+        void print_pings_since_last_response(std::string& pings,size_t max);
 
         sigslot::signal1<IceConnection*> signal_state_change;
 
@@ -99,16 +101,12 @@ namespace xrtc {
         int64_t _last_ping_received = 0;
         int64_t _last_ping_response_received = 0;
         int64_t _last_data_received = 0;
-
         int _num_pings_sent = 0;
-
         int _rtt = 3000;
-
         int _rtt_samples = 0;
-
         std::vector<SentPing> _pings_since_last_response;
-
         StunRequestManager _requests;
+        bool _selected = false;
     };
 }
 

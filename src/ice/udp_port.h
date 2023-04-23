@@ -55,8 +55,7 @@ namespace xrtc {
 
 
     private:
-
-        void on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr, int64_t ts);
+        void _on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr, int64_t ts);
         bool _parse_stun_username(StunMessage *stun_msg, std::string *local_ufrag,std::string* remote_ufrag);
         IceConnection* get_connection(const rtc::SocketAddress &addr);
     private:

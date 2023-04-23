@@ -58,14 +58,14 @@ namespace xrtc {
         signal_candidate_allocate_done(this, _local_candidates);
     }
 
-    void IceTransportChannel::set_ice_params(const IceParameters ice_params) {
+    void IceTransportChannel::set_ice_params(const IceParameters& ice_params) {
         RTC_LOG(LS_INFO) << "set ICE param, "
                          << " transport_name: " << _transport_name << " component: " << _component
                          << " ice ufrag: " << ice_params.ice_ufrag << " ice pwd: " << ice_params.ice_pwd;
         _ice_params = ice_params;
     }
 
-    void IceTransportChannel::set_remote_ice_params(const IceParameters ice_params) {
+    void IceTransportChannel::set_remote_ice_params(const IceParameters& ice_params) {
         RTC_LOG(LS_INFO) << "set remote ICE param, "
                          << " transport_name: " << _transport_name << " component: " << _component
                          << " ice ufrag: " << ice_params.ice_ufrag << " ice pwd: " << ice_params.ice_pwd;
@@ -82,38 +82,51 @@ namespace xrtc {
                                                   const rtc::SocketAddress &addr,
                                                   StunMessage *msg,
                                                   const std::string &remote_ufrag) {
-        const StunUInt32Attribute *priority_attr = msg->get_uint32(STUN_ATTR_PRIORITY);
+        const StunUInt32Attribute* priority_attr = msg->get_uint32(STUN_ATTR_PRIORITY);
         if (!priority_attr) {
-            RTC_LOG(LS_WARNING)
-            << to_string() << ": priority not found in the" << " binding request message, remote_addr: "
-            << addr.ToString();
-            port->send_binding_error_response(msg,addr,STUN_ERROR_BAD_REQUEST,STUN_ERROR_REASON_BAD_REQUEST);
+            RTC_LOG(LS_WARNING) << to_string() << ": priority not found in the"
+                                << " binding request message, remote_addr: " << addr.ToString();
+            port->send_binding_error_response(msg, addr, STUN_ERROR_BAD_REQUEST,
+                                              STUN_ERROR_REASON_BAD_REQUEST);
             return;
         }
+
         uint32_t remote_priority = priority_attr->value();
         Candidate remote_candidate;
         remote_candidate.component = _component;
         remote_candidate.protocol = "udp";
         remote_candidate.address = addr;
-        remote_candidate.priority = remote_priority;
         remote_candidate.username = remote_ufrag;
         remote_candidate.password = _remote_ice_params.ice_pwd;
+        remote_candidate.priority = remote_priority;
         remote_candidate.type = PRFLX_PORT_TYPE;
-        RTC_LOG(LS_INFO) << "create peer reflexive candidate: " << remote_candidate.to_string();
 
-        IceConnection* conn = port->create_connection(remote_candidate);;
-        if(!conn){
-            port->send_binding_error_response(msg,addr,STUN_ERROR_SERVER_ERROR,STUN_ERROR_REASON_SERVER_ERROR);
-            RTC_LOG(LS_WARNING) << to_string() << ": create connection failed, remote_addr: " << addr.ToString();
+        RTC_LOG(LS_INFO) << to_string() << ": create peer reflexive candidate: "
+                         << remote_candidate.to_string();
+
+        IceConnection* conn = port->create_connection(remote_candidate);
+        if (!conn) {
+            RTC_LOG(LS_WARNING) << to_string() << ": create connection from "
+                                << " peer reflexive candidate error, remote_addr: "
+                                << addr.ToString();
+            port->send_binding_error_response(msg, addr, STUN_ERROR_SERVER_ERROR,
+                                              STUN_ERROR_REASON_SERVER_ERROR);
             return;
         }
-        RTC_LOG(LS_INFO) << to_string() << ": create connection success, remote_addr: " << addr.ToString();
-        // after buidl connection , handle request
+
+        RTC_LOG(LS_INFO) << to_string() << ": create connection from "
+                         << " peer reflexive candidate success, remote_addr: "
+                         << addr.ToString();
+
         _add_connection(conn);
+
         conn->handle_stun_binding_request(msg);
+
         _sort_connections_and_update_state();
+
     }
     void IceTransportChannel::_sort_connections_and_update_state(){
+        _maybe_switch_selected_connection(_ice_controller->sort_and_switch_connection());
         _maybe_start_pinging();
     }
     void IceTransportChannel::_maybe_start_pinging(){
@@ -143,24 +156,43 @@ namespace xrtc {
         // selected_connection 从空到非空
         // selected_connection 中断了 选取备用的
         // 切换到更优质connection
-        _maybe_switch_slected_connection(_ice_controller->sort_and_switch_connection());
         _sort_connections_and_update_state();
     }
-    void IceTransportChannel::_maybe_switch_slected_connection(IceConnection* conn){
+    void IceTransportChannel::_maybe_switch_selected_connection(IceConnection* conn){
 
+        if(!conn){
+            return;
+        }
+//        RTC_LOG(LS_INFO) <<"Switching selected connection: " << conn->to_string();
+        IceConnection* old_selected_connection = _selected_connection;
+        if(old_selected_connection){
+            old_selected_connection->set_selected(false);
+            RTC_LOG(LS_INFO) << to_string() << ": previios connection: "
+                << old_selected_connection->to_string();
+        }
+        RTC_LOG(LS_INFO) << to_string() << ": new selected connection: " << conn->to_string();
+        _selected_connection = conn;
+        _selected_connection->set_selected(true);
+        _ice_controller->set_selected_connection(_selected_connection);
     }
 
     void IceTransportChannel::_on_check_and_ping() {
-        auto result = _ice_controller->select_connection_to_ping(_last_ping_sent_ms - PING_INTERVAL_DIFF);
-        RTC_LOG(LS_WARNING) << "=============conn: " << result.conn << " ping_interval: " << result.ping_interval;
-        if(result.conn){
+        auto result = _ice_controller->select_connection_to_ping(
+                _last_ping_sent_ms - PING_INTERVAL_DIFF);
+
+        RTC_LOG(LS_WARNING) << "===========conn: " << result.conn << ", ping interval: "
+                            << result.ping_interval;
+
+        if (result.conn) {
             _ping_connection((IceConnection*)result.conn);
         }
-        if(_cur_ping_interval != result.ping_interval){
+
+        if (_cur_ping_interval != result.ping_interval) {
             _cur_ping_interval = result.ping_interval;
             _el->stop_timer(_ping_watcher);
-            _el->start_timer(_ping_watcher,_cur_ping_interval);
+            _el->start_timer(_ping_watcher, _cur_ping_interval * 1000);
         }
+
     };
     void IceTransportChannel::_ping_connection(IceConnection* conn){
         _last_ping_sent_ms = rtc::TimeMillis();
@@ -168,3 +200,28 @@ namespace xrtc {
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

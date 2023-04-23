@@ -26,8 +26,8 @@ class IceTransportChannel: public sigslot::has_slots<>{
     virtual ~IceTransportChannel();
     std::string transport_name() const { return _transport_name; }
     IceCandidateComponent component() const { return _component; }
-    void set_ice_params(const IceParameters ice_params);
-    void set_remote_ice_params(const IceParameters ice_params);
+    void set_ice_params(const IceParameters& ice_params);
+    void set_remote_ice_params(const IceParameters& ice_params);
     void gathering_candidate();
     std::string to_string();
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
@@ -35,7 +35,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     friend void ice_ping_cb(EventLoop*,TimerWatcher*,void* data);
     void _ping_connection(IceConnection *conn);
     void _on_connection_state_change(IceConnection*);
-    void _maybe_switch_slected_connection(IceConnection* conn);
+    void _maybe_switch_selected_connection(IceConnection* conn);
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                              const std::string &remote_ufrag);
@@ -57,6 +57,7 @@ private:
     int64_t _last_ping_sent_ms = 0;
     int _cur_ping_interval = WEAK_PING_INTERVAL;
 
+    IceConnection* _selected_connection = nullptr;
 
 };
 }

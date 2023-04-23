@@ -120,7 +120,7 @@ namespace xrtc {
         return ss.str();
     }
 
-    bool IceConnection::maybe_set_remote_ice_params(const IceParameters &ice_params) {
+    void IceConnection::maybe_set_remote_ice_params(const IceParameters &ice_params) {
         if (_remote_candidate.username == ice_params.ice_ufrag && _remote_candidate.password.empty()) {
             _remote_candidate.password = ice_params.ice_pwd;
         }
@@ -133,12 +133,12 @@ namespace xrtc {
     }
 
     void IceConnection::ping(int64_t now) {
-        ConnectionRequest *request = new ConnectionRequest(this);
+        ConnectionRequest* request = new ConnectionRequest(this);
         _pings_since_last_response.push_back(SentPing(request->id(), now));
-        RTC_LOG(LS_INFO) << to_string() << ": Sending ping, id=" << rtc::hex_encode(request->id());
+        RTC_LOG(LS_INFO) << to_string() << ": Sending STUN ping, id="
+                         << rtc::hex_encode(request->id());
         _requests.send(request);
         _num_pings_sent++;
-
     }
 
     const Candidate &IceConnection::local_candidate() const {
@@ -165,11 +165,12 @@ namespace xrtc {
         if (_last_ping_sent < _last_ping_response_received) {
             receiving = true;
         } else {
-            receiving = last_received() > 0 && now < last_received() + receiving_timeout();
+            receiving = last_received() > 0 &&
+                        (now < last_received() + receiving_timeout());
         }
 
-        if(_receiving == receiving){
-            return ;
+        if (_receiving == receiving) {
+            return;
         }
         RTC_LOG(LS_INFO) << to_string() << ": set receiving to " << receiving;
         _receiving = receiving;
@@ -181,8 +182,9 @@ namespace xrtc {
 
         WriteState old_state = _write_state;
         _write_state = state;
-        if(old_state != _write_state){
-            RTC_LOG(LS_INFO) << to_string() << ": set write state frome " << old_state << "to " << state;
+        if (old_state != state) {
+            RTC_LOG(LS_INFO) << to_string() << ": set write state from " << old_state
+                             << " to " << state;
             signal_state_change(this);
         }
 
@@ -210,17 +212,18 @@ namespace xrtc {
         set_write_state(WriteState::STATE_WRITABLE);
 
 
-
-
     }
 
     void IceConnection::on_connection_request_response(ConnectionRequest *request, StunMessage *msg) {
         // 往返延迟
         int rtt = request->elapsed();
         std::string pings;
-        pirnt_pings_since_last_response(pings, 5);
-        RTC_LOG(LS_INFO) << to_string() << ": Received " << stun_method_to_string(msg->type())
-                         << ", id=" << rtc::hex_encode(msg->transaction_id()) << ", rtt=" << rtt << " pings=" << pings;
+        print_pings_since_last_response(pings, 5);
+        RTC_LOG(LS_INFO) << to_string() << ": Received "
+                         << stun_method_to_string(msg->type())
+                         << ", id=" << rtc::hex_encode(msg->transaction_id())
+                         << ", rtt=" << rtt
+                         << ", pings=" << pings;
         received_ping_response(rtt);
     }
 
@@ -228,7 +231,7 @@ namespace xrtc {
 
     }
 
-    void IceConnection::pirnt_pings_since_last_response(std::string &pings, size_t max) {
+    void IceConnection::print_pings_since_last_response(std::string &pings, size_t max) {
         std::stringstream ss;
         if (_pings_since_last_response.size() > max) {
             for (size_t i = 0; i < max; ++i) {
@@ -236,11 +239,12 @@ namespace xrtc {
             }
             ss << "... " << (_pings_since_last_response.size() - max) << " more";
         } else {
-            for (auto ping: _pings_since_last_response) {
+            for (auto ping : _pings_since_last_response) {
                 ss << rtc::hex_encode(ping.id) << " ";
             }
         }
         pings = ss.str();
+
     }
 
     uint64_t IceConnection::priority() {
@@ -289,3 +293,5 @@ namespace xrtc {
         _connection->on_connection_error_request_response(this, msg);
     }
 }
+
+
