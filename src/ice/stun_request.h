@@ -16,6 +16,7 @@ namespace xrtc{
         StunRequestManager() = default;
         ~StunRequestManager() = default;
         void send(StunRequest* request);
+        bool check_response(StunMessage* msg);
         sigslot::signal3<StunRequest*,const char*,size_t> signal_send_packet;
     private:
         typedef std::map<std::string,StunRequest*> RequestMap;
@@ -31,8 +32,12 @@ namespace xrtc{
         void set_manager(StunRequestManager* manager){_manager = manager;}
         void construct();
         void send();
+        int type() const { return _msg->type(); }
     protected:
         virtual void prepare(StunMessage *msg);
+        virtual void on_response(StunMessage*){};
+        virtual void on_error_response(StunMessage*){};
+        friend class StunRequestManager;
     private:
         StunMessage* _msg;
         StunRequestManager* _manager = nullptr;

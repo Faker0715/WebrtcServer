@@ -18,6 +18,8 @@ namespace xrtc {
         ConnectionRequest(IceConnection* conn);
     protected:
         void prepare(StunMessage *msg) override;
+        void on_response(StunMessage *msg) override;
+        void on_error_response(StunMessage*) override;
 
     private:
         IceConnection* _connection;
@@ -64,6 +66,8 @@ namespace xrtc {
         int num_pings_sent() const {
             return _num_pings_sent;
         }
+        void on_connection_response(ConnectionRequest* request,StunMessage* msg) ;
+        void on_connection_error_response(ConnectionRequest* request,StunMessage* msg) ;
     private:
         void _on_stun_send_packet(StunRequest* request,const char* buf,size_t len);
     private:

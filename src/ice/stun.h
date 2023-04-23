@@ -18,6 +18,7 @@ namespace xrtc {
     const size_t k_stun_magic_cookie_length = sizeof(k_stun_magic_cookie);
     const size_t k_stun_transaction_id_length = 12;
     const size_t k_stun_message_integrity_size = 20;
+    const uint32_t k_stun_type_mask = 0x0110;
     enum StunMessageType{
         STUN_BINDING_REQUEST = 0x0001,
         STUN_BINDING_RESPONSE = 0x0101,
@@ -94,6 +95,12 @@ namespace xrtc {
 
         const StunUInt32Attribute* get_uint32(uint16_t type);
         const StunByteStringAttribute* get_byte_string(uint16_t type);
+        IntegrityStatus integrity(){
+            return _integrity;
+        }
+        bool integrity_ok(){
+            return _integrity == IntegrityStatus::k_integrity_ok;
+        }
 
     private:
         StunAttribute* _create_attribute(uint16_t type, uint16_t length);
@@ -243,6 +250,9 @@ namespace xrtc {
         uint8_t _number;
         std::string _reason;
     };
+    int get_stun_success_response(int req_type);
+    int get_stun_error_response(int req_type);
+    bool is_stun_request_type(int req_type);
 }
 
 
