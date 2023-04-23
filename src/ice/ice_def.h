@@ -14,6 +14,7 @@ namespace xrtc {
     extern const int MIN_PINGS_AT_WEAK_PING_INTERVAL;
     extern const int STABLEING_CONNECTION_PING_INTERVAL;
     extern const int STABLE_CONNECTION_PING_INTERVAL;
+    extern const int WEAK_CONNECTION_RECEIVE_TIMEOUT;
 
 
     enum IceCandidateComponent {

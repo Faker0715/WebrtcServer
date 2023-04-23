@@ -4,6 +4,7 @@
 
 #include "ice_connection.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/time_utils.h"
 
 namespace xrtc {
     IceConnection::IceConnection(EventLoop *el, UDPPort *port, const Candidate &remote_candidate) : _el(el),
@@ -51,7 +52,7 @@ namespace xrtc {
 
                 case STUN_BINDING_ERROR_RESPONSE:
                     stun_msg->validate_message_integrity(_remote_candidate.password);
-                    if(stun_msg->integrity_ok()){
+                    if (stun_msg->integrity_ok()) {
                         _requests.check_response(stun_msg.get());
                     }
                     break;
@@ -151,29 +152,74 @@ namespace xrtc {
         }
 
     }
-    void IceConnection::on_connection_request_response(ConnectionRequest* request,StunMessage *msg) {
-        // 往返延迟
-        int rtt = request->elapsed();
-        std::string pings;
-        pirnt_pings_since_last_response(pings,5);
-        RTC_LOG(LS_INFO) << to_string() << ": Received " << stun_method_to_string(msg->type())
-            << ", id=" << rtc::hex_encode(msg->transaction_id()) << ", rtt=" << rtt << " pings=" << pings;
+
+    int64_t IceConnection::last_received(){
+        return std::max(std::max(_last_ping_received,_last_ping_response_received),_last_data_received);
+    }
+    int IceConnection::receiving_timeout(){
+        return WEAK_CONNECTION_RECEIVE_TIMEOUT;
+    }
+    void IceConnection::update_receiving(int64_t now) {
+        bool receiving;
+        if (_last_ping_sent < _last_ping_response_received) {
+            receiving = true;
+        } else {
+            receiving = last_received() > 0 && now < last_received() + receiving_timeout();
+        }
+
+        if(_receiving == receiving){
+            return ;
+        }
+        RTC_LOG(LS_INFO) << to_string() << ": set receiving to " << receiving;
+        _receiving = receiving;
+        //发送一个通知 以便于ice_transportchannel感知状态的变化
+
+        signal_state_change(this);
+    }
+    void IceConnection::set_write_state(WriteState state){
+
+        WriteState old_state = _write_state;
+        _write_state = state;
+        if(old_state != _write_state){
+            RTC_LOG(LS_INFO) << to_string() << ": set write state frome " << old_state << "to " << state;
+            signal_state_change(this);
+        }
+
+    }
+    void IceConnection::received_ping_response(int rtt) {
+        _last_ping_response_received = rtc::TimeMillis();
+        // 一旦收到pingreponse 就把缓存清除掉
+        _pings_since_last_response.clear();
+        // 收到任何数据都会调用update_receiving方法
+        update_receiving(_last_ping_response_received);
+        // 一旦ping收到ping response 就是可写入状态
+        set_write_state(WriteState::STATE_WRITABLE);
 
     }
 
-    void IceConnection::on_connection_error_request_response(ConnectionRequest* request,StunMessage *msg) {
+    void IceConnection::on_connection_request_response(ConnectionRequest *request, StunMessage *msg) {
+        // 往返延迟
+        int rtt = request->elapsed();
+        std::string pings;
+        pirnt_pings_since_last_response(pings, 5);
+        RTC_LOG(LS_INFO) << to_string() << ": Received " << stun_method_to_string(msg->type())
+                         << ", id=" << rtc::hex_encode(msg->transaction_id()) << ", rtt=" << rtt << " pings=" << pings;
+        received_ping_response(rtt);
+    }
+
+    void IceConnection::on_connection_error_request_response(ConnectionRequest *request, StunMessage *msg) {
 
     }
 
     void IceConnection::pirnt_pings_since_last_response(std::string &pings, size_t max) {
-        std::stringstream  ss;
-        if(_pings_since_last_response.size() > max){
-            for(size_t i = 0; i < max;++i){
+        std::stringstream ss;
+        if (_pings_since_last_response.size() > max) {
+            for (size_t i = 0; i < max; ++i) {
                 ss << rtc::hex_encode(_pings_since_last_response[i].id) << " ";
             }
             ss << "... " << (_pings_since_last_response.size() - max) << " more";
-        }else{
-            for(auto ping: _pings_since_last_response){
+        } else {
+            for (auto ping: _pings_since_last_response) {
                 ss << rtc::hex_encode(ping.id) << " ";
             }
         }
@@ -206,11 +252,11 @@ namespace xrtc {
     }
 
     void ConnectionRequest::on_request_response(StunMessage *msg) {
-        _connection->on_connection_request_response(this,msg);
+        _connection->on_connection_request_response(this, msg);
     }
 
     void ConnectionRequest::on_error_request_response(StunMessage *msg) {
 
-        _connection->on_connection_error_request_response(this,msg);
+        _connection->on_connection_error_request_response(this, msg);
     }
 }

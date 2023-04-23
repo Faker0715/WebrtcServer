@@ -13,6 +13,5 @@ namespace xrtc {
 
     const int STABLEING_CONNECTION_PING_INTERVAL = 900;
     const int STABLE_CONNECTION_PING_INTERVAL = 2500;
-
-
+    const int WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;
 }
