@@ -67,6 +67,10 @@ namespace xrtc {
             return _write_state;
         };
 
+        int rtt() {
+            return _rtt;
+        }
+        uint64_t  priority();
 
         std::string to_string();
         int64_t last_ping_sent() const { return _last_ping_sent; }
@@ -80,7 +84,9 @@ namespace xrtc {
 
         void set_write_state(WriteState state);
         void pirnt_pings_since_last_response(std::string& pings,size_t max);
+
         sigslot::signal1<IceConnection*> signal_state_change;
+
     private:
         void _on_stun_send_packet(StunRequest* request,const char* buf,size_t len);
     private:
@@ -94,10 +100,11 @@ namespace xrtc {
         int64_t _last_ping_response_received = 0;
         int64_t _last_data_received = 0;
 
-
-
-
         int _num_pings_sent = 0;
+
+        int _rtt = 3000;
+
+        int _rtt_samples = 0;
 
         std::vector<SentPing> _pings_since_last_response;
 

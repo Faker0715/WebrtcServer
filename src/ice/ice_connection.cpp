@@ -5,13 +5,14 @@
 #include "ice_connection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_base/helpers.h"
 
 namespace xrtc {
+    const int RTT_RATIO = 3;
     IceConnection::IceConnection(EventLoop *el, UDPPort *port, const Candidate &remote_candidate) : _el(el),
                                                                                                     _port(port),
                                                                                                     _remote_candidate(
                                                                                                             remote_candidate) {
-
         _requests.signal_send_packet.connect(this, &IceConnection::_on_stun_send_packet);
 
     }
@@ -187,6 +188,19 @@ namespace xrtc {
 
     }
     void IceConnection::received_ping_response(int rtt) {
+        // rtt传入的是某一个时刻的rtt
+
+        // 平滑算法
+        //old_rtt : new_rtt = 3 : 1
+        // 5 10 20
+        // 当10到来了 rtt = 5*0.75 + 10 * 0.25 = 6.25
+
+        if(_rtt_samples > 0){
+            // 至少收到了一个ping的response
+            _rtt = rtc::GetNextMovingAverage(_rtt,rtt,RTT_RATIO);
+        }else{
+            _rtt = rtt;
+        }
         _last_ping_response_received = rtc::TimeMillis();
         // 一旦收到pingreponse 就把缓存清除掉
         _pings_since_last_response.clear();
@@ -227,6 +241,18 @@ namespace xrtc {
             }
         }
         pings = ss.str();
+    }
+
+    uint64_t IceConnection::priority() {
+        // rtc5245
+        // g: controlling candidate priority
+        // d: controlled candidate priority
+        // conn priority = 2^32 * MIN(g,d) + 2 * MAX(g,d) + (g > d ? 1 : 0)
+        uint32_t g = local_candidate().priority;
+        uint32_t d = remote_candidate().priority;
+        uint64_t priority = std::min(g,d);
+        priority = priority << 32;
+        return priority + 2 * std::max(g,d) + (g > d ? 1 : 0);
     }
 
     ConnectionRequest::ConnectionRequest(IceConnection *conn) : StunRequest(new StunMessage()), _connection(conn) {
