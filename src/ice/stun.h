@@ -48,7 +48,9 @@ namespace xrtc {
     enum StunErrorCode{
         STUN_ERROR_BAD_REQUEST = 400,
         STUN_ERROR_UNAUTHORIZED = 401,
+        STUN_ERROR_UNKNOWN_ATTRIBUTE = 420,
         STUN_ERROR_SERVER_ERROR = 500,
+        STUN_ERROR_GLOBAL_FAIL = 600,
     };
     extern const char STUN_ERROR_REASON_BAD_REQUEST[];
     extern const char STUN_ERROR_REASON_UNAUTHORIZED[];
@@ -101,6 +103,9 @@ namespace xrtc {
         bool integrity_ok(){
             return _integrity == IntegrityStatus::k_integrity_ok;
         }
+        const StunErrorCodeAttribute* get_error_code();
+        int get_error_code_value();
+
 
     private:
         StunAttribute* _create_attribute(uint16_t type, uint16_t length);
@@ -241,6 +246,7 @@ namespace xrtc {
         StunErrorCodeAttribute(uint16_t type,uint16_t length);
         ~StunErrorCodeAttribute() override = default;
 
+        int code() const;
         bool read(rtc::ByteBufferReader* buf) override;
         bool write(rtc::ByteBufferWriter* buf) override;
         void set_code(int code);

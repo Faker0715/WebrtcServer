@@ -226,8 +226,23 @@ namespace xrtc {
                          << ", pings=" << pings;
         received_ping_response(rtt);
     }
+    void IceConnection::fail_and_destory(){
 
+    }
     void IceConnection::on_connection_error_request_response(ConnectionRequest *request, StunMessage *msg) {
+        int rtt = request->elapsed();
+        int error_code = msg->get_error_code_value();
+        RTC_LOG(LS_WARNING) << to_string() << ": Received: " << stun_method_to_string(msg->type())
+            << ", id=" << rtc::hex_encode(msg->transaction_id())
+            << ", rtt=" << rtt
+            << ", code=" << error_code;
+        if(STUN_ERROR_UNAUTHORIZED == error_code ||
+            STUN_ERROR_UNKNOWN_ATTRIBUTE == error_code ||
+            STUN_ERROR_SERVER_ERROR == error_code){
+            // retry maybe recover
+        }else{
+            fail_and_destory();
+        }
 
     }
 

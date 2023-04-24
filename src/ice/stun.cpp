@@ -32,7 +32,7 @@ namespace xrtc {
     }
 
     int get_stun_success_response(int req_type) {
-        return is_stun_request_type(req_type)? (req_type | 0x100): -1;
+        return is_stun_request_type(req_type) ? (req_type | 0x100) : -1;
     }
 
     bool is_stun_request_type(int req_type) {
@@ -40,7 +40,7 @@ namespace xrtc {
     }
 
     int get_stun_error_response(int req_type) {
-        return is_stun_request_type(req_type)? (req_type | 0x110): -1;
+        return is_stun_request_type(req_type) ? (req_type | 0x110) : -1;
     }
 
     StunMessage::StunMessage() : _type(0), _length(0), _transaction_id(EMPTY_TRANSACTION_ID) {
@@ -286,7 +286,7 @@ namespace xrtc {
     bool StunMessage::add_fingerprint() {
         auto fingerprint_attr_ptr = std::make_unique<StunUInt32Attribute>(
                 STUN_ATTR_FINGERPRINT, 0);
-        auto fingerprint_attr =  fingerprint_attr_ptr.get();
+        auto fingerprint_attr = fingerprint_attr_ptr.get();
         add_attribute(std::move(fingerprint_attr_ptr));
 
         rtc::ByteBufferWriter buf;
@@ -328,6 +328,18 @@ namespace xrtc {
         return true;
     }
 
+    const StunErrorCodeAttribute *StunMessage::get_error_code() {
+        return static_cast<const StunErrorCodeAttribute *>(_get_attribute(STUN_ATTR_ERROR_CODE));
+    }
+
+    int StunMessage::get_error_code_value() {
+        auto attr = get_error_code();
+        if (attr) {
+            return attr->code();
+        }
+        return STUN_ERROR_GLOBAL_FAIL;
+    }
+
     StunMessage::~StunMessage() = default;
 
     StunAttribute::StunAttribute(uint16_t type, uint16_t length) : _type(type), _length(length) {
@@ -362,7 +374,7 @@ namespace xrtc {
     }
 
     std::unique_ptr<StunErrorCodeAttribute> StunAttribute::create_error_code() {
-        return std::make_unique<StunErrorCodeAttribute>(STUN_ATTR_ERROR_CODE,StunErrorCodeAttribute::MIN_SIZE);
+        return std::make_unique<StunErrorCodeAttribute>(STUN_ATTR_ERROR_CODE, StunErrorCodeAttribute::MIN_SIZE);
     }
 
 
@@ -414,6 +426,7 @@ namespace xrtc {
         write_padding(buf);
         return true;
     }
+
 // UInt32
     bool StunUInt32Attribute::read(rtc::ByteBufferReader *buf) {
         if (length() != SIZE || !buf->ReadUInt32(&_bits)) {
@@ -492,7 +505,7 @@ namespace xrtc {
         }
     }
 
-    bool StunAddressAttribute::write(rtc::ByteBufferWriter* buf) {
+    bool StunAddressAttribute::write(rtc::ByteBufferWriter *buf) {
         StunAddressFamily stun_family = family();
         if (STUN_ADDRESS_UNDEF == stun_family) {
             RTC_LOG(LS_WARNING) << "write address attribute error: unknown family";
@@ -506,12 +519,12 @@ namespace xrtc {
         switch (_address.family()) {
             case AF_INET: {
                 in_addr v4addr = _address.ipaddr().ipv4_address();
-                buf->WriteBytes((const char*)&v4addr, sizeof(v4addr));
+                buf->WriteBytes((const char *) &v4addr, sizeof(v4addr));
                 break;
             }
             case AF_INET6: {
                 in6_addr v6addr = _address.ipaddr().ipv6_address();
-                buf->WriteBytes((const char*)&v6addr, sizeof(v6addr));
+                buf->WriteBytes((const char *) &v6addr, sizeof(v6addr));
                 break;
             }
             default:
@@ -562,12 +575,12 @@ namespace xrtc {
         switch (_address.family()) {
             case AF_INET: {
                 in_addr v4addr = xored_ip.ipv4_address();
-                buf->WriteBytes((const char*)&v4addr, sizeof(v4addr));
+                buf->WriteBytes((const char *) &v4addr, sizeof(v4addr));
                 break;
             }
             case AF_INET6: {
                 in6_addr v6addr = xored_ip.ipv6_address();
-                buf->WriteBytes((const char*)&v6addr, sizeof(v6addr));
+                buf->WriteBytes((const char *) &v6addr, sizeof(v6addr));
                 break;
             }
             default:
@@ -580,8 +593,9 @@ namespace xrtc {
 
     // error code
     const uint16_t StunErrorCodeAttribute::MIN_SIZE = 4;
-    StunErrorCodeAttribute::StunErrorCodeAttribute(uint16_t type, uint16_t length):
-            StunAttribute(type, length),_class(0),_number(0) {
+
+    StunErrorCodeAttribute::StunErrorCodeAttribute(uint16_t type, uint16_t length) :
+            StunAttribute(type, length), _class(0), _number(0) {
 
     }
 
@@ -604,6 +618,10 @@ namespace xrtc {
         buf->WriteString(_reason);
         write_padding(buf);
         return true;
+    }
+
+    int StunErrorCodeAttribute::code() const {
+        return _class * 100 + _number;
     }
 
 

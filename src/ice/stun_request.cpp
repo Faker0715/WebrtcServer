@@ -11,6 +11,11 @@ namespace xrtc{
         _msg->set_transaction_id(rtc::CreateRandomString(k_stun_transaction_id_length));
     }
     StunRequest::~StunRequest() {
+        if(_manager){
+            _manager->remove(this);
+        }
+        delete _msg;
+        _msg = nullptr;
     }
 
     void StunRequest::construct() {
@@ -20,6 +25,15 @@ namespace xrtc{
     void StunRequest::prepare(StunMessage *pMessage) {
 
     }
+
+
+    void StunRequestManager::remove(StunRequest* request){
+        auto iter = _requests.find(request->id());
+        if(iter != _requests.end()){
+            _requests.erase(iter);
+        }
+    }
+
 
     void StunRequestManager::send(StunRequest *request) {
          request->set_manager(this);
@@ -41,9 +55,20 @@ namespace xrtc{
         }else{
             RTC_LOG(LS_WARNING) << "Received STUN binding response with wrong type: "
                 << msg->type() << ", id=" << rtc::hex_encode(msg->transaction_id());
+            delete request;
             return false;
         }
+        delete request;
         return true;
+    }
+
+    StunRequestManager::~StunRequestManager() {
+        while(_requests.begin() != _requests.end()){
+            StunRequest* request = _requests.begin() -> second;
+            _requests.erase(_requests.begin());
+            delete request;
+        }
+//        _requests.clear();
     }
 
     void StunRequest::send(){

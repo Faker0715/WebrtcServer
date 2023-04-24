@@ -184,7 +184,10 @@ namespace xrtc {
                             << result.ping_interval;
 
         if (result.conn) {
-            _ping_connection((IceConnection*)result.conn);
+            IceConnection* conn = (IceConnection*)result.conn;
+            _ping_connection(conn);
+            // 标记这个connection已经ping过了
+            _ice_controller->mark_connection_pinged(conn);
         }
 
         if (_cur_ping_interval != result.ping_interval) {

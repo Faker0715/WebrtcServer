@@ -62,6 +62,7 @@ namespace xrtc {
         void ping(int64_t now);
         void received_ping_response(int rtt);
         void update_receiving(int64_t now);
+        void fail_and_destory();
         int receiving_timeout();
         WriteState write_state(){
             return _write_state;

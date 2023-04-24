@@ -186,6 +186,13 @@ namespace xrtc{
             return top_connection;
         }
     }
+
+    void IceController::mark_connection_pinged(IceConnection *conn) {
+        if(conn && _pinged_connections.insert(conn).second){
+            _unpinged_connections.erase(conn);
+        }
+
+    }
 }
 
 
