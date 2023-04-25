@@ -79,8 +79,24 @@ namespace xrtc {
         return false;
     }
 
-    bool DtlsTransport::_maybe_start_dtls() {
-        return true;
+    void DtlsTransport::_maybe_start_dtls() {
+        if(_dtls && _ice_channel->writable()){
+            if(_dtls->StartSSL()){
+                RTC_LOG(LS_WARNING) << ": Failed to StartSSL.";
+                _set_dtls_state(DtlsTransportState::k_failed);
+                return ;
+            }
+            RTC_LOG(LS_INFO) << to_string() << ": Started DTLS.";;
+            _set_dtls_state(DtlsTransportState::k_connected);
+            if(_cached_client_hello.size()){
+                if(!_handle_dtls_packet(_cached_client_hello.data<char>(), _cached_client_hello.size())){
+                    RTC_LOG(LS_WARNING) << to_string() << ": Handing dtls packet failed.";
+                    _set_dtls_state(DtlsTransportState::k_failed);
+                }
+                _cached_client_hello.Clear();
+            }
+        }
+
     }
 
     std::string DtlsTransport::to_string() {
@@ -115,7 +131,7 @@ namespace xrtc {
         return true;
     }
     // 收到answersdp的时候才会去设置 有可能hello packet先到
-    bool DtlsTransport::set_remote_fingerprint(const std::string &digest_alg, const char *digest, size_t digest_len) {
+    bool DtlsTransport::set_remote_fingerprint(const std::string &digest_alg, const uint8_t *digest, size_t digest_len) {
         rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
         if (_dtls_active && _remote_fingerprint_value == remote_fingerprint_value &&
@@ -145,8 +161,11 @@ namespace xrtc {
                 _set_dtls_state(DtlsTransportState::k_failed);
                 // 如果是验证错误 还是true
                 return err == rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
+            }else{
+                return true;
             }
         }
+        // 指纹发生变化
         if(_dtls && fingerprint_change){
             _dtls.reset(nullptr);
             _set_dtls_state(DtlsTransportState::k_new);
@@ -182,6 +201,25 @@ namespace xrtc {
         signal_writable_state(this);
     }
 
+    bool DtlsTransport::_handle_dtls_packet(const char *data, size_t size) {
+        const uint8_t* tmp_data = reinterpret_cast<const uint8_t*>(data);
+        // data可能包含多分的数据
+        size_t tmp_size = size;
+        while(tmp_size > 0){
+            if(tmp_size < k_dtls_record_header_len){
+                return false;
+            }
+            size_t record_len = (tmp_data[11] << 8 | tmp_data[12]);
+            if(record_len + k_dtls_record_header_len > tmp_size){
+                return false;
+            }
+            tmp_data += k_dtls_record_header_len + record_len;
+            tmp_size -= k_dtls_record_header_len + record_len;
+        }
+        // 传给streaminterfacechannel来处理
+        return _downward->on_received_packet(data,size);
+    }
+
     rtc::StreamState StreamInterfaceChannel::GetState() const {
     }
 
@@ -198,6 +236,11 @@ namespace xrtc {
     StreamInterfaceChannel::StreamInterfaceChannel(IceTransportChannel *ice_channel) :
             _ice_channel(ice_channel) {
 
+    }
+
+    bool StreamInterfaceChannel::on_received_packet(const char *string, size_t i) {
+
+        return false;
     }
 
 }

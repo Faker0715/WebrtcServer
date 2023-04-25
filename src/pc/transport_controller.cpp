@@ -48,6 +48,13 @@ namespace xrtc {
                                                          const std::vector<Candidate> &candidates) {
         signal_candidate_allocate_done(this, transport_name, component, candidates);
     }
+    DtlsTransport* TransportController::_get_dtls_transport(const std::string& transport_name){
+        auto iter = _dtls_transport_by_name.find(transport_name);
+        if(iter != _dtls_transport_by_name.end()){
+            return iter->second;
+        }
+        return nullptr;
+    }
 
     int TransportController::set_remote_description(SessionDescription *desc) {
         if (!desc) {
@@ -61,6 +68,13 @@ namespace xrtc {
             auto td = desc->get_transport_info(mid);
             if(td){
                 _ice_agent->set_remote_ice_params(content->mid(),IceCandidateComponent::RTP,IceParameters(td->ice_ufrag,td->ice_pwd));
+                auto dtls = _get_dtls_transport(mid);
+                if(dtls){
+                    dtls->set_remote_fingerprint(td->identity_fingerprint->algorithm,
+                            td->identity_fingerprint->digest.data(),
+                                                 td->identity_fingerprint->digest.size());
+
+                }
             }
         }
         return 0;

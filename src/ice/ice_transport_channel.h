@@ -44,7 +44,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     void _update_state();
     void _set_receiving(bool receiving);
     void _set_writable(bool writable);
-
+    bool writable(){return _writable;}
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                              const std::string &remote_ufrag);
