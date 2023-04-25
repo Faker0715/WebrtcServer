@@ -211,9 +211,18 @@ namespace xrtc {
 
 
 
+    void IceTransportChannel::_update_connection_states() {
+        // 这里最好保存一份 connections 的拷贝，因为在其他地方里面可能会删除 connection 导致迭代器被删除
 
+        std::vector<IceConnection *> connections = _ice_controller->connections();
+        int64_t now = rtc::TimeMillis();
+        for(auto conn: connections){
+            conn->update_state(now);
+        }
+    }
 
     void IceTransportChannel::_on_check_and_ping() {
+        _update_connection_states();
         auto result = _ice_controller->select_connection_to_ping(
                 _last_ping_sent_ms - PING_INTERVAL_DIFF);
 

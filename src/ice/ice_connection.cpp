@@ -9,6 +9,8 @@
 
 namespace xrtc {
     const int RTT_RATIO = 3;
+    const int MIN_RTT = 100;
+    const int MAX_RTT = 60000;
 
     IceConnection::IceConnection(EventLoop *el, UDPPort *port, const Candidate &remote_candidate) : _el(el),
                                                                                                     _port(port),
@@ -304,6 +306,48 @@ namespace xrtc {
         if (old_state != state) {
             RTC_LOG(LS_INFO) << to_string() << ": set state" << old_state << "->" << _state;
         }
+
+    }
+
+
+    // 判断一定次数后 没有收到任何的响应
+    bool IceConnection::_too_many_ping_fails(size_t max_pings,int rtt, int64_t now){
+        if(_pings_since_last_response.size() < max_pings){
+            return false;
+        }
+        int expected_response_time = _pings_since_last_response[max_pings - 1].sent_time + rtt;
+        return now > expected_response_time;
+    }
+    bool IceConnection::_too_long_without_response(int min_time,int64_t now){
+        if(_pings_since_last_response.empty()){
+            return false;
+        }
+        return now > _pings_since_last_response[0].sent_time + min_time;
+    }
+
+
+
+    void IceConnection::update_state(int64_t now) {
+        int rtt = 2* _rtt;
+        if(rtt < MIN_RTT){
+            rtt = MIN_RTT;
+        }else if(rtt > MAX_RTT){
+           rtt = MAX_RTT;
+        }
+        if(_write_state == STATE_WRITABLE && _too_many_ping_fails(CONNECTION_WRITE_CONNECT_FAILS,rtt,now)
+        && _too_long_without_response(CONNECTION_WRITE_CONNECT_TIMEOUT,now)){
+            RTC_LOG(LS_INFO) << to_string() << ": Unwritable after " << CONNECTION_WRITE_CONNECT_FAILS
+                << " ping fails and " << now - _pings_since_last_response[0].sent_time
+                << "ms without a response";
+            set_write_state(STATE_WRITE_UNRELIABLE);
+        }
+        if((_write_state == STATE_WRITE_UNRELIABLE || _write_state == STATE_WRITE_INIT) &&
+                _too_long_without_response(CONNECTION_WRITE_TIMEOUT,now)){
+            RTC_LOG(LS_INFO) << to_string() << ": Timeout after " << now - _pings_since_last_response[0].sent_time
+                             << "ms without a response";
+            set_write_state(STATE_WRITE_TIMEOUT);
+        }
+        update_receiving(now);
 
     }
 

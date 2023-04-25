@@ -44,6 +44,7 @@ private:
     void _sort_connections_and_update_state();
     void _maybe_start_pinging();
     void _add_connection(IceConnection* conn);
+    void _update_connection_states();
 private:
 
     EventLoop* _el;
