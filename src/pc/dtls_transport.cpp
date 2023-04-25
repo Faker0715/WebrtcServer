@@ -47,7 +47,35 @@ namespace xrtc{
     }
 
     bool DtlsTransport::_setup_dtls(){
+        auto downward = std::make_unique<StreamInterfaceChannel>(_ice_channel);
+        StreamInterfaceChannel* downward_ptr = downward.get();
+
+        _dtls = rtc::SSLStreamAdapter::Create(std::move(downward));
+        if(!_dtls){
+            RTC_LOG(LS_WARNING) << to_string() << ": Failed to create SSLStreamAdapter";
+            return false;
+        }
+        _downward = downward_ptr;
+        _dtls->SetIdentity(_local_certificate->identity()->Clone());
+        _dtls->SetMode(rtc::SSL_MODE_DTLS);
+        _dtls->SetMaxProtocolVersion(rtc::SSL_PROTOCOL_DTLS_12);
+        _dtls->SetServerRole(rtc::SSL_SERVER);
+        // finerprint是通过sdp交换拿到的 也就是answersdp
+        if(_remote_fingerprint_value.size() && !_dtls->SetPeerCertificateDigest(
+                _remote_fingerprint_alg,
+                _remote_fingerprint_value.data(),
+                _remote_fingerprint_value.size()
+                )){
+            RTC_LOG(LS_WARNING) << to_string() << ": Failed to set remote fingerprint";
+            return false;
+        }
+        RTC_LOG(LS_INFO) << to_string() << ": Setup DTLS complete";
+        _maybe_start_dtls();
+
         return false;
+    }
+    bool DtlsTransport::_maybe_start_dtls(){
+        return true;
     }
     std::string DtlsTransport::to_string(){
         std::stringstream ss;
@@ -61,4 +89,23 @@ namespace xrtc{
     DtlsTransport::~DtlsTransport() {
 
     }
+
+    rtc::StreamState StreamInterfaceChannel::GetState() const {
+    }
+
+    rtc::StreamResult StreamInterfaceChannel::Write(const void *data, size_t data_len, size_t *written, int *error) {
+    }
+
+    rtc::StreamResult StreamInterfaceChannel::Read(void *buffer, size_t buffer_len, size_t *read, int *error) {
+    }
+
+    void StreamInterfaceChannel::Close() {
+
+    }
+
+    StreamInterfaceChannel::StreamInterfaceChannel(IceTransportChannel *ice_channel):
+    _ice_channel(ice_channel){
+
+    }
+
 }
