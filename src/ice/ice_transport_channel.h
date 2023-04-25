@@ -31,6 +31,8 @@ class IceTransportChannel: public sigslot::has_slots<>{
     void gathering_candidate();
     std::string to_string();
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
+    sigslot::signal1<IceTransportChannel*> signal_receiving_state;
+    sigslot::signal1<IceTransportChannel*> signal_writable_state;
     void _on_check_and_ping();
     friend void ice_ping_cb(EventLoop*,TimerWatcher*,void* data);
     void _ping_connection(IceConnection *conn);
@@ -38,6 +40,10 @@ class IceTransportChannel: public sigslot::has_slots<>{
     void _maybe_switch_selected_connection(IceConnection* conn);
     void _on_connection_destroy(IceConnection *conn);
     void _switch_selected_connection(IceConnection *conn);
+    void _update_state();
+    void _set_receiving(bool receiving);
+    void _set_writable(bool writable);
+
 private:
     void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                              const std::string &remote_ufrag);
@@ -61,6 +67,8 @@ private:
     int _cur_ping_interval = WEAK_PING_INTERVAL;
 
     IceConnection* _selected_connection = nullptr;
+    bool _receiving = false;
+    bool _writable = false;
 
 };
 }

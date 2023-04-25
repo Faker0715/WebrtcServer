@@ -130,6 +130,7 @@ namespace xrtc {
 
     void IceTransportChannel::_sort_connections_and_update_state() {
         _maybe_switch_selected_connection(_ice_controller->sort_and_switch_connection());
+        _update_state();
         _maybe_start_pinging();
     }
 
@@ -168,7 +169,7 @@ namespace xrtc {
             _sort_connections_and_update_state();
         }else{
             // todo
-
+            _update_state();
         }
 
     }
@@ -220,6 +221,41 @@ namespace xrtc {
             conn->update_state(now);
         }
     }
+
+    void IceTransportChannel::_set_writable(bool writable) {
+        if(_writable == writable){
+            return ;
+        }
+        _writable = writable;
+        RTC_LOG(LS_INFO) << to_string() << ": change writable to " << _writable;
+        signal_writable_state(this);
+    }
+
+    void IceTransportChannel::_set_receiving(bool receiving) {
+        if(_receiving == receiving){
+            return ;
+        }
+        _receiving = receiving;
+        RTC_LOG(LS_INFO) << to_string() << ": change receiving to " << _receiving;
+        signal_receiving_state(this);
+    }
+
+
+    void IceTransportChannel::_update_state(){
+        bool writable = _selected_connection && _selected_connection->writable();
+        _set_writable(writable);
+        bool receving = false;
+        for(auto conn : _ice_controller->connections()){
+            if(conn->receiving()){
+                receving = true;
+                break;
+            }
+        }
+        _set_receiving(receving);
+
+    }
+
+
 
     void IceTransportChannel::_on_check_and_ping() {
         _update_connection_states();
