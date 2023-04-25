@@ -95,6 +95,7 @@ namespace xrtc {
         sigslot::signal1<IceConnection*> signal_connection_destroy;
     private:
         void _on_stun_send_packet(StunRequest* request,const char* buf,size_t len);
+        bool _miss_response(int64_t now) const;
     private:
         EventLoop* _el;
         UDPPort* _port;

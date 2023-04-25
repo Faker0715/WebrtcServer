@@ -37,7 +37,7 @@ namespace xrtc{
         bool _weak(){
             return _selected_connection == nullptr || _selected_connection->weak();
         }
-        bool _is_pingable(IceConnection *conn);
+        bool _is_pingable(IceConnection *conn,int64_t now);
         const IceConnection* _find_next_pingable_connection(int64_t last_ping_sent_ms);
         bool _is_connection_past_ping_interval(const IceConnection* conn, int64_t now);
         int _get_connection_ping_interval(const IceConnection* conn, int64_t now);
