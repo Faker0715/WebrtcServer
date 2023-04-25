@@ -60,11 +60,14 @@ namespace xrtc {
 
         std::string to_string();
         bool set_local_certificate(rtc::RTCCertificate* cert);
-
+        sigslot::signal2<DtlsTransport*,DtlsTransportState> signal_dtls_state;
+        sigslot::signal1<DtlsTransport*> signal_writable_state;
     private:
         void _on_read_packet(IceTransportChannel *, const char *buf, size_t len, int64_t ts);
         bool _maybe_start_dtls();
         bool _setup_dtls();
+        void _set_dtls_state(DtlsTransportState state);
+        void _set_writable_state(bool writable);
 
     private:
         IceTransportChannel *_ice_channel;
@@ -78,6 +81,8 @@ namespace xrtc {
         rtc::Buffer _remote_fingerprint_value;
         std::string _remote_fingerprint_alg;
         bool _dtls_active = false;
+
+        bool set_remote_fingerprint(const std::string &digest_alg, const char *digest, size_t len);
     };
 
 }
