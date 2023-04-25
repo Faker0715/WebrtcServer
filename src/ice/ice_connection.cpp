@@ -32,6 +32,7 @@ namespace xrtc {
         if (!_port->get_stun_message(buf, len, remote.address, &stun_msg, &remote_ufrag)) {
 
             // 不是stun包，可能是其他的比如dtls或者rtp包
+            signal_read_packet(this,buf,len,ts);
 
         } else if (!stun_msg) {
 
@@ -180,7 +181,9 @@ namespace xrtc {
         if (_last_ping_sent < _last_ping_response_received) {
             receiving = true;
         } else {
+
             receiving = last_received() > 0 &&
+                    // 在超时范围之内
                         (now < last_received() + receiving_timeout());
         }
 
@@ -190,7 +193,6 @@ namespace xrtc {
         RTC_LOG(LS_INFO) << to_string() << ": set receiving to " << receiving;
         _receiving = receiving;
         //发送一个通知 以便于ice_transportchannel感知状态的变化
-
         signal_state_change(this);
     }
 

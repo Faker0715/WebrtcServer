@@ -4,6 +4,7 @@
 
 #include "transport_controller.h"
 #include "rtc_base/logging.h"
+#include "dtls_transport.h"
 
 namespace xrtc {
     TransportController::TransportController(xrtc::EventLoop *el, PortAllocator *allocator) : _el(el), _ice_agent(
@@ -31,7 +32,10 @@ namespace xrtc {
             if (td) {
                 _ice_agent->set_ice_params(mid, IceCandidateComponent::RTP, IceParameters(td->ice_ufrag,td->ice_pwd));
             }
-
+            // 创建完icetransportchannel之后还要创建一个dtlstransport
+            DtlsTransport* dtls = new DtlsTransport(_ice_agent->get_channel(mid,IceCandidateComponent::RTP));
+            // 放入icecontroller进行管理
+            _add_dtls_transport(dtls);
         }
         _ice_agent->gathering_candidate();
 
@@ -59,5 +63,13 @@ namespace xrtc {
             }
         }
         return 0;
+    }
+
+    void TransportController::_add_dtls_transport(DtlsTransport *dtls) {
+        auto iter = _dtls_transport_by_name.find(dtls->transport_name());
+        if (iter != _dtls_transport_by_name.end()) {
+            delete iter->second;
+        }
+        _dtls_transport_by_name[dtls->transport_name()] = dtls;
     }
 }

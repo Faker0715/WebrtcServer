@@ -24,7 +24,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     public:
     IceTransportChannel(EventLoop* el, PortAllocator* allocator,const std::string& transport_name, IceCandidateComponent component);
     virtual ~IceTransportChannel();
-    std::string transport_name() const { return _transport_name; }
+    const std::string& transport_name() const { return _transport_name; }
     IceCandidateComponent component() const { return _component; }
     void set_ice_params(const IceParameters& ice_params);
     void set_remote_ice_params(const IceParameters& ice_params);
@@ -33,6 +33,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
     sigslot::signal1<IceTransportChannel*> signal_receiving_state;
     sigslot::signal1<IceTransportChannel*> signal_writable_state;
+    sigslot::signal4<IceTransportChannel*, const char*, size_t,int64_t> signal_read_packet;
     void _on_check_and_ping();
     friend void ice_ping_cb(EventLoop*,TimerWatcher*,void* data);
     void _ping_connection(IceConnection *conn);
@@ -51,6 +52,7 @@ private:
     void _maybe_start_pinging();
     void _add_connection(IceConnection* conn);
     void _update_connection_states();
+    void _on_read_packet(IceConnection *, const char *buf, size_t len, int64_t ts);
 private:
 
     EventLoop* _el;

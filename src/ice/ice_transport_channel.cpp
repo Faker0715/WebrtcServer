@@ -157,7 +157,12 @@ namespace xrtc {
     void IceTransportChannel::_add_connection(IceConnection *conn) {
         conn->signal_state_change.connect(this, &IceTransportChannel::_on_connection_state_change);
         conn->signal_connection_destroy.connect(this,&IceTransportChannel::_on_connection_destroy);
+        conn->signal_read_packet.connect(this,
+                                         &IceTransportChannel::_on_read_packet);
         _ice_controller->add_connection(conn);
+    }
+    void IceTransportChannel::_on_read_packet(IceConnection* , const char* buf,size_t len,int64_t ts){
+        signal_read_packet(this,buf,len,ts);
     }
     void IceTransportChannel::_on_connection_destroy(IceConnection* conn){
         _ice_controller->on_connection_destroy(conn);
