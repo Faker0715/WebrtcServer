@@ -59,6 +59,7 @@ namespace xrtc {
         }
 
         std::string to_string();
+        bool set_local_certificate(rtc::RTCCertificate* cert);
 
     private:
         void _on_read_packet(IceTransportChannel *, const char *buf, size_t len, int64_t ts);
@@ -76,8 +77,7 @@ namespace xrtc {
         StreamInterfaceChannel* _downward = nullptr;
         rtc::Buffer _remote_fingerprint_value;
         std::string _remote_fingerprint_alg;
-
-
+        bool _dtls_active = false;
     };
 
 }

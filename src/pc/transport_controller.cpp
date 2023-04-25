@@ -35,6 +35,7 @@ namespace xrtc {
             // 创建完icetransportchannel之后还要创建一个dtlstransport
             DtlsTransport* dtls = new DtlsTransport(_ice_agent->get_channel(mid,IceCandidateComponent::RTP));
             // 放入icecontroller进行管理
+            dtls->set_local_certificate(_local_certificate);
             _add_dtls_transport(dtls);
         }
         _ice_agent->gathering_candidate();
@@ -71,5 +72,9 @@ namespace xrtc {
             delete iter->second;
         }
         _dtls_transport_by_name[dtls->transport_name()] = dtls;
+    }
+
+    void TransportController::set_local_certificate(rtc::RTCCertificate *cert) {
+        _local_certificate = cert;
     }
 }

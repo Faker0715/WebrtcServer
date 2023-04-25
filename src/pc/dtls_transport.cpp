@@ -90,6 +90,24 @@ namespace xrtc{
 
     }
 
+    bool DtlsTransport::set_local_certificate(rtc::RTCCertificate *cert) {
+        if(_dtls_active){
+            if(cert == _local_certificate){
+                RTC_LOG(LS_INFO) << to_string() << ": Ignoring identical DTLS cert";
+                return true;
+            }else{
+                // 不允许重新改变证书
+                RTC_LOG(LS_WARNING) << to_string() << ": Cannot change cert in this state";
+                return false;
+            }
+        }
+        if(cert){
+            _local_certificate = cert;
+            _dtls_active = true;
+        }
+        return true;
+    }
+
     rtc::StreamState StreamInterfaceChannel::GetState() const {
     }
 
