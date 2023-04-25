@@ -9,6 +9,7 @@
 #include "udp_port.h"
 #include "candidate.h"
 #include "stun_request.h"
+#include "ice_connection_info.h"
 
 namespace xrtc {
     class UDPPort;
@@ -77,6 +78,8 @@ namespace xrtc {
         int64_t last_ping_sent() const { return _last_ping_sent; }
         int64_t last_received();
 
+        void set_state(IceCandidatePairState state);
+        IceCandidatePairState state() {return _state;}
         void set_selected(bool selected) { _selected = selected; }
         bool selected() const { return _selected; }
         int num_pings_sent() const {
@@ -87,9 +90,9 @@ namespace xrtc {
 
         void set_write_state(WriteState state);
         void print_pings_since_last_response(std::string& pings,size_t max);
-
+        void destroy();
         sigslot::signal1<IceConnection*> signal_state_change;
-
+        sigslot::signal1<IceConnection*> signal_connection_destroy;
     private:
         void _on_stun_send_packet(StunRequest* request,const char* buf,size_t len);
     private:
@@ -108,6 +111,8 @@ namespace xrtc {
         std::vector<SentPing> _pings_since_last_response;
         StunRequestManager _requests;
         bool _selected = false;
+        IceCandidatePairState _state = IceCandidatePairState::WAITING;
+
     };
 }
 

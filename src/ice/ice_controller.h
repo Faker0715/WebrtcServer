@@ -32,6 +32,7 @@ namespace xrtc{
             _selected_connection = conn;
         };
         void mark_connection_pinged(IceConnection* conn);
+        void on_connection_destroy(IceConnection* conn);
     private:
         bool _weak(){
             return _selected_connection == nullptr || _selected_connection->weak();
