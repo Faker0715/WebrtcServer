@@ -109,8 +109,9 @@ namespace xrtc {
     bool DtlsTransport::_setup_dtls() {
         auto downward = std::make_unique<StreamInterfaceChannel>(_ice_channel);
         StreamInterfaceChannel *downward_ptr = downward.get();
-
+        // 这里和streaminterfacechannel建立了联系 adapter内部连接了streaminterfacechannel的信号
         _dtls = rtc::SSLStreamAdapter::Create(std::move(downward));
+
         if (!_dtls) {
             RTC_LOG(LS_WARNING) << to_string() << ": Failed to create SSLStreamAdapter";
             return false;
