@@ -7,6 +7,8 @@
 
 namespace xrtc {
     const size_t k_dtls_record_header_len = 13;
+    const size_t k_max_dtls_packet_len = 2048;
+    const size_t k_max_pending_packets = 2;
 
     bool is_dtls_packet(const char *buf, size_t len) {
         const uint8_t *u = reinterpret_cast<const uint8_t *>(buf);
@@ -24,8 +26,24 @@ namespace xrtc {
     DtlsTransport::DtlsTransport(IceTransportChannel *ice_channel) :
             _ice_channel(ice_channel) {
         _ice_channel->signal_read_packet.connect(this, &DtlsTransport::_on_read_packet);
+        _ice_channel->signal_writable_state.connect(this,&DtlsTransport::_on_writable_state);
     }
-
+    void DtlsTransport::_on_writable_state(IceTransportChannel* channel){
+        RTC_LOG(LS_INFO) << to_string() << ": IceTransportChannel writable changed to " << channel->writable();
+        if(!_dtls_active){
+            _set_writable_state(channel->writable());
+        }
+        switch (_dtls_state) {
+            case DtlsTransportState::k_new:
+                _maybe_start_dtls();
+                break;
+            case DtlsTransportState::k_connected:
+                _set_writable_state(channel->writable());
+                break;
+            default:
+                break;
+        }
+    }
     void DtlsTransport::_on_read_packet(IceTransportChannel * /*channel*/, const char *buf, size_t len, int64_t ts) {
         switch (_dtls_state) {
             case DtlsTransportState::k_new:
@@ -80,6 +98,7 @@ namespace xrtc {
     }
 
     void DtlsTransport::_maybe_start_dtls() {
+        // ice_channel writable需要一定时间
         if(_dtls && _ice_channel->writable()){
             if(_dtls->StartSSL()){
                 RTC_LOG(LS_WARNING) << ": Failed to StartSSL.";
@@ -221,12 +240,24 @@ namespace xrtc {
     }
 
     rtc::StreamState StreamInterfaceChannel::GetState() const {
+        return _state;
     }
 
     rtc::StreamResult StreamInterfaceChannel::Write(const void *data, size_t data_len, size_t *written, int *error) {
+
     }
 
     rtc::StreamResult StreamInterfaceChannel::Read(void *buffer, size_t buffer_len, size_t *read, int *error) {
+        if(_state == rtc::SS_CLOSED){
+            return rtc::SR_EOS;
+        }
+        if(_state == rtc::SS_OPENING){
+            return rtc::SR_BLOCK;
+        }
+        if(!_packets.ReadFront(buffer,buffer_len,read)){
+            return rtc::SR_BLOCK;
+        }
+        return rtc::SR_SUCCESS;
     }
 
     void StreamInterfaceChannel::Close() {
@@ -234,13 +265,22 @@ namespace xrtc {
     }
 
     StreamInterfaceChannel::StreamInterfaceChannel(IceTransportChannel *ice_channel) :
-            _ice_channel(ice_channel) {
+            _ice_channel(ice_channel),
+            _packets(k_max_pending_packets,k_max_dtls_packet_len){
 
     }
-
-    bool StreamInterfaceChannel::on_received_packet(const char *string, size_t i) {
-
-        return false;
+    // 一旦客户端有数据包发送过来
+    bool StreamInterfaceChannel::on_received_packet(const char *data, size_t size) {
+        if(_packets.size() > 0){
+            RTC_LOG(LS_INFO) << ": Pakcet already in buffer queue";
+        }
+        if(!_packets.WriteBack(data,size,NULL)){
+            RTC_LOG(LS_WARNING) << ": Failed to write packet to buffer queue";
+        }
+        // 发送信号 被SSLadapter捕捉
+        SignalEvent(this,rtc::SE_READ,0);
+        return true;
     }
+
 
 }
