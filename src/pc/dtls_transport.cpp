@@ -3,11 +3,13 @@
 //
 #include "dtls_transport.h"
 #include "rtc_base/logging.h"
+#include <api/crypto/crypto_options.h>
 
 namespace xrtc {
     const size_t k_dtls_record_header_len = 13;
     const size_t k_max_dtls_packet_len = 2048;
     const size_t k_max_pending_packets = 2;
+    const size_t k_min_rtp_packet_len = 12;
 
     bool is_dtls_packet(const char *buf, size_t len) {
         const uint8_t *u = reinterpret_cast<const uint8_t *>(buf);
@@ -21,11 +23,19 @@ namespace xrtc {
         const uint8_t *u = reinterpret_cast<const uint8_t *>(buf);
         return len >= 17 && (u[0] == 22 && u[13] == 1);
     }
+    bool is_rtp_packet(const char* buf,size_t len){
+        const uint8_t* u = reinterpret_cast<const uint8_t*>(buf);
+        return len >= k_min_rtp_packet_len && ((u[0] & 0xC0) == 0x80);
+    }
 
     DtlsTransport::DtlsTransport(IceTransportChannel *ice_channel) :
             _ice_channel(ice_channel) {
         _ice_channel->signal_read_packet.connect(this, &DtlsTransport::_on_read_packet);
         _ice_channel->signal_writable_state.connect(this, &DtlsTransport::_on_writable_state);
+        webrtc::CryptoOptions crypto_options;
+        _srtp_ciphers = crypto_options.GetSupportedDtlsSrtpCryptoSuites();
+
+
     }
 
     void DtlsTransport::_on_writable_state(IceTransportChannel *channel) {
@@ -77,6 +87,17 @@ namespace xrtc {
                         return;
                     }
                 }else{ // RTP/RTCP包
+                    if(_dtls_state != DtlsTransportState::k_connected){
+                       RTC_LOG(LS_WARNING) << to_string() << ": Received non-DTLS packet before "
+                                           << "DTLS complete";
+                       return;
+                    }
+                    if(!is_rtp_packet(buf,len)){
+                        RTC_LOG(LS_WARNING) << to_string() << ": Received non-RTP packet";
+                        return;
+                    }
+                    RTC_LOG(LS_INFO) << "===============rtc received: " << len;
+                    signal_read_packet(this,buf,len,ts);
 
                 }
                 break;
@@ -108,6 +129,15 @@ namespace xrtc {
             RTC_LOG(LS_WARNING) << to_string() << ": Failed to set remote fingerprint";
             return false;
         }
+        if(!_srtp_ciphers.empty()){
+            if(!_dtls->SetDtlsSrtpCryptoSuites(_srtp_ciphers)){
+                RTC_LOG(LS_WARNING) << to_string() << ": Failed to set DTLS-SRTP crypto suites";
+                return false;
+            }
+        }else{
+            RTC_LOG(LS_WARNING) << to_string() << ": Not using DTLS-SRTP";
+        }
+
         RTC_LOG(LS_INFO) << to_string() << ": Setup DTLS complete";
         _maybe_start_dtls();
 

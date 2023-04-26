@@ -67,6 +67,7 @@ namespace xrtc {
         bool set_remote_fingerprint(const std::string &digest_alg, const uint8_t * digest, size_t len);;
         sigslot::signal2<DtlsTransport*,DtlsTransportState> signal_dtls_state;
         sigslot::signal1<DtlsTransport*> signal_writable_state;
+        sigslot::signal4<DtlsTransport*,const char*,size_t,int64_t> signal_read_packet;
     private:
         void _on_read_packet(IceTransportChannel *, const char *buf, size_t len, int64_t ts);
         void  _maybe_start_dtls();
@@ -87,6 +88,7 @@ namespace xrtc {
         rtc::Buffer _remote_fingerprint_value;
         std::string _remote_fingerprint_alg;
         bool _dtls_active = false;
+        std::vector<int> _srtp_ciphers;
     };
 
 }
