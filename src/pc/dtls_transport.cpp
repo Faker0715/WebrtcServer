@@ -1,7 +1,6 @@
 //
 // Created by faker on 23-4-25.
 //
-
 #include "dtls_transport.h"
 #include "rtc_base/logging.h"
 
@@ -26,17 +25,20 @@ namespace xrtc {
     DtlsTransport::DtlsTransport(IceTransportChannel *ice_channel) :
             _ice_channel(ice_channel) {
         _ice_channel->signal_read_packet.connect(this, &DtlsTransport::_on_read_packet);
-        _ice_channel->signal_writable_state.connect(this,&DtlsTransport::_on_writable_state);
+        _ice_channel->signal_writable_state.connect(this, &DtlsTransport::_on_writable_state);
     }
-    void DtlsTransport::_on_writable_state(IceTransportChannel* channel){
+
+    void DtlsTransport::_on_writable_state(IceTransportChannel *channel) {
         RTC_LOG(LS_INFO) << to_string() << ": IceTransportChannel writable changed to " << channel->writable();
-        if(!_dtls_active){
+        if (!_dtls_active) {
             _set_writable_state(channel->writable());
         }
         switch (_dtls_state) {
+//           还未启动
             case DtlsTransportState::k_new:
                 _maybe_start_dtls();
                 break;
+//           重新改变状态 有可能之前连上了 中途断开了
             case DtlsTransportState::k_connected:
                 _set_writable_state(channel->writable());
                 break;
@@ -44,6 +46,7 @@ namespace xrtc {
                 break;
         }
     }
+
     void DtlsTransport::_on_read_packet(IceTransportChannel * /*channel*/, const char *buf, size_t len, int64_t ts) {
         switch (_dtls_state) {
             case DtlsTransportState::k_new:
@@ -65,6 +68,20 @@ namespace xrtc {
                                         << "dropping";
                 }
                 break;
+            case DtlsTransportState::k_connecting:
+            case DtlsTransportState::k_connected:
+//               Dtls包
+                if(is_dtls_packet(buf,len)){
+                    if(!_handle_dtls_packet(buf,len)){
+                        RTC_LOG(LS_WARNING) << to_string() << ": Handing dtls packet failed.";
+                        return;
+                    }
+                }else{ // RTP/RTCP包
+
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -82,7 +99,7 @@ namespace xrtc {
         _dtls->SetMode(rtc::SSL_MODE_DTLS);
         _dtls->SetMaxProtocolVersion(rtc::SSL_PROTOCOL_DTLS_12);
         _dtls->SetServerRole(rtc::SSL_SERVER);
-        // finerprint是通过sdp交换拿到的 也就是answersdp
+//       finerprint是通过sdp交换拿到的 也就是answersdp
         if (_remote_fingerprint_value.size() && !_dtls->SetPeerCertificateDigest(
                 _remote_fingerprint_alg,
                 _remote_fingerprint_value.data(),
@@ -98,17 +115,17 @@ namespace xrtc {
     }
 
     void DtlsTransport::_maybe_start_dtls() {
-        // ice_channel writable需要一定时间
-        if(_dtls && _ice_channel->writable()){
-            if(_dtls->StartSSL()){
+//       ice_channel writable需要一定时间
+        if (_dtls && _ice_channel->writable()) {
+            if (_dtls->StartSSL()) {
                 RTC_LOG(LS_WARNING) << ": Failed to StartSSL.";
                 _set_dtls_state(DtlsTransportState::k_failed);
-                return ;
+                return;
             }
             RTC_LOG(LS_INFO) << to_string() << ": Started DTLS.";;
             _set_dtls_state(DtlsTransportState::k_connected);
-            if(_cached_client_hello.size()){
-                if(!_handle_dtls_packet(_cached_client_hello.data<char>(), _cached_client_hello.size())){
+            if (_cached_client_hello.size()) {
+                if (!_handle_dtls_packet(_cached_client_hello.data<char>(), _cached_client_hello.size())) {
                     RTC_LOG(LS_WARNING) << to_string() << ": Handing dtls packet failed.";
                     _set_dtls_state(DtlsTransportState::k_failed);
                 }
@@ -138,7 +155,7 @@ namespace xrtc {
                 RTC_LOG(LS_INFO) << to_string() << ": Ignoring identical DTLS cert";
                 return true;
             } else {
-                // 不允许重新改变证书
+//               不允许重新改变证书
                 RTC_LOG(LS_WARNING) << to_string() << ": Cannot change cert in this state";
                 return false;
             }
@@ -149,8 +166,10 @@ namespace xrtc {
         }
         return true;
     }
-    // 收到answersdp的时候才会去设置 有可能hello packet先到
-    bool DtlsTransport::set_remote_fingerprint(const std::string &digest_alg, const uint8_t *digest, size_t digest_len) {
+
+//   收到answersdp的时候才会去设置 有可能hello packet先到
+    bool
+    DtlsTransport::set_remote_fingerprint(const std::string &digest_alg, const uint8_t *digest, size_t digest_len) {
         rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
         if (_dtls_active && _remote_fingerprint_value == remote_fingerprint_value &&
@@ -160,7 +179,7 @@ namespace xrtc {
         }
         if (digest_alg.empty()) {
             RTC_LOG(LS_WARNING) << to_string() << ": Other sides not support DTLS";
-            // 如果对方不支持dtls
+//           如果对方不支持dtls
             _dtls_active = false;
             return false;
         }
@@ -173,24 +192,24 @@ namespace xrtc {
         _remote_fingerprint_value = std::move(remote_fingerprint_value);
         _remote_fingerprint_alg = digest_alg;
         rtc::SSLPeerCertificateDigestError err;
-        // Client hello packet 先到 answer sdp后到
+//       Client hello packet 先到 answer sdp后到
         if (_dtls && !fingerprint_change) {
-            if (!_dtls->SetPeerCertificateDigest(digest_alg, (const unsigned char*)digest, digest_len, &err)) {
+            if (!_dtls->SetPeerCertificateDigest(digest_alg, (const unsigned char *) digest, digest_len, &err)) {
                 RTC_LOG(WARNING) << to_string() << ": Failed to set peer certificate digest";
                 _set_dtls_state(DtlsTransportState::k_failed);
-                // 如果是验证错误 还是true
+//               如果是验证错误 还是true
                 return err == rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
-            }else{
+            } else {
                 return true;
             }
         }
-        // 指纹发生变化
-        if(_dtls && fingerprint_change){
+//       指纹发生变化
+        if (_dtls && fingerprint_change) {
             _dtls.reset(nullptr);
             _set_dtls_state(DtlsTransportState::k_new);
             _set_writable_state(false);
         }
-        if(!_setup_dtls()){
+        if (!_setup_dtls()) {
             RTC_LOG(LS_WARNING) << to_string() << ": Failed to setup DTLS";
             _set_dtls_state(DtlsTransportState::k_failed);
             return false;
@@ -202,18 +221,19 @@ namespace xrtc {
 
     void DtlsTransport::_set_dtls_state(DtlsTransportState state) {
 
-        if(_dtls_state == state){
-            return ;
+        if (_dtls_state == state) {
+            return;
         }
         RTC_LOG(LS_INFO) << to_string() << ": Change dtls state from " << _dtls_state << "to " << state;
         _dtls_state = state;
-        signal_dtls_state(this,state);
+        signal_dtls_state(this, state);
 
     }
-    void DtlsTransport::_set_writable_state(bool writable){
 
-        if(_writable == writable){
-            return ;
+    void DtlsTransport::_set_writable_state(bool writable) {
+
+        if (_writable == writable) {
+            return;
         }
         RTC_LOG(LS_INFO) << to_string() << ": set DTLS writable to" << writable;
         _writable = writable;
@@ -221,22 +241,22 @@ namespace xrtc {
     }
 
     bool DtlsTransport::_handle_dtls_packet(const char *data, size_t size) {
-        const uint8_t* tmp_data = reinterpret_cast<const uint8_t*>(data);
-        // data可能包含多分的数据
+        const uint8_t *tmp_data = reinterpret_cast<const uint8_t *>(data);
+//       data可能包含多分的数据
         size_t tmp_size = size;
-        while(tmp_size > 0){
-            if(tmp_size < k_dtls_record_header_len){
+        while (tmp_size > 0) {
+            if (tmp_size < k_dtls_record_header_len) {
                 return false;
             }
             size_t record_len = (tmp_data[11] << 8 | tmp_data[12]);
-            if(record_len + k_dtls_record_header_len > tmp_size){
+            if (record_len + k_dtls_record_header_len > tmp_size) {
                 return false;
             }
             tmp_data += k_dtls_record_header_len + record_len;
             tmp_size -= k_dtls_record_header_len + record_len;
         }
-        // 传给streaminterfacechannel来处理
-        return _downward->on_received_packet(data,size);
+//       传给streaminterfacechannel来处理
+        return _downward->on_received_packet(data, size);
     }
 
     rtc::StreamState StreamInterfaceChannel::GetState() const {
@@ -244,43 +264,61 @@ namespace xrtc {
     }
 
     rtc::StreamResult StreamInterfaceChannel::Write(const void *data, size_t data_len, size_t *written, int *error) {
-
+        _ice_channel->send_packet((const char*)data,data_len);
+        if(written){
+            *written = data_len;
+        }
+        return rtc::SR_SUCCESS;
     }
 
     rtc::StreamResult StreamInterfaceChannel::Read(void *buffer, size_t buffer_len, size_t *read, int *error) {
-        if(_state == rtc::SS_CLOSED){
+        if (_state == rtc::SS_CLOSED) {
             return rtc::SR_EOS;
         }
-        if(_state == rtc::SS_OPENING){
+        if (_state == rtc::SS_OPENING) {
             return rtc::SR_BLOCK;
         }
-        if(!_packets.ReadFront(buffer,buffer_len,read)){
+        if (!_packets.ReadFront(buffer, buffer_len, read)) {
             return rtc::SR_BLOCK;
         }
         return rtc::SR_SUCCESS;
     }
 
     void StreamInterfaceChannel::Close() {
-
+        _state = rtc::SS_CLOSED;
+        _packets.Clear();
     }
 
     StreamInterfaceChannel::StreamInterfaceChannel(IceTransportChannel *ice_channel) :
             _ice_channel(ice_channel),
-            _packets(k_max_pending_packets,k_max_dtls_packet_len){
+            _packets(k_max_pending_packets, k_max_dtls_packet_len) {
 
     }
+
     // 一旦客户端有数据包发送过来
     bool StreamInterfaceChannel::on_received_packet(const char *data, size_t size) {
-        if(_packets.size() > 0){
+        if (_packets.size() > 0) {
             RTC_LOG(LS_INFO) << ": Pakcet already in buffer queue";
         }
-        if(!_packets.WriteBack(data,size,NULL)){
+        if (!_packets.WriteBack(data, size, NULL)) {
             RTC_LOG(LS_WARNING) << ": Failed to write packet to buffer queue";
         }
         // 发送信号 被SSLadapter捕捉
-        SignalEvent(this,rtc::SE_READ,0);
+        SignalEvent(this, rtc::SE_READ, 0);
         return true;
     }
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+

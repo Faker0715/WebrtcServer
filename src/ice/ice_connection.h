@@ -63,7 +63,7 @@ namespace xrtc {
         void ping(int64_t now);
         void received_ping_response(int rtt);
         void update_receiving(int64_t now);
-        void fail_and_destory();
+        void fail_and_destroy();
         int receiving_timeout();
         WriteState write_state(){
             return _write_state;
@@ -92,6 +92,7 @@ namespace xrtc {
         void set_write_state(WriteState state);
         void print_pings_since_last_response(std::string& pings,size_t max);
         void destroy();
+        int send_packet(const char* data,size_t len);
         sigslot::signal1<IceConnection*> signal_state_change;
         sigslot::signal1<IceConnection*> signal_connection_destroy;
         sigslot::signal4<IceConnection*, const char*,size_t ,int64_t> signal_read_packet;

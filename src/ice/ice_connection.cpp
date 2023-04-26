@@ -247,7 +247,7 @@ namespace xrtc {
         received_ping_response(rtt);
     }
 
-    void IceConnection::fail_and_destory() {
+    void IceConnection::fail_and_destroy() {
         set_state(IceCandidatePairState::FAILED);
         destroy();
     }
@@ -269,7 +269,7 @@ namespace xrtc {
             STUN_ERROR_SERVER_ERROR == error_code) {
             // retry maybe recover
         } else {
-            fail_and_destory();
+            fail_and_destroy();
         }
 
     }
@@ -353,6 +353,14 @@ namespace xrtc {
 
     }
 
+    int IceConnection::send_packet(const char *data, size_t len) {
+        if(!_port){
+            return -1;
+        }
+        return _port->send_to(data,len,_remote_candidate.address);
+    }
+
+
     ConnectionRequest::ConnectionRequest(IceConnection *conn) : StunRequest(new StunMessage()), _connection(conn) {
 
     }
@@ -387,5 +395,4 @@ namespace xrtc {
         _connection->on_connection_error_request_response(this, msg);
     }
 }
-
 

@@ -162,7 +162,7 @@ namespace xrtc {
         return 0;
     }
 
-    bool IceController::_ready_to_send(IceConnection *conn) {
+    bool IceController::ready_to_send(IceConnection *conn) {
         return conn && (conn->writable() || conn->write_state() == IceConnection::STATE_WRITE_UNRELIABLE);
     }
 
@@ -181,7 +181,7 @@ namespace xrtc {
         }
         IceConnection *top_connection = _connections.empty() ? nullptr : _connections[0];
         // 不具备发送条件 以及 排序完了还是自身
-        if (!_ready_to_send(top_connection) || _selected_connection == top_connection) {
+        if (!ready_to_send(top_connection) || _selected_connection == top_connection) {
             return nullptr;
         }
 

@@ -33,6 +33,7 @@ namespace xrtc{
         };
         void mark_connection_pinged(IceConnection* conn);
         void on_connection_destroy(IceConnection* conn);
+        bool ready_to_send(IceConnection* conn);
     private:
         bool _weak(){
             return _selected_connection == nullptr || _selected_connection->weak();
@@ -43,7 +44,6 @@ namespace xrtc{
         int _get_connection_ping_interval(const IceConnection* conn, int64_t now);
         bool _more_pingable(IceConnection *conn1, IceConnection *conn2);
         int _compare_connections(IceConnection* a,IceConnection* b);
-        bool _ready_to_send(IceConnection* conn);
     private:
         IceTransportChannel* _ice_channel;
         IceConnection* _selected_connection = nullptr;

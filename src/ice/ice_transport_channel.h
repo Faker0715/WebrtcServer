@@ -30,6 +30,7 @@ class IceTransportChannel: public sigslot::has_slots<>{
     void set_remote_ice_params(const IceParameters& ice_params);
     void gathering_candidate();
     std::string to_string();
+    int send_packet(const char* data,size_t len);
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&> signal_candidate_allocate_done;
     sigslot::signal1<IceTransportChannel*> signal_receiving_state;
     sigslot::signal1<IceTransportChannel*> signal_writable_state;

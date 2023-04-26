@@ -173,7 +173,6 @@ namespace xrtc {
             _switch_selected_connection(nullptr);
             _sort_connections_and_update_state();
         }else{
-            // todo
             _update_state();
         }
 
@@ -249,14 +248,14 @@ namespace xrtc {
     void IceTransportChannel::_update_state(){
         bool writable = _selected_connection && _selected_connection->writable();
         _set_writable(writable);
-        bool receving = false;
+        bool receiving = false;
         for(auto conn : _ice_controller->connections()){
             if(conn->receiving()){
-                receving = true;
+                receiving = true;
                 break;
             }
         }
-        _set_receiving(receving);
+        _set_receiving(receiving);
 
     }
 
@@ -290,7 +289,20 @@ namespace xrtc {
         conn->ping(_last_ping_sent_ms);
     }
 
+    int IceTransportChannel::send_packet(const char *data, size_t len) {
+        if(!_ice_controller->ready_to_send(_selected_connection)){
+            RTC_LOG(LS_WARNING) << to_string() << ": Selected connection not ready to send.";
+            return -1;
+        }
+        int sent = _selected_connection->send_packet(data,len);
+        if(sent <= 0){
+            RTC_LOG(LS_WARNING) << to_string() << ": Selected connection send packet failed";
+        }
+        return sent;
+    }
+
 }
+
 
 
 
