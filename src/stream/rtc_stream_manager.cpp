@@ -26,6 +26,7 @@ namespace xrtc {
             delete stream;
         }
         stream = new PushStream(_el,_allocator.get(), uid, stream_name, audio, video, log_id);
+        stream->register_listener(this);
         stream->start(certificate);
         offer = stream->create_offer();
         _push_streams[stream_name] = stream;
@@ -58,6 +59,26 @@ namespace xrtc {
         }else if("pull" == stream_type){
 
         }
+        return 0;
+    }
+
+    void RtcStreamManager::on_connection_state(RtcStream *stream, PeerConnectionState state) {
+        if(state == PeerConnectionState::k_failed){
+            // 区分pull和pushstream
+            if(stream->stream_type() == RtcStreamType::k_push){
+                remove_push_stream(stream);
+            }
+        }
+    }
+
+    void RtcStreamManager::remove_push_stream(RtcStream *stream) {
+        const std::string& stream_name = stream->get_stream_name();
+        PushStream* push_stream = find_push_stream(stream_name);
+        if(push_stream){
+            _push_streams.erase(stream_name);
+            delete push_stream;
+        }
+
     }
 
 }

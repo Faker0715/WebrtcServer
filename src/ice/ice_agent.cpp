@@ -12,6 +12,10 @@ namespace xrtc {
     }
 
     IceAgent::~IceAgent() {
+        for(auto channel: _channels){
+            delete channel;
+        }
+        _channels.clear();
 
     }
     IceTransportChannel* IceAgent::get_channel(const std::string &transport_name,

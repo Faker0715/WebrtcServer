@@ -121,6 +121,8 @@ namespace xrtc {
 
         bool _had_connection = false;
         bool _has_been_connection = false; // 连接是否连通过
+
+        std::vector<UDPPort*> _ports;
     };
 }
 

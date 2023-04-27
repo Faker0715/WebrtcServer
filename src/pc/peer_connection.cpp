@@ -35,6 +35,11 @@ namespace xrtc {
     }
 
     PeerConnection::~PeerConnection() {
+        if(_destroy_timer){
+            _el->delete_timer(_destroy_timer);
+            _destroy_timer = nullptr;
+        }
+        RTC_LOG(LS_INFO) << "PeerConnection destroy";
 
     }
 
@@ -219,6 +224,20 @@ namespace xrtc {
         _transport_controller->set_remote_description(_remote_desc.get());
 
         return 0;
+
+    }
+    void destroy_timer_cb(EventLoop* /*el*/,TimerWatcher* /*w*/,void* data){
+        PeerConnection* pc = (PeerConnection*)data;
+        delete pc;
+    }
+    void PeerConnection::destroy() {
+        if(_destroy_timer){
+            _el->delete_timer(_destroy_timer);
+            _destroy_timer = nullptr;
+        }
+        _destroy_timer = _el->create_timer(destroy_timer_cb,this,false);
+        // 让pc的销毁跳出当前方法,避免在on_check中删除了
+        _el->start_timer(_destroy_timer,10000); // 延时10ms销毁
 
     }
 }

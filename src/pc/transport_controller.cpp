@@ -13,7 +13,14 @@ namespace xrtc {
     }
 
     TransportController::~TransportController() {
-
+        for(auto dtls: _dtls_transport_by_name){
+            delete dtls.second;
+        }
+        _dtls_transport_by_name.clear();
+        if(_ice_agent){
+            delete _ice_agent;
+            _ice_agent = nullptr;
+        }
     }
 
     int TransportController::set_local_description(SessionDescription *desc) {
@@ -90,7 +97,8 @@ namespace xrtc {
         int total_ice_disconnected = ice_state_counts[IceTransportState::k_disconnected];
         int total_ice_completed = ice_state_counts[IceTransportState::k_completed];
         if(total_failed > 0){
-            pc_state = PeerConnectionState::k_failed;
+            pc_state = PeerConnectionState::k_failed;;
+
         }else if(total_ice_disconnected > 0){
             pc_state = PeerConnectionState::k_disconnected;
         }

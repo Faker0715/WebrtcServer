@@ -15,6 +15,9 @@ PushStream(EventLoop* el,PortAllocator* allocator, uint64_t uid,const std::strin
                    bool audio,bool video,uint32_t log_id);
         ~PushStream() override;
         std::string create_offer() override;
+        RtcStreamType stream_type() override{
+            return RtcStreamType::k_push;
+        };
     };
 }
 

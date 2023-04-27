@@ -15,7 +15,7 @@
 namespace xrtc {
     class PushStream;
 
-    class RtcStreamManager {
+    class RtcStreamManager :public RtcStreamListener {
     public:
         RtcStreamManager(EventLoop *el);
 
@@ -29,11 +29,14 @@ namespace xrtc {
                        const std::string& answer,const std::string& stream_type,
                        uint32_t log_id);
         PushStream *find_push_stream(const std::string &string_name);
+        void on_connection_state(RtcStream *stream, PeerConnectionState state) override;
 
+        void remove_push_stream(RtcStream *pStream);
     private:
         EventLoop *_el;
         std::unordered_map<std::string, PushStream *> _push_streams;
         std::unique_ptr<PortAllocator>  _allocator;
+
     };
 }
 

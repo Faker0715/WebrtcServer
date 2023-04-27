@@ -32,6 +32,17 @@ namespace xrtc {
             _el->delete_timer(_ping_watcher);
             _ping_watcher = nullptr;
         }
+        std::vector<IceConnection*> connections = _ice_controller->connections();
+        for (auto conn: connections) {
+            conn->destroy();
+        }
+        for (auto port: _ports) {
+            delete port;
+        }
+        _ports.clear();
+        _ice_controller.reset(nullptr);
+        RTC_LOG(LS_INFO) << to_string() << ": IceTransportChannel destroy";
+
     }
 
     void IceTransportChannel::gathering_candidate() {
@@ -51,6 +62,7 @@ namespace xrtc {
             UDPPort *port = new UDPPort(_el, _transport_name, _component, _ice_params);
             port->signal_unknown_address.connect(this,
                                                  &IceTransportChannel::_on_unknown_address);
+            _ports.push_back(port);
             Candidate c;
             int ret = port->create_ice_candidate(network, _allocator->min_port(), _allocator->max_port(), c);
             if (ret != 0)
@@ -276,11 +288,13 @@ namespace xrtc {
 
     void IceTransportChannel::_on_check_and_ping() {
         _update_connection_states();
+        // 一旦发现rtc_stream 是fail状态 ice_controller就会被删除了 只能通过定时器 将删除动作放在后面
+
         auto result = _ice_controller->select_connection_to_ping(
                 _last_ping_sent_ms - PING_INTERVAL_DIFF);
 
-        RTC_LOG(LS_WARNING) << "===========conn: " << result.conn << ", ping interval: "
-                            << result.ping_interval;
+//        RTC_LOG(LS_WARNING) << "===========conn: " << result.conn << ", ping interval: "
+//                            << result.ping_interval;
 
         if (result.conn) {
             IceConnection *conn = (IceConnection *) result.conn;

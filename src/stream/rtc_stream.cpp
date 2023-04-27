@@ -13,17 +13,20 @@ namespace xrtc {
         pc->signal_connection_state.connect(this,&RtcStream::_on_connection_state);
 
     }
-    void  RtcStream::_on_connection_state(PeerConnection*,PeerConnectionState state){
+    void RtcStream::_on_connection_state(PeerConnection*,PeerConnectionState state){
         if(_state == state){
             return;
         }
-        RTC_LOG(LS_INFO) << "PeerConnectionState change from " << _state << "to" << state;
+        RTC_LOG(LS_INFO) << to_string() << "PeerConnectionState change from " << _state << " to" << state;
         _state = state;
+        if(_listener){
+            _listener->on_connection_state(this,state);
+        }
 
     }
 
     RtcStream::~RtcStream() {
-
+        pc->destroy();
     }
 
     int RtcStream::start(rtc::RTCCertificate *certificate) {
@@ -32,5 +35,11 @@ namespace xrtc {
 
     int RtcStream::set_remote_sdp(const std::string &sdp) {
         return pc->set_remote_sdp(sdp);
+    }
+
+    std::string RtcStream::to_string() {
+        std::stringstream ss;
+        ss << "Stream[" << this << "|" << uid << "|" << stream_name << "}";
+        return ss.str();
     }
 }
