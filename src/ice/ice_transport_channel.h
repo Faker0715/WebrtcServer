@@ -20,6 +20,15 @@
 namespace xrtc {
     class UDPPort;
 
+    enum class IceTransportState{
+        k_new,
+        k_checking,
+        k_connected,
+        k_completed,
+        k_failed,
+        k_disconnected,
+        k_closed
+    };
     class IceController;
 
     class IceTransportChannel : public sigslot::has_slots<> {
@@ -43,10 +52,6 @@ namespace xrtc {
 
         int send_packet(const char *data, size_t len);
 
-        sigslot::signal2<IceTransportChannel *, const std::vector<Candidate> &> signal_candidate_allocate_done;
-        sigslot::signal1<IceTransportChannel *> signal_receiving_state;
-        sigslot::signal1<IceTransportChannel *> signal_writable_state;
-        sigslot::signal4<IceTransportChannel *, const char *, size_t, int64_t> signal_read_packet;
 
         void _on_check_and_ping();
 
@@ -71,6 +76,13 @@ namespace xrtc {
 
         bool writable() { return _writable; }
 
+        IceTransportState state() { return _state; }
+
+        sigslot::signal2<IceTransportChannel *, const std::vector<Candidate> &> signal_candidate_allocate_done;
+        sigslot::signal1<IceTransportChannel *> signal_receiving_state;
+        sigslot::signal1<IceTransportChannel *> signal_writable_state;
+        sigslot::signal1<IceTransportChannel *> signal_ice_state_changed;
+        sigslot::signal4<IceTransportChannel *, const char *, size_t, int64_t> signal_read_packet;
     private:
         void _on_unknown_address(xrtc::UDPPort *port, const rtc::SocketAddress &addr, xrtc::StunMessage *msg,
                                  const std::string &remote_ufrag);
@@ -85,6 +97,7 @@ namespace xrtc {
 
         void _on_read_packet(IceConnection *, const char *buf, size_t len, int64_t ts);
 
+        IceTransportState _compute_ice_transport_state();
     private:
 
         EventLoop *_el;
@@ -104,6 +117,10 @@ namespace xrtc {
         bool _receiving = false;
         bool _writable = false;
 
+        IceTransportState _state = IceTransportState::k_new;
+
+        bool _had_connection = false;
+        bool _has_been_connection = false; // 连接是否连通过
     };
 }
 

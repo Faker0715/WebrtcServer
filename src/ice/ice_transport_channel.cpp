@@ -156,23 +156,26 @@ namespace xrtc {
 
     void IceTransportChannel::_add_connection(IceConnection *conn) {
         conn->signal_state_change.connect(this, &IceTransportChannel::_on_connection_state_change);
-        conn->signal_connection_destroy.connect(this,&IceTransportChannel::_on_connection_destroy);
+        conn->signal_connection_destroy.connect(this, &IceTransportChannel::_on_connection_destroy);
         conn->signal_read_packet.connect(this,
                                          &IceTransportChannel::_on_read_packet);
+        _had_connection = true;
         _ice_controller->add_connection(conn);
     }
-    void IceTransportChannel::_on_read_packet(IceConnection* , const char* buf,size_t len,int64_t ts){
-        signal_read_packet(this,buf,len,ts);
+
+    void IceTransportChannel::_on_read_packet(IceConnection *, const char *buf, size_t len, int64_t ts) {
+        signal_read_packet(this, buf, len, ts);
     }
-    void IceTransportChannel::_on_connection_destroy(IceConnection* conn){
+
+    void IceTransportChannel::_on_connection_destroy(IceConnection *conn) {
         _ice_controller->on_connection_destroy(conn);
         RTC_LOG(LS_INFO) << to_string() << ": Remove connection: " << conn << " with "
-            << _ice_controller->connections().size() << " remaining";
-        if(_selected_connection == conn){
+                         << _ice_controller->connections().size() << " remaining";
+        if (_selected_connection == conn) {
             RTC_LOG(LS_INFO) << to_string() << ": Selected connection destroyed, should select a new connection";
             _switch_selected_connection(nullptr);
             _sort_connections_and_update_state();
-        }else{
+        } else {
             _update_state();
         }
 
@@ -203,17 +206,16 @@ namespace xrtc {
         }
 
 
-        if(_selected_connection){
+        if (_selected_connection) {
             RTC_LOG(LS_INFO) << to_string() << ": new selected connection: " << conn->to_string();
             _selected_connection = conn;
             _selected_connection->set_selected(true);
             _ice_controller->set_selected_connection(_selected_connection);
-        }else{
+        } else {
             RTC_LOG(LS_INFO) << to_string() << ": No connection selected";
         }
 
     }
-
 
 
     void IceTransportChannel::_update_connection_states() {
@@ -221,23 +223,27 @@ namespace xrtc {
 
         std::vector<IceConnection *> connections = _ice_controller->connections();
         int64_t now = rtc::TimeMillis();
-        for(auto conn: connections){
+        for (auto conn: connections) {
             conn->update_state(now);
         }
     }
 
     void IceTransportChannel::_set_writable(bool writable) {
-        if(_writable == writable){
-            return ;
+        if (_writable == writable) {
+            return;
+        }
+        if (writable) {
+            _has_been_connection = true;
         }
         _writable = writable;
+
         RTC_LOG(LS_INFO) << to_string() << ": change writable to " << _writable;
         signal_writable_state(this);
     }
 
     void IceTransportChannel::_set_receiving(bool receiving) {
-        if(_receiving == receiving){
-            return ;
+        if (_receiving == receiving) {
+            return;
         }
         _receiving = receiving;
         RTC_LOG(LS_INFO) << to_string() << ": change receiving to " << _receiving;
@@ -245,20 +251,27 @@ namespace xrtc {
     }
 
 
-    void IceTransportChannel::_update_state(){
+    void IceTransportChannel::_update_state() {
         bool writable = _selected_connection && _selected_connection->writable();
         _set_writable(writable);
         bool receiving = false;
-        for(auto conn : _ice_controller->connections()){
-            if(conn->receiving()){
+        for (auto conn: _ice_controller->connections()) {
+            if (conn->receiving()) {
                 receiving = true;
                 break;
             }
         }
         _set_receiving(receiving);
 
-    }
+        // transport_channel有三个状态 本身 读写
+        IceTransportState state = _compute_ice_transport_state();
+        if (state != _state) {
+            _state = state;
+            signal_ice_state_changed(this);
+        }
 
+
+    }
 
 
     void IceTransportChannel::_on_check_and_ping() {
@@ -273,7 +286,8 @@ namespace xrtc {
             IceConnection *conn = (IceConnection *) result.conn;
             _ping_connection(conn);
             // 标记这个connection已经ping过了
-            _ice_controller->mark_connection_pinged(conn);
+            _ice_controller->mark_connection_pinged(conn);;
+
         }
 
         if (_cur_ping_interval != result.ping_interval) {
@@ -290,15 +304,40 @@ namespace xrtc {
     }
 
     int IceTransportChannel::send_packet(const char *data, size_t len) {
-        if(!_ice_controller->ready_to_send(_selected_connection)){
+        if (!_ice_controller->ready_to_send(_selected_connection)) {
             RTC_LOG(LS_WARNING) << to_string() << ": Selected connection not ready to send.";
             return -1;
         }
-        int sent = _selected_connection->send_packet(data,len);
-        if(sent <= 0){
+        int sent = _selected_connection->send_packet(data, len);
+        if (sent <= 0) {
             RTC_LOG(LS_WARNING) << to_string() << ": Selected connection send packet failed";
         }
         return sent;
+    }
+
+    IceTransportState IceTransportChannel::_compute_ice_transport_state() {
+        bool has_connection = false;
+        for (auto conn: _ice_controller->connections()) {
+            if (conn->active()) {
+                has_connection = true;
+                break;
+            }
+        }
+
+        if (_had_connection && !has_connection) {
+            return IceTransportState::k_failed;
+        }
+        if (_has_been_connection && !writable()) {
+            return IceTransportState::k_disconnected;
+        }
+        if (!_had_connection && !has_connection) {
+            return IceTransportState::k_new;
+        }
+        if (_had_connection && !writable()) {
+            return IceTransportState::k_checking;
+        }
+        return IceTransportState::k_connected;
+
     }
 
 }

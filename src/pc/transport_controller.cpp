@@ -62,6 +62,7 @@ namespace xrtc {
     void TransportController::_update_state(){
         PeerConnectionState pc_state = PeerConnectionState::k_new;
         // 根据dtls状态来计算pc状态
+        // 根据transportchannel状态来决定ice_agent状态
         std::map<DtlsTransportState,int> dtls_state_counts;
         auto iter = _dtls_transport_by_name.begin();
         for(; iter != _dtls_transport_by_name.end();++iter){
