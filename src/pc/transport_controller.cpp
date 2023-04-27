@@ -34,14 +34,64 @@ namespace xrtc {
             }
             // 创建完icetransportchannel之后还要创建一个dtlstransport
             DtlsTransport* dtls = new DtlsTransport(_ice_agent->get_channel(mid,IceCandidateComponent::RTP));
-            // 放入icecontroller进行管理
+            // 放入icecontroller进行管理,一个controller可能有多个dtls连接
             dtls->set_local_certificate(_local_certificate);
+
+            dtls->signal_receiving_state.connect(this,&TransportController::_on_dtls_receiving_state);
+            dtls->signal_writable_state.connect(this,&TransportController::_on_dtls_writable_state);
+            dtls->signal_dtls_state.connect(this,&TransportController::_on_dtls_state);
             _add_dtls_transport(dtls);
+
         }
         _ice_agent->gathering_candidate();
 
         return 0;
     }
+
+    void TransportController::_on_dtls_receiving_state(DtlsTransport*){
+        _update_state();
+    }
+
+    void TransportController::_on_dtls_writable_state(DtlsTransport*){
+        _update_state();
+    }
+
+    void TransportController::_on_dtls_state(DtlsTransport*,DtlsTransportState){
+        _update_state();
+    }
+    void TransportController::_update_state(){
+        PeerConnectionState pc_state = PeerConnectionState::k_new;
+        // 根据dtls状态来计算pc状态
+        std::map<DtlsTransportState,int> dtls_state_counts;
+        auto iter = _dtls_transport_by_name.begin();
+        for(; iter != _dtls_transport_by_name.end();++iter){
+           dtls_state_counts[iter->second->dtls_state()]++;
+        }
+        int total_connected = dtls_state_counts[DtlsTransportState::k_connected];
+        int total_connecting = dtls_state_counts[DtlsTransportState::k_connecting];
+        int total_closed = dtls_state_counts[DtlsTransportState::k_closed];
+        int total_failed = dtls_state_counts[DtlsTransportState::k_failed];
+        int total_new = dtls_state_counts[DtlsTransportState::k_new];
+        int total_transports = _dtls_transport_by_name.size();
+        if(total_failed > 0){
+            _pc_state = PeerConnectionState::k_failed;
+        }//else if(IceTransportState::k_disconnected == _ice_agent->ice_state()){
+          //  _pc_state = PeerConnectionState::k_disconnected;
+        //}
+        else if(total_new + total_closed == total_transports){
+            _pc_state = PeerConnectionState::k_new;
+        }else if(total_connecting + total_closed > 0){
+            _pc_state = PeerConnectionState::k_connecting;
+        }else if(total_connected + total_closed == total_transports) {
+            _pc_state = PeerConnectionState::k_connected;
+        }
+        if(_pc_state != pc_state){
+            _pc_state = pc_state;
+            signal_connection_state(this,pc_state);
+        }
+
+    }
+
 
     void TransportController::on_candidate_allocate_done(IceAgent *agent, const std::string &transport_name,
                                                          IceCandidateComponent component,
