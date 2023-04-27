@@ -54,7 +54,7 @@ namespace xrtc {
         bool writable() const { return _write_state == STATE_WRITABLE; }
         bool receiving(){return _receiving;}
         bool weak(){
-            !(writable() && receiving());
+            return !(writable() && receiving());
         }
         bool active(){
             return _write_state != STATE_WRITE_TIMEOUT;

@@ -431,7 +431,7 @@ namespace xrtc {
         return 0;
     }
 
-    int SignalingWorker::_process_answer(int cmdno, TcpConnection *c,
+    int SignalingWorker::_process_answer(int cmdno, TcpConnection */*c*/,
                                        const Json::Value &root, uint32_t log_id) {
         uint64_t uid;
         std::string stream_name;
@@ -531,7 +531,7 @@ namespace xrtc {
         return notify(RTC_MSG);
     }
 
-    int SignalingWorker::_process_stop_push(int cmdno, TcpConnection *c,const Json::Value& root, uint32_t log_id) {
+    int SignalingWorker::_process_stop_push(int cmdno, TcpConnection* /*c*/,const Json::Value& root, uint32_t log_id) {
         uint64_t uid;
         std::string stream_name;
         std::string answer;

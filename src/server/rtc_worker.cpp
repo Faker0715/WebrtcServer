@@ -121,7 +121,9 @@ namespace xrtc {
                                                       offer);
         RTC_LOG(LS_INFO) << "offer: " << offer;
         msg->sdp = offer;
-
+        if(ret != 0){
+            msg->err_no = -1;
+        }
         SignalingWorker *worker = (SignalingWorker *) (msg->worker);
         if (worker) {
             worker->send_rtc_msg(msg);

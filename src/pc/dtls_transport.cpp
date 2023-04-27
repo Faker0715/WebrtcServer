@@ -276,7 +276,7 @@ namespace xrtc {
         if (_dtls_state == state) {
             return;
         }
-        RTC_LOG(LS_INFO) << to_string() << ": Change dtls state from " << _dtls_state << "to " << state;
+        RTC_LOG(LS_INFO) << to_string() << ": Change dtls state from " << _dtls_state << " to " << state;
         _dtls_state = state;
         signal_dtls_state(this, state);
 
@@ -311,7 +311,7 @@ namespace xrtc {
         return _downward->on_received_packet(data, size);
     }
 
-    void DtlsTransport::_on_dtls_event(rtc::StreamInterface *dtls, int sig, int error) {
+    void DtlsTransport::_on_dtls_event(rtc::StreamInterface */*dtls*/, int sig, int error) {
         if (sig & rtc::SE_OPEN) {
             RTC_LOG(LS_INFO) << to_string() << ": DTLS handshake complete.";
             _set_writable_state(true);
@@ -365,7 +365,7 @@ namespace xrtc {
         return _state;
     }
 
-    rtc::StreamResult StreamInterfaceChannel::Write(const void *data, size_t data_len, size_t *written, int *error) {
+    rtc::StreamResult StreamInterfaceChannel::Write(const void *data, size_t data_len, size_t *written, int */*error*/) {
         _ice_channel->send_packet((const char *) data, data_len);
         if (written) {
             *written = data_len;
@@ -373,7 +373,7 @@ namespace xrtc {
         return rtc::SR_SUCCESS;
     }
 
-    rtc::StreamResult StreamInterfaceChannel::Read(void *buffer, size_t buffer_len, size_t *read, int *error) {
+    rtc::StreamResult StreamInterfaceChannel::Read(void *buffer, size_t buffer_len, size_t *read, int * /*error*/) {
         if (_state == rtc::SS_CLOSED) {
             return rtc::SR_EOS;
         }

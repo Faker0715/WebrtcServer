@@ -86,8 +86,8 @@ namespace xrtc {
         return 0;
     }
 
-    void PeerConnection::_on_candidate_allocate_done(TransportController *controller, const std::string &transport_name,
-                                                    IceCandidateComponent component,
+    void PeerConnection::_on_candidate_allocate_done(TransportController */*controller*/, const std::string &transport_name,
+                                                    IceCandidateComponent /*component*/,
                                                     const std::vector<Candidate> &candidates) {
         for (auto c: candidates) {
             RTC_LOG(LS_INFO) << "candidate gathered, transport_name:" << transport_name << ", " << c.to_string();

@@ -86,6 +86,7 @@ namespace xrtc {
     }
     int RtcStreamManager::stop_push(uint64_t uid, const std::string &stream_name) {
         remove_push_stream(uid,stream_name);
+        return 0;
     }
 
 }

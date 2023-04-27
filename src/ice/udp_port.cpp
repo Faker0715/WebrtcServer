@@ -25,7 +25,7 @@ namespace xrtc {
                                    const std::string &relay_protocol,
                                    const rtc::SocketAddress &base) {
         std::stringstream ss;
-        ss << "type" << base.HostAsURIString() << protocol << relay_protocol;
+        ss << type << base.HostAsURIString() << protocol << relay_protocol;
         return std::to_string(rtc::ComputeCrc32(ss.str()));
     }
 
@@ -73,7 +73,7 @@ namespace xrtc {
         auto iter = _connections.find(addr);
         return iter == _connections.end() ? nullptr : iter->second;
     }
-    void UDPPort::_on_read_packet(AsyncUdpSocket *socket, char *buf, size_t size, const rtc::SocketAddress &addr,
+    void UDPPort::_on_read_packet(AsyncUdpSocket */*socket*/, char *buf, size_t size, const rtc::SocketAddress &addr,
                                  int64_t ts) {
 
         if(IceConnection * conn = get_connection(addr)) {

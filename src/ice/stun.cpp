@@ -67,7 +67,7 @@ namespace xrtc {
         // 检查fingerprint的值
         uint32_t fingerprint = rtc::GetBE32(fingerprint_attr_data + k_stun_attribute_header_size);
 
-        return fingerprint ^ STUN_FINGERPRINT_XOR_VALUE == rtc::ComputeCrc32(data, len - finerprint_attr_size);
+        return (fingerprint ^ STUN_FINGERPRINT_XOR_VALUE) == rtc::ComputeCrc32(data, len - finerprint_attr_size);
 
     }
 
@@ -354,7 +354,7 @@ namespace xrtc {
     }
 
     StunAttribute *
-    StunAttribute::create(StunAttributeValueType value_type, uint16_t type, uint16_t length, void *owner) {
+    StunAttribute::create(StunAttributeValueType value_type, uint16_t type, uint16_t length, void */*owner*/) {
         switch (value_type) {
             case STUN_VALUE_BYTE_STRING:
                 return new StunByteStringAttribute(type, length);
@@ -474,7 +474,7 @@ namespace xrtc {
         set_address(addr);
     }
 
-    bool StunAddressAttribute::read(rtc::ByteBufferReader *buf) {
+    bool StunAddressAttribute::read(rtc::ByteBufferReader */*buf*/) {
         return true;
     }
 
@@ -609,7 +609,7 @@ namespace xrtc {
         set_length(MIN_SIZE + _reason.size());
     }
 
-    bool StunErrorCodeAttribute::read(rtc::ByteBufferReader *buf) {
+    bool StunErrorCodeAttribute::read(rtc::ByteBufferReader */*buf*/) {
         return false;
     }
 
