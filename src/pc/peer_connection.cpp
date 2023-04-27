@@ -24,8 +24,14 @@ namespace xrtc {
     PeerConnection::PeerConnection(EventLoop *el, PortAllocator *allocator) : _el(el), _transport_controller(
             new TransportController(el, allocator)) {
         _transport_controller->signal_candidate_allocate_done.connect(this,
-                                                                      &PeerConnection::on_candidate_allocate_done);;
+                                                                      &PeerConnection::_on_candidate_allocate_done);
+        _transport_controller->signal_connection_state.connect(this,
+                                                       &PeerConnection::_on_connection_state);
 
+
+    }
+    void PeerConnection::_on_connection_state(TransportController*,PeerConnectionState state){
+        signal_connection_state(this,state);
     }
 
     PeerConnection::~PeerConnection() {
@@ -75,7 +81,7 @@ namespace xrtc {
         return 0;
     }
 
-    void PeerConnection::on_candidate_allocate_done(TransportController *controller, const std::string &transport_name,
+    void PeerConnection::_on_candidate_allocate_done(TransportController *controller, const std::string &transport_name,
                                                     IceCandidateComponent component,
                                                     const std::vector<Candidate> &candidates) {
         for (auto c: candidates) {

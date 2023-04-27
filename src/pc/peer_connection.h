@@ -30,14 +30,17 @@ namespace xrtc{
         int init(rtc::RTCCertificate* certificate);
         std::string create_offer(const RTCOfferAnswerOptions options);
         int set_remote_sdp(const std::string& sdp);
+        sigslot::signal2<PeerConnection*,PeerConnectionState> signal_connection_state;
     private:
-        void on_candidate_allocate_done(TransportController* controller,const std::string& transport_name,IceCandidateComponent component,const std::vector<Candidate>& candidates);
+        void _on_candidate_allocate_done(TransportController* controller,const std::string& transport_name,IceCandidateComponent component,const std::vector<Candidate>& candidates);
+        void _on_connection_state(TransportController *, PeerConnectionState state);
     private:
         EventLoop* _el;
         rtc::RTCCertificate* _certificate = nullptr;
         std::unique_ptr<SessionDescription> _local_desc;
         std::unique_ptr<SessionDescription> _remote_desc;
         std::unique_ptr<TransportController> _transport_controller;
+
     };
 }
 

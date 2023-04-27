@@ -31,6 +31,7 @@ namespace xrtc{
         void _on_dtls_writable_state(DtlsTransport*);
         void _on_dtls_state(DtlsTransport*,DtlsTransportState);
         void _update_state();
+        void _on_ice_state(IceAgent *, IceTransportState);
     private:
         EventLoop* _el;
         IceAgent* _ice_agent;

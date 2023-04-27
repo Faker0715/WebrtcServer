@@ -40,12 +40,16 @@ namespace xrtc {
             dtls->signal_receiving_state.connect(this,&TransportController::_on_dtls_receiving_state);
             dtls->signal_writable_state.connect(this,&TransportController::_on_dtls_writable_state);
             dtls->signal_dtls_state.connect(this,&TransportController::_on_dtls_state);
+            _ice_agent->signal_ice_state.connect(this,&TransportController::_on_ice_state);
             _add_dtls_transport(dtls);
 
         }
         _ice_agent->gathering_candidate();
 
         return 0;
+    }
+    void TransportController::_on_ice_state(IceAgent* ,IceTransportState){
+        _update_state();
     }
 
     void TransportController::_on_dtls_receiving_state(DtlsTransport*){
@@ -61,30 +65,41 @@ namespace xrtc {
     }
     void TransportController::_update_state(){
         PeerConnectionState pc_state = PeerConnectionState::k_new;
-        // 根据dtls状态来计算pc状态
+        // 根据dtls状态和ice_transport_channel来计算pc状态
         // 根据transportchannel状态来决定ice_agent状态
         std::map<DtlsTransportState,int> dtls_state_counts;
+        std::map<IceTransportState,int> ice_state_counts;
+
         auto iter = _dtls_transport_by_name.begin();
         for(; iter != _dtls_transport_by_name.end();++iter){
            dtls_state_counts[iter->second->dtls_state()]++;
+           ice_state_counts[iter->second->ice_channel()->state()]++;
         }
-        int total_connected = dtls_state_counts[DtlsTransportState::k_connected];
-        int total_connecting = dtls_state_counts[DtlsTransportState::k_connecting];
-        int total_closed = dtls_state_counts[DtlsTransportState::k_closed];
-        int total_failed = dtls_state_counts[DtlsTransportState::k_failed];
-        int total_new = dtls_state_counts[DtlsTransportState::k_new];
-        int total_transports = _dtls_transport_by_name.size();
+        int total_connected = ice_state_counts[IceTransportState::k_connected]
+                +
+                dtls_state_counts[DtlsTransportState::k_connected];
+        int total_dtls_connecting = dtls_state_counts[DtlsTransportState::k_connecting];
+        int total_closed = ice_state_counts[IceTransportState::k_closed] +
+                dtls_state_counts[DtlsTransportState::k_closed];
+        int total_failed = ice_state_counts[IceTransportState::k_failed] +
+                dtls_state_counts[DtlsTransportState::k_failed];
+        int total_new = ice_state_counts[IceTransportState::k_new] +
+                dtls_state_counts[DtlsTransportState::k_new];
+        int total_transports = _dtls_transport_by_name.size() * 2;
+        int total_ice_checking = ice_state_counts[IceTransportState::k_checking];
+        int total_ice_disconnected = ice_state_counts[IceTransportState::k_disconnected];
+        int total_ice_completed = ice_state_counts[IceTransportState::k_completed];
         if(total_failed > 0){
-            _pc_state = PeerConnectionState::k_failed;
-        }//else if(IceTransportState::k_disconnected == _ice_agent->ice_state()){
-          //  _pc_state = PeerConnectionState::k_disconnected;
-        //}
+            pc_state = PeerConnectionState::k_failed;
+        }else if(total_ice_disconnected > 0){
+            pc_state = PeerConnectionState::k_disconnected;
+        }
         else if(total_new + total_closed == total_transports){
-            _pc_state = PeerConnectionState::k_new;
-        }else if(total_connecting + total_closed > 0){
-            _pc_state = PeerConnectionState::k_connecting;
-        }else if(total_connected + total_closed == total_transports) {
-            _pc_state = PeerConnectionState::k_connected;
+            pc_state = PeerConnectionState::k_new;
+        }else if(total_ice_checking + total_dtls_connecting + total_new > 0){
+            pc_state = PeerConnectionState::k_connecting;
+        }else if(total_connected + total_closed + total_ice_completed == total_transports) {
+            pc_state = PeerConnectionState::k_connected;
         }
         if(_pc_state != pc_state){
             _pc_state = pc_state;

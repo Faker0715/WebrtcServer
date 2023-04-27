@@ -61,6 +61,11 @@ namespace xrtc {
             return _ice_channel->component();
         }
 
+        IceTransportChannel* ice_channel() {
+            return _ice_channel;
+        }
+
+
         std::string to_string();
 
         bool set_local_certificate(rtc::RTCCertificate* cert);

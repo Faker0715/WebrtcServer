@@ -13,7 +13,7 @@
 #include "ice/port_allocator.h"
 #include <rtc_base/rtc_certificate.h>
 namespace xrtc{
-    class RtcStream{
+    class RtcStream : public sigslot::has_slots<>{
     public:
         RtcStream(EventLoop* _el,PortAllocator* allocator, uint64_t,const std::string& stream_name,
                   bool audiom,bool video,uint32_t log_id);
@@ -21,6 +21,8 @@ namespace xrtc{
         int start(rtc::RTCCertificate* certificate);
         virtual std::string create_offer() = 0;
         int set_remote_sdp(const std::string& sdp);
+    private:
+        void _on_connection_state(PeerConnection *, PeerConnectionState state);
     protected:
         EventLoop* el;
         uint64_t uid;
@@ -30,6 +32,7 @@ namespace xrtc{
         uint32_t log_id;
         std::unique_ptr<PeerConnection> pc;
         friend class RtcStreamManager;
+        PeerConnectionState _state = PeerConnectionState::k_new;
     };
 
 }
