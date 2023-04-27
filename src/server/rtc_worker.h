@@ -1,22 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file rtc_worker.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __RTC_WORKER_H_
 #define  __RTC_WORKER_H_
 
@@ -57,6 +38,7 @@ private:
     void _process_rtc_msg();
     void _process_push(std::shared_ptr<RtcMsg> msg);
     void _process_answer(std::shared_ptr<RtcMsg> msg);
+    void _process_stop_push(std::shared_ptr<RtcMsg> msg);
 
 private:
     RtcServerOptions _options;

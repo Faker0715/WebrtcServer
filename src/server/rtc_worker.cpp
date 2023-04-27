@@ -1,20 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
-
-
-
-/**
- * @file rtc_worker.cpp
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
 #include <unistd.h>
 
 #include <rtc_base/logging.h>
@@ -154,6 +137,14 @@ namespace xrtc {
             << ", ret: " << ret;
 
     }
+    void RtcWorker::_process_stop_push(std::shared_ptr<RtcMsg> msg) {
+        int ret = _rtc_stream_mgr->stop_push(msg->uid, msg->stream_name);
+        RTC_LOG(LS_INFO) << "rtc worker process stop push, uid: " << msg->uid << ", stream_name: " <<
+                         msg->stream_name << ", worker_id: " << _worker_id
+                         << ", log_id: " << msg->log_id
+                         << ", ret: " << ret;
+
+    }
     void RtcWorker::_process_rtc_msg() {
         std::shared_ptr<RtcMsg> msg;
         if (!pop_msg(&msg)) {
@@ -169,6 +160,9 @@ namespace xrtc {
         switch (msg->cmdno) {
             case CMDNO_PUSH:
                 _process_push(msg);
+                break;
+            case CMDNO_STOPPUSH:
+                _process_stop_push(msg);
                 break;
             case CMDNO_ANSWER:
                 _process_answer(msg);

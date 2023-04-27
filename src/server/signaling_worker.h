@@ -1,22 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file signaling_worker.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __SIGNALING_WORKER_H_
 #define  __SIGNALING_WORKER_H_
 
@@ -80,6 +61,7 @@ private:
             const Json::Value& root, uint32_t log_id);
     int _process_answer(int cmdno, TcpConnection* c,
             const Json::Value& root, uint32_t log_id);
+    int _process_stop_push(int cmdno, TcpConnection *pConnection, const Json::Value& root, uint32_t id);
     void _process_rtc_msg();
     void _response_server_offer(std::shared_ptr<RtcMsg> msg);
     void _add_reply(TcpConnection *c, const rtc::Slice &reply);

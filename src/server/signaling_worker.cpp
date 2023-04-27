@@ -1,19 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
-
-
-
-/**
- * @file signaling_worker.cpp
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
 #include <rtc_base/zmalloc.h>
 #include <unistd.h>
 
@@ -405,6 +389,9 @@ namespace xrtc {
         switch (cmdno) {
             case CMDNO_PUSH:
                 return _process_push(cmdno, c, root, xh->log_id);
+            case CMDNO_STOPPUSH:
+                ret = _process_stop_push(cmdno,c,root,xh->log_id);
+                break;
             case CMDNO_ANSWER:
                 // 这里是不需要等待返回结果的 因为这里是算调用了算成功
                 ret = _process_answer(cmdno,c,root,xh->log_id);
@@ -542,6 +529,33 @@ namespace xrtc {
     int SignalingWorker::send_rtc_msg(std::shared_ptr<RtcMsg> msg) {
         push_msg(msg);
         return notify(RTC_MSG);
+    }
+
+    int SignalingWorker::_process_stop_push(int cmdno, TcpConnection *c,const Json::Value& root, uint32_t log_id) {
+        uint64_t uid;
+        std::string stream_name;
+        std::string answer;
+        std::string stream_type;
+
+        try {
+            uid = root["uid"].asUInt64();
+            stream_name = root["stream_name"].asString();
+        } catch (Json::Exception e) {
+            RTC_LOG(LS_WARNING) << "parse json body error: " << e.what()
+                                << "log_id: " << log_id;
+            return -1;
+        }
+
+        RTC_LOG(LS_INFO) << "cmdno[" << cmdno << "] uid[" << uid
+                         << "] stream_name[" << stream_name
+                         << "] signaling server send stop push request";
+
+        std::shared_ptr<RtcMsg> msg = std::make_shared<RtcMsg>();
+        msg->cmdno = cmdno;
+        msg->uid = uid;
+        msg->stream_name = stream_name;
+        msg->log_id = log_id;
+        return g_rtc_server->send_rtc_msg(msg);
     }
 
 

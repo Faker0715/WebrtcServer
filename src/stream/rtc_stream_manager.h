@@ -28,10 +28,12 @@ namespace xrtc {
         int set_answer(uint64_t uid, const std::string &stream_name,
                        const std::string& answer,const std::string& stream_type,
                        uint32_t log_id);
+        int stop_push(uint64_t uid,const std::string& stream_name);
         PushStream *find_push_stream(const std::string &string_name);
         void on_connection_state(RtcStream *stream, PeerConnectionState state) override;
 
         void remove_push_stream(RtcStream *pStream);
+        void remove_push_stream(uint64_t uid, const std::string &stream_name);
     private:
         EventLoop *_el;
         std::unordered_map<std::string, PushStream *> _push_streams;
