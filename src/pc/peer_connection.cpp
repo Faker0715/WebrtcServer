@@ -53,14 +53,14 @@ namespace xrtc {
         IceParameters ice_param = IceCredentials::create_random_ice_credentials();
 
 
-        if (options.recv_audio) {
+        if (options.recv_audio || options.send_audio) {
             auto audio = std::make_shared<AudioContentDescription>();
             audio->set_direction(get_direction(options.send_audio, options.recv_audio));
             audio->set_rtcp_mux(options.use_rtcp_mux);
             _local_desc->add_content(audio);
             _local_desc->add_transport_info(audio->mid(), ice_param, _certificate);
         }
-        if (options.recv_video) {
+        if (options.recv_video || options.send_video) {
             auto video = std::make_shared<VideoContentDescription>();
             video->set_direction(get_direction(options.send_video, options.recv_video));
             video->set_rtcp_mux(options.use_rtcp_mux);

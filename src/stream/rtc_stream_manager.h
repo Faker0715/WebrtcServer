@@ -11,9 +11,11 @@
 #include "push_stream.h"
 #include "ice/port_allocator.h"
 #include <rtc_base/rtc_certificate.h>
+#include "pull_stream.h"
 
 namespace xrtc {
     class PushStream;
+    class PullStream;
 
     class RtcStreamManager :public RtcStreamListener {
     public:
@@ -25,18 +27,27 @@ namespace xrtc {
                                bool audio, bool video, uint32_t log_id,
                                rtc::RTCCertificate *certificate,
                                std::string &offer);
+        int create_pull_stream(uint64_t uid, const std::string &stream_name,
+                               bool audio, bool video, uint32_t log_id,
+                               rtc::RTCCertificate *certificate,
+                               std::string &offer);
         int set_answer(uint64_t uid, const std::string &stream_name,
                        const std::string& answer,const std::string& stream_type,
                        uint32_t log_id);
         int stop_push(uint64_t uid,const std::string& stream_name);
-        PushStream *find_push_stream(const std::string &string_name);
         void on_connection_state(RtcStream *stream, PeerConnectionState state) override;
 
-        void remove_push_stream(RtcStream *pStream);
-        void remove_push_stream(uint64_t uid, const std::string &stream_name);
+    private:
+        PushStream *_find_push_stream(const std::string &string_name);
+        void _remove_push_stream(RtcStream *pStream);
+        void _remove_push_stream(uint64_t uid, const std::string &stream_name);
+        PullStream *_find_pull_stream(const std::string &string_name);
+        void _remove_pull_stream(RtcStream *pStream);
+        void _remove_pull_stream(uint64_t uid, const std::string &stream_name);
     private:
         EventLoop *_el;
         std::unordered_map<std::string, PushStream *> _push_streams;
+        std::unordered_map<std::string, PullStream *> _pull_streams;
         std::unique_ptr<PortAllocator>  _allocator;
 
     };

@@ -130,6 +130,22 @@ namespace xrtc {
         }
     }
 
+    void RtcWorker::_process_pull(std::shared_ptr<RtcMsg> msg) {
+        std::string offer;
+        int ret = _rtc_stream_mgr->create_pull_stream(msg->uid, msg->stream_name,
+                                                      msg->audio, msg->video, msg->log_id,
+                                                      (rtc::RTCCertificate *) (msg->certifcate),
+                                                      offer);
+        RTC_LOG(LS_INFO) << "offer: " << offer;
+        msg->sdp = offer;
+        if(ret != 0){
+            msg->err_no = -1;
+        }
+        SignalingWorker *worker = (SignalingWorker *) (msg->worker);
+        if (worker) {
+            worker->send_rtc_msg(msg);
+        }
+    }
     void RtcWorker::_process_answer(std::shared_ptr<RtcMsg> msg) {
         int ret = _rtc_stream_mgr->set_answer(msg->uid, msg->stream_name,
                                                       msg->sdp, msg->stream_type,msg->log_id);
@@ -162,6 +178,9 @@ namespace xrtc {
         switch (msg->cmdno) {
             case CMDNO_PUSH:
                 _process_push(msg);
+                break;
+            case CMDNO_PULL:
+                _process_pull(msg);
                 break;
             case CMDNO_STOPPUSH:
                 _process_stop_push(msg);
