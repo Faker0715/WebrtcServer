@@ -37,6 +37,13 @@ namespace xrtc{
         SessionDescription* local_desc(){
             return _local_desc.get();
         }
+        void add_audio_source(const std::vector<StreamParams>& source){
+            _audio_source = source;
+        }
+        void add_video_source(const std::vector<StreamParams>& source){
+            _video_source = source;
+        }
+
         sigslot::signal2<PeerConnection*,PeerConnectionState> signal_connection_state;
     private:
         // 只能通过destory进行销毁
@@ -51,6 +58,8 @@ namespace xrtc{
         std::unique_ptr<SessionDescription> _remote_desc;
         std::unique_ptr<TransportController> _transport_controller;
         TimerWatcher* _destroy_timer = nullptr;
+        std::vector<StreamParams> _audio_source;
+        std::vector<StreamParams> _video_source;
 
     };
 }

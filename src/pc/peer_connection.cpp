@@ -68,6 +68,12 @@ namespace xrtc {
             audio->set_rtcp_mux(options.use_rtcp_mux);
             _local_desc->add_content(audio);
             _local_desc->add_transport_info(audio->mid(), ice_param, _certificate);
+
+            if(options.send_audio){
+                for(auto stream: _audio_source){
+                    audio->add_stream(stream);
+                }
+            }
         }
         if (options.recv_video || options.send_video) {
             auto video = std::make_shared<VideoContentDescription>();
@@ -75,6 +81,11 @@ namespace xrtc {
             video->set_rtcp_mux(options.use_rtcp_mux);
             _local_desc->add_content(video);
             _local_desc->add_transport_info(video->mid(), ice_param, _certificate);
+            if(options.send_video){
+                for(auto stream: _video_source){
+                    video->add_stream(stream);
+                }
+            }
         }
         if (options.use_rtp_mux) {
             ContentGroup offer_bundle("BUNDLE");
