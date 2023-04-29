@@ -18,6 +18,10 @@ PushStream(EventLoop* el,PortAllocator* allocator, uint64_t uid,const std::strin
         RtcStreamType stream_type() override{
             return RtcStreamType::k_push;
         };
+        bool get_audio_source(std::vector<StreamParams>& source);
+        bool get_video_source(std::vector<StreamParams>& source);
+    private:
+        bool _get_source(const std::string& mid,std::vector<StreamParams>& source);
     };
 }
 

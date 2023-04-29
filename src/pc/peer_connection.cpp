@@ -361,6 +361,9 @@ namespace xrtc {
         }
         if(!audio_ssrc_info.empty()){
             create_track_from_ssrc_info(audio_ssrc_info,audio_tracks);
+            for(auto track:audio_tracks){
+                audio_content->add_stream(track);
+            }
         }
         if(!video_ssrc_info.empty()){
             create_track_from_ssrc_info(video_ssrc_info,video_tracks);
@@ -377,6 +380,9 @@ namespace xrtc {
                 }
             }
 
+            for(auto track:video_tracks){
+                video_content->add_stream(track);
+            }
         }
 
         _remote_desc->add_transport_info(audio_td);

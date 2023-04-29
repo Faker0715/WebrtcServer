@@ -24,4 +24,29 @@ namespace xrtc{
 //        options.use_rtcp_mux = false;
         return pc->create_offer(options);
     }
+
+    bool PushStream::get_audio_source(std::vector<StreamParams> &source) {
+        return _get_source("audio",source);
+    }
+
+    bool PushStream::get_video_source(std::vector<StreamParams> &source) {
+        return _get_source("video",source);
+    }
+
+    bool PushStream::_get_source(const std::string &mid, std::vector<StreamParams> &source) {
+        if(!pc){
+            return false;
+        }
+        auto remote_desc = pc->remote_desc();
+        if(!remote_desc){
+            return false;
+        }
+        auto content = remote_desc->get_content(mid);
+        if(!content){
+            return false;
+        }
+        source = content->streams();
+        return true;
+
+    }
 }

@@ -12,7 +12,6 @@ namespace xrtc{
 
     struct SsrcGroup {
         SsrcGroup(const std::string& semantics, const std::vector<uint32_t>& ssrcs);
-
         std::string semantics;
         std::vector<uint32_t> ssrcs;
     };

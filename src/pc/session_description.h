@@ -11,6 +11,7 @@
 #include "codec_info.h"
 #include "ice/ice_credentials.h"
 #include "ice/candidate.h"
+#include "stream_params.h"
 #include <rtc_base/ssl_fingerprint.h>
 #include <rtc_base/ssl_identity.h>
 #include <rtc_base/rtc_certificate.h>
@@ -67,11 +68,19 @@ namespace xrtc {
         const std::vector<Candidate>& candidates() const {
             return _candidates;
         }
+        const std::vector<StreamParams>& streams(){
+            return _send_streams;
+        };
+        void add_stream(const StreamParams& stream){
+            _send_streams.push_back(stream);
+        }
+
     protected:
         std::vector<std::shared_ptr<CodecInfo>> _codecs;
         RtpDirection _direction;
         bool _rtcp_mux = true;
         std::vector<Candidate> _candidates;
+        std::vector<StreamParams> _send_streams;
     };
 
     class AudioContentDescription : public MediaContentDescription {
