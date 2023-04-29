@@ -41,7 +41,7 @@ add_executable(xrtcserver ${all_src} src/base/log.h
 
 target_link_libraries(xrtcserver libyaml-cpp.a librtcbase.a
         libabsl_strings.a libabsl_throw_delegate.a libev.a libjsoncpp.a libssl.a libcrypto.a -lpthread -ldl
-        libabsl_bad_optional_access.a
+        libabsl_bad_optional_access.a libsrtp2.a
         )
 
 
