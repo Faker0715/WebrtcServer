@@ -21,21 +21,21 @@ namespace xrtc{
             _create_srtp_session();
             new_session = true;
         }
-        bool ret = new_session ? _send_session->set_send(send_cs,send_key,send_key_len,send_extension_ids)
-                               : _send_session->update_send(send_cs,send_key,send_key_len,send_extension_ids);
+//        bool ret = new_session ? _send_session->set_send(send_cs,send_key,send_key_len,send_extension_ids)
+//                               : _send_session->update_send(send_cs,send_key,send_key_len,send_extension_ids);
 
-        if(!ret){
-            reset_params();
-            return false;
-        }
+//        if(!ret){
+//            reset_params();
+//            return false;
+//        }
 
-        ret = new_session ? _recv_session->set_recv(recv_cs,recv_key,recv_key_len,recv_extension_ids)
-                          : _recv_session->update_recv(recv_cs,recv_key,recv_key_len,recv_extension_ids);
+//        ret = new_session ? _recv_session->set_recv(recv_cs,recv_key,recv_key_len,recv_extension_ids)
+//                          : _recv_session->update_recv(recv_cs,recv_key,recv_key_len,recv_extension_ids);
 
-        if(!ret){
-            reset_params();
-            return false;
-        }
+//        if(!ret){
+//            reset_params();
+//            return false;
+//        }
 
         RTC_LOG(LS_INFO) << "SRTP " << (new_session ? "activated" : "updated")
                     << " params: send_cs suite " << send_cs

@@ -297,7 +297,7 @@ namespace xrtc {
         std::vector<std::string> fields;
         size_t size = rtc::tokenize(sdp, '\n', &fields);
         if (size <= 0) {
-            RTC_LOG(LS_WARNING) << "sdp invaild";
+            RTC_LOG(LS_WARNING) << "sdp invalid";
             return -1;
         }
         bool is_rn = false;
