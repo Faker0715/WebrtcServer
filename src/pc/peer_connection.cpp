@@ -9,6 +9,13 @@
 #include "absl/algorithm/container.h"
 
 namespace xrtc {
+    struct SsrcInfo {
+        uint32_t ssrc_id;
+        std::string cname;
+        std::string stream_id;
+        std::string track_id;
+    };
+
     static RtpDirection get_direction(bool send, bool recv) {
         if (send & recv) {
             return RtpDirection::k_send_recv;
@@ -26,16 +33,17 @@ namespace xrtc {
         _transport_controller->signal_candidate_allocate_done.connect(this,
                                                                       &PeerConnection::_on_candidate_allocate_done);
         _transport_controller->signal_connection_state.connect(this,
-                                                       &PeerConnection::_on_connection_state);
+                                                               &PeerConnection::_on_connection_state);
 
 
     }
-    void PeerConnection::_on_connection_state(TransportController*,PeerConnectionState state){
-        signal_connection_state(this,state);
+
+    void PeerConnection::_on_connection_state(TransportController *, PeerConnectionState state) {
+        signal_connection_state(this, state);
     }
 
     PeerConnection::~PeerConnection() {
-        if(_destroy_timer){
+        if (_destroy_timer) {
             _el->delete_timer(_destroy_timer);
             _destroy_timer = nullptr;
         }
@@ -86,9 +94,10 @@ namespace xrtc {
         return 0;
     }
 
-    void PeerConnection::_on_candidate_allocate_done(TransportController */*controller*/, const std::string &transport_name,
-                                                    IceCandidateComponent /*component*/,
-                                                    const std::vector<Candidate> &candidates) {
+    void
+    PeerConnection::_on_candidate_allocate_done(TransportController */*controller*/, const std::string &transport_name,
+                                                IceCandidateComponent /*component*/,
+                                                const std::vector<Candidate> &candidates) {
         for (auto c: candidates) {
             RTC_LOG(LS_INFO) << "candidate gathered, transport_name:" << transport_name << ", " << c.to_string();
         }
@@ -102,32 +111,26 @@ namespace xrtc {
     }
 
 
-    static std::string get_attribute(
-            const std::string &line, bool is_rn) {
+    static std::string get_attribute(const std::string &line) {
         std::vector<std::string> fields;
         size_t size = rtc::tokenize(line, ':', &fields);
         if (size != 2) {
             RTC_LOG(LS_WARNING) << "get attribute error: " << line;
             return "";
         }
-        if (is_rn) {
-            return fields[1].substr(0, fields[1].length() - 1);
-        }
         return fields[1];
-
     }
 
 
     static int parse_transport_info(TransportDescription *td,
-                                    const std::string &line,
-                                    bool is_rn) {
+                                    const std::string &line) {
         if (line.find("a=ice-ufrag") != std::string::npos) {
-            td->ice_ufrag = get_attribute(line, is_rn);
+            td->ice_ufrag = get_attribute(line );
             if (td->ice_ufrag.empty()) {
                 return -1;
             }
         } else if (line.find("a=ice-pwd") != std::string::npos) {
-            td->ice_pwd = get_attribute(line, is_rn);
+            td->ice_pwd = get_attribute(line);
             if (td->ice_pwd.empty()) {
                 return -1;
             }
@@ -142,9 +145,6 @@ namespace xrtc {
             std::string alg = items[0].substr(14);
             absl::c_transform(alg, alg.begin(), ::tolower);
             std::string content = items[1];
-            if (is_rn) {
-                content = content.substr(0, content.length() - 1);
-            }
             td->identity_fingerprint = rtc::SSLFingerprint::CreateUniqueFromRfc4572(
                     alg, content
             );
@@ -157,6 +157,70 @@ namespace xrtc {
         return 0;
     }
 
+    static int parse_ssrc_info(std::vector<SsrcInfo>& ssrc_info,const std::string& line){
+        if(line.find("a=ssrc:") == std::string::npos){
+            return 0;
+        }
+        // rtc5576
+        // a=ssrc:<ssrc-id><attribute>
+        // a=ssrc:<ssrc-id><attribute>:<value>
+        std::string field1, field2;
+        if (!rtc::tokenize_first(line.substr(2), ' ', &field1, &field2)) {
+            RTC_LOG(LS_WARNING) << "parse a=ssrc failed, line: " << line;
+            return -1;
+        }
+
+        // ssrc:<ssrc-id>
+        std::string ssrc_id_s = field1.substr(5);
+        uint32_t ssrc_id = 0;
+        if (!rtc::FromString(ssrc_id_s, &ssrc_id)) {
+            RTC_LOG(LS_WARNING) << "invalid ssrc_id, line: " << line;
+            return -1;
+        }
+
+        // <attribute>
+        std::string attribute;
+        std::string value;
+        if (!rtc::tokenize_first(field2, ':', &attribute, &value)) {
+            RTC_LOG(LS_WARNING) << "get ssrc attribute failed, line: " << line;
+            return -1;
+        }
+
+        // 查找ssrc是否已经有了
+        auto iter = ssrc_info.begin();
+        for (; iter != ssrc_info.end(); ++iter) {
+            if (iter->ssrc_id == ssrc_id) {
+                break;
+            }
+        }
+
+        if (iter == ssrc_info.end()) {
+            SsrcInfo info;
+            info.ssrc_id = ssrc_id;
+            ssrc_info.push_back(info);
+            // 指向最后一个元素
+            iter = ssrc_info.end() - 1;
+        }
+
+        if ("cname" == attribute) {
+            iter->cname = value;
+        } else if ("msid" == attribute) {
+            std::vector<std::string> fields;
+            rtc::split(value, ' ', &fields);
+            if (fields.size() < 1 || fields.size() > 2) {
+                RTC_LOG(LS_WARNING) << "msid format error, line: " << line;
+                return -1;
+            }
+
+            iter->stream_id = fields[0];
+            if (fields.size() == 2) {
+                iter->track_id = fields[1];
+            }
+        }
+
+        return 0;
+
+    }
     int PeerConnection::set_remote_sdp(const std::string &sdp) {
         std::vector<std::string> fields;
         size_t size = rtc::tokenize(sdp, '\n', &fields);
@@ -175,11 +239,17 @@ namespace xrtc {
         auto video_content = std::make_shared<VideoContentDescription>();
         auto audio_td = std::make_shared<TransportDescription>();
         auto video_td = std::make_shared<TransportDescription>();
+
+        std::vector<SsrcInfo> audio_ssrc_info;
+        std::vector<SsrcInfo> video_ssrc_info;
+
+
+
         for (auto field: fields) {
-            if(field.find("m=group:BUNDILE") != std::string::npos) {
+            if (is_rn)
+                field = field.substr(0, field.length() - 1);
+            if (field.find("m=group:BUNDILE") != std::string::npos) {
                 std::vector<std::string> items;
-                if(is_rn)
-                    field = field.substr(0, field.length() - 1);
                 rtc::split(field, ' ', &items);
                 if (items.size() <= 1) {
                     RTC_LOG(LS_WARNING) << "parse m=group error: " << field;
@@ -210,11 +280,17 @@ namespace xrtc {
                 }
             }
             if ("audio" == media_type) {
-                if (parse_transport_info(audio_td.get(), field, is_rn) != 0) {
+                if (parse_transport_info(audio_td.get(), field) != 0) {
+                    return -1;
+                }
+                if(parse_ssrc_info(audio_ssrc_info,field) != 0){
                     return -1;
                 }
             } else if ("video" == media_type) {
-                if (parse_transport_info(video_td.get(), field, is_rn) != 0) {
+                if (parse_transport_info(video_td.get(), field) != 0) {
+                    return -1;
+                }
+                if(parse_ssrc_info(video_ssrc_info,field) != 0){
                     return -1;
                 }
             }
@@ -226,18 +302,20 @@ namespace xrtc {
         return 0;
 
     }
-    void destroy_timer_cb(EventLoop* /*el*/,TimerWatcher* /*w*/,void* data){
-        PeerConnection* pc = (PeerConnection*)data;
+
+    void destroy_timer_cb(EventLoop * /*el*/, TimerWatcher * /*w*/, void *data) {
+        PeerConnection *pc = (PeerConnection *) data;
         delete pc;
     }
+
     void PeerConnection::destroy() {
-        if(_destroy_timer){
+        if (_destroy_timer) {
             _el->delete_timer(_destroy_timer);
             _destroy_timer = nullptr;
         }
-        _destroy_timer = _el->create_timer(destroy_timer_cb,this,false);
+        _destroy_timer = _el->create_timer(destroy_timer_cb, this, false);
         // 让pc的销毁跳出当前方法,避免在on_check中删除了
-        _el->start_timer(_destroy_timer,10000); // 延时10ms销毁
+        _el->start_timer(_destroy_timer, 10000); // 延时10ms销毁
 
     }
 }
