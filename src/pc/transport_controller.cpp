@@ -5,6 +5,7 @@
 #include "transport_controller.h"
 #include "rtc_base/logging.h"
 #include "dtls_transport.h"
+#include "dtls_srtp_transport.h"
 
 namespace xrtc {
     TransportController::TransportController(xrtc::EventLoop *el, PortAllocator *allocator) : _el(el), _ice_agent(
@@ -49,6 +50,9 @@ namespace xrtc {
             dtls->signal_dtls_state.connect(this,&TransportController::_on_dtls_state);
             _ice_agent->signal_ice_state.connect(this,&TransportController::_on_ice_state);
             _add_dtls_transport(dtls);
+            DtlsSrtpTransport* dtls_srtp = new DtlsSrtpTransport(dtls->transport_name(),true);
+            dtls_srtp->set_dtls_transports(dtls,nullptr);
+
 
         }
         _ice_agent->gathering_candidate();
