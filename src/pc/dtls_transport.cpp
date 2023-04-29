@@ -361,6 +361,22 @@ namespace xrtc {
         RTC_LOG(LS_WARNING) << to_string() << ": DTLS handshake error=" << (int) err;
     }
 
+    bool DtlsTransport::get_srtp_crypto_suite(int* selected_crypto_suite) {
+        if(_dtls_state != DtlsTransportState::k_connected){
+            return false;
+        }
+        return _dtls->GetSslCipherSuite(selected_crypto_suite);
+    }
+
+    bool DtlsTransport::export_keying_material(const std::string &label, const uint8_t *context, size_t context_len,
+                                               bool use_context, uint8_t *result, size_t result_len) {
+        return _dtls.get() ? _dtls->ExportKeyingMaterial(label, context, context_len, use_context, result, result_len)
+                           : false;
+
+
+
+    }
+
     rtc::StreamState StreamInterfaceChannel::GetState() const {
         return _state;
     }

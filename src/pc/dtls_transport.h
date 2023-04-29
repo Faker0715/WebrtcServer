@@ -65,7 +65,16 @@ namespace xrtc {
             return _ice_channel;
         }
 
+        bool is_dtls_active(){
+            return _dtls_active;
+        }
 
+        bool export_keying_material(const std::string& label,
+                                    const uint8_t* context,
+                                    size_t context_len,
+                                    bool use_context,
+                                    uint8_t* result,
+                                    size_t result_len);
         std::string to_string();
 
         bool set_local_certificate(rtc::RTCCertificate* cert);
@@ -73,6 +82,10 @@ namespace xrtc {
         DtlsTransportState dtls_state() {
             return _dtls_state;
         }
+
+        bool get_srtp_crypto_suite(int* selected_crypto_suite);
+
+
         sigslot::signal2<DtlsTransport*,DtlsTransportState> signal_dtls_state;
         sigslot::signal1<DtlsTransport*> signal_writable_state;
         sigslot::signal4<DtlsTransport*,const char*,size_t,int64_t> signal_read_packet;

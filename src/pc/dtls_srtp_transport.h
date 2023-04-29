@@ -17,12 +17,14 @@ namespace xrtc{
 
         void set_dtls_transports(DtlsTransport* rtp_dtls_transport,
                                  DtlsTransport* rtcp_dtls_transport);
-
+        bool _extract_params(DtlsTransport* dtls_transport,
+                                                int* selected_crypto_suite,
+                                                rtc::ZeroOnFreeBuffer<unsigned char>* send_key,
+                                                rtc::ZeroOnFreeBuffer<unsigned char>* recv_key);
     private:
         std::string _transport_name;
         DtlsTransport* _rtcp_dtls_transport = nullptr;
         DtlsTransport* _rtp_dtls_transport = nullptr;
-
 
     };
 }
