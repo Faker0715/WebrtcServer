@@ -120,7 +120,9 @@ namespace xrtc {
             }
 
             iter->cname = ssrc_info.cname;
+            iter->stream_id = ssrc_info.stream_id;
             iter->ssrcs.push_back(ssrc_info.ssrc_id);
+
         }
 
 
