@@ -16,8 +16,39 @@ namespace xrtc{
 
     }
 
-    bool SrtpSession::set_send(int cs, const uint8_t *key, size_t key_len, const std::vector<int> &extension_ids) {
-        return _set_key(ssrc_any_outbound,cs,key,key_len,extension_ids);
+    bool SrtpSession::set_send(int cs, const uint8_t* key, size_t key_len,
+                               const std::vector<int>& extension_ids)
+    {
+        return _set_key(ssrc_any_outbound, cs, key, key_len, extension_ids);
+    }
+
+    bool SrtpSession::update_send(int cs, const uint8_t* key, size_t key_len,
+                                  const std::vector<int>& extension_ids)
+    {
+        return _update_key(ssrc_any_outbound, cs, key, key_len, extension_ids);
+    }
+
+    bool SrtpSession::set_recv(int cs, const uint8_t* key, size_t key_len,
+                               const std::vector<int>& extension_ids)
+    {
+        return _set_key(ssrc_any_outbound, cs, key, key_len, extension_ids);
+    }
+
+    bool SrtpSession::update_recv(int cs, const uint8_t* key, size_t key_len,
+                                  const std::vector<int>& extension_ids)
+    {
+        return _update_key(ssrc_any_outbound, cs, key, key_len, extension_ids);
+    }
+
+    bool SrtpSession::_update_key(int type, int cs, const uint8_t* key, size_t key_len,
+                                  const std::vector<int>& extension_ids)
+    {
+        if (!_session) {
+            RTC_LOG(LS_WARNING) << "Failed to update on non-exsiting SRTP session";
+            return false;
+        }
+
+        return _do_set_key(type, cs, key, key_len, extension_ids);
     }
 
     ABSL_CONST_INIT int g_libsrtp_usage_count = 0;
@@ -110,6 +141,7 @@ namespace xrtc{
                 _session = nullptr;
                 return false;
             }
+            srtp_set_user_data(_session,this);
         }else{
             int err = srtp_update(_session,&policy);
             if(err != srtp_err_status_ok){

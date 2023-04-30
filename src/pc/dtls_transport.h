@@ -85,6 +85,9 @@ namespace xrtc {
 
         bool get_srtp_crypto_suite(int* selected_crypto_suite);
 
+        bool writable(){
+            return _writable;
+        }
 
         sigslot::signal2<DtlsTransport*,DtlsTransportState> signal_dtls_state;
         sigslot::signal1<DtlsTransport*> signal_writable_state;
