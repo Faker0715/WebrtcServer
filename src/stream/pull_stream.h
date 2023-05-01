@@ -21,6 +21,7 @@ namespace xrtc{
         void add_audio_source(const std::vector<StreamParams>& source);
         void add_video_source(const std::vector<StreamParams>& source);
 
+        int send_rtp(const char *data, size_t len);
     };
 }
 

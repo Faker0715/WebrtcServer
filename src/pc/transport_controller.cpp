@@ -14,6 +14,11 @@ namespace xrtc {
     }
 
     TransportController::~TransportController() {
+        for(auto dtls_srtp: _dtls_srtp_transport_by_name){
+            delete dtls_srtp.second;
+        }
+        _dtls_srtp_transport_by_name.clear();
+
         for(auto dtls: _dtls_transport_by_name){
             delete dtls.second;
         }
@@ -54,6 +59,7 @@ namespace xrtc {
             dtls_srtp->set_dtls_transports(dtls,nullptr);
             dtls_srtp->signal_rtp_packet_received.connect(this,&TransportController::_on_rtp_packet_received);
             dtls_srtp->signal_rtcp_packet_received.connect(this,&TransportController::_on_rtcp_packet_received);
+            _add_dtls_srtp_transport(dtls_srtp);
         }
         _ice_agent->gathering_candidate();
 
@@ -176,5 +182,32 @@ namespace xrtc {
 
     void TransportController::set_local_certificate(rtc::RTCCertificate *cert) {
         _local_certificate = cert;
+    }
+
+    int TransportController::send_rtp(const std::string &transport_name, const char *data, size_t len) {
+
+        auto dtls_srtp = _get_dtls_srtp_transport(transport_name);
+        if(dtls_srtp){
+            dtls_srtp->send_rtp(data,len);
+        }
+        return -1;
+    }
+
+    void TransportController::_add_dtls_srtp_transport(DtlsSrtpTransport *dtls_srtp) {
+
+        auto iter = _dtls_srtp_transport_by_name.find(dtls_srtp->transport_name());
+        if (iter != _dtls_srtp_transport_by_name.end()) {
+            delete iter->second;
+        }
+        _dtls_srtp_transport_by_name[dtls_srtp->transport_name()] = dtls_srtp;
+    }
+
+    DtlsSrtpTransport *TransportController::_get_dtls_srtp_transport(const std::string &transport_name) {
+
+        auto iter = _dtls_srtp_transport_by_name.find(transport_name);
+        if(iter != _dtls_srtp_transport_by_name.end()){
+            return iter->second;
+        }
+        return nullptr;
     }
 }

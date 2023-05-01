@@ -38,4 +38,12 @@ namespace xrtc {
             pc->add_video_source(source);
         }
     }
+
+    int PullStream::send_rtp(const char *data, size_t len) {
+        if(pc){
+            pc->send_rtp(data,len);
+        }
+        return -1;
+
+    }
 }

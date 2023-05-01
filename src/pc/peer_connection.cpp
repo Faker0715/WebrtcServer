@@ -427,4 +427,12 @@ namespace xrtc {
         _el->start_timer(_destroy_timer, 10000); // 延时10ms销毁
 
     }
+
+    int PeerConnection::send_rtp(const char *data, size_t len) {
+        if(_transport_controller) {
+            // todo: 根据实际情况
+            _transport_controller->send_rtp("audio", data,len);
+        }
+        return -1;
+    }
 }
