@@ -438,10 +438,6 @@ namespace xrtc {
                            : false;
     }
 
-
-
-
-
 }
 
 

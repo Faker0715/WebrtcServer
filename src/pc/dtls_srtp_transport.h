@@ -29,11 +29,12 @@ namespace xrtc {
         void _maybe_setup_dtls_srtp();
         void _setup_dtls_srtp();
         void _on_dtls_state(DtlsTransport* dtls, DtlsTransportState state);
-
+        void _on_read_packet(DtlsTransport *dtls, const char *data, size_t len, int64_t);
     private:
         std::string _transport_name;
         DtlsTransport* _rtp_dtls_transport = nullptr;
         DtlsTransport* _rtcp_dtls_transport = nullptr;
+
     };
 
 }

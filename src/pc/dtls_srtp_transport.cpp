@@ -4,6 +4,8 @@
 
 #include "dtls_srtp_transport.h"
 #include "rtc_base/logging.h"
+#include "module/rtc_rtcp/rtp_utils.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace xrtc {
     // rtc5764
@@ -25,9 +27,25 @@ namespace xrtc {
         if (_rtp_dtls_transport) {
             _rtp_dtls_transport->signal_dtls_state.connect(this,
                                                            &DtlsSrtpTransport::_on_dtls_state);
+            _rtp_dtls_transport->signal_read_packet.connect(this,&DtlsSrtpTransport::_on_read_packet);
         }
 
         _maybe_setup_dtls_srtp();
+    }
+    void DtlsSrtpTransport::_on_read_packet(DtlsTransport* /*dtls*/,const char* data,size_t len,int64_t ts){
+        auto array_new = rtc::MakeArrayView(data,len);
+        // 判断rtp还是rtcp包
+        RtpPacketType packet_type = infer_rtp_packet_type(array_new);
+
+        if(packet_type == RtpPacketType::k_unknown){
+            return ;
+        }
+        rtc::CopyOnWriteBuffer packet(data,len);
+        if(packet_type == RtpPacketType::k_rtcp){
+//            _on_rtcp_packet_received(std::move(packet),ts);
+        }else{
+//            _on_rtp_packet_received(std::move(packet),ts);
+        }
     }
 
     void DtlsSrtpTransport::_on_dtls_state(DtlsTransport* /*dtls*/,

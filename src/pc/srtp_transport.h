@@ -30,7 +30,6 @@ namespace xrtc {
         std::unique_ptr<SrtpSession> _send_session;
         std::unique_ptr<SrtpSession> _recv_session;
 
-
     };
 }
 
