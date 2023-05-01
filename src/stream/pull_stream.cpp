@@ -39,11 +39,4 @@ namespace xrtc {
         }
     }
 
-    int PullStream::send_rtp(const char *data, size_t len) {
-        if(pc){
-            pc->send_rtp(data,len);
-        }
-        return -1;
-
-    }
 }

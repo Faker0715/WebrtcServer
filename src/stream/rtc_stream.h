@@ -46,6 +46,7 @@ namespace xrtc{
             return stream_name;
         }
         std::string to_string();
+        int send_rtp(const char *data, size_t len);
     private:
         void _on_connection_state(PeerConnection *, PeerConnectionState state);
         void _on_rtp_packet_received(PeerConnection *, rtc::CopyOnWriteBuffer *packet, int64_t);

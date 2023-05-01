@@ -49,9 +49,17 @@ namespace xrtc {
         return pc->set_remote_sdp(sdp);
     }
 
+
     std::string RtcStream::to_string() {
         std::stringstream ss;
         ss << "Stream[" << this << "|" << uid << "|" << stream_name << "}";
         return ss.str();
+    }
+    int RtcStream::send_rtp(const char *data, size_t len) {
+        if(pc){
+            return pc->send_rtp(data,len);
+        }
+        return -1;
+
     }
 }

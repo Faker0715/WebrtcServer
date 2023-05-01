@@ -175,4 +175,17 @@ namespace xrtc{
         int err = srtp_unprotect_rtcp(_session,p,out_len);
         return err  == srtp_err_status_ok;
     }
+
+    void SrtpSession::get_auth_tag_len(int *rtp_auth_tag_len, int *rtcp_auth_tag_len) {
+
+        if(!_session) {
+            RTC_LOG(LS_WARNING) << "Failed to get auth tag: no SRTP session";
+        }
+        if(rtp_auth_tag_len){
+            *rtp_auth_tag_len = _rtp_auth_tag_len;
+        }
+        if(rtcp_auth_tag_len){
+            *rtcp_auth_tag_len = _rtcp_auth_tag_len;
+        }
+    }
 }

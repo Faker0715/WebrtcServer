@@ -18,92 +18,92 @@ namespace xrtc {
 
     }
 
-    void DtlsSrtpTransport::set_dtls_transports(DtlsTransport* rtp_dtls_transport,
-                                                DtlsTransport* rtcp_dtls_transport)
-    {
+    void DtlsSrtpTransport::set_dtls_transports(DtlsTransport *rtp_dtls_transport,
+                                                DtlsTransport *rtcp_dtls_transport) {
         _rtp_dtls_transport = rtp_dtls_transport;
         _rtcp_dtls_transport = rtcp_dtls_transport;
 
         if (_rtp_dtls_transport) {
             _rtp_dtls_transport->signal_dtls_state.connect(this,
                                                            &DtlsSrtpTransport::_on_dtls_state);
-            _rtp_dtls_transport->signal_read_packet.connect(this,&DtlsSrtpTransport::_on_read_packet);
+            _rtp_dtls_transport->signal_read_packet.connect(this, &DtlsSrtpTransport::_on_read_packet);
         }
 
         _maybe_setup_dtls_srtp();
     }
-    void DtlsSrtpTransport::_on_read_packet(DtlsTransport* /*dtls*/,const char* data,size_t len,int64_t ts){
-        auto array_new = rtc::MakeArrayView(data,len);
+
+    void DtlsSrtpTransport::_on_read_packet(DtlsTransport * /*dtls*/, const char *data, size_t len, int64_t ts) {
+        auto array_new = rtc::MakeArrayView(data, len);
         // 判断rtp还是rtcp包
         RtpPacketType packet_type = infer_rtp_packet_type(array_new);
 
-        if(packet_type == RtpPacketType::k_unknown){
-            return ;
+        if (packet_type == RtpPacketType::k_unknown) {
+            return;
         }
-        rtc::CopyOnWriteBuffer packet(data,len);
-        if(packet_type == RtpPacketType::k_rtcp){
-            _on_rtcp_packet_received(std::move(packet),ts);
-        }else{
-            _on_rtp_packet_received(std::move(packet),ts);
+        rtc::CopyOnWriteBuffer packet(data, len);
+        if (packet_type == RtpPacketType::k_rtcp) {
+            _on_rtcp_packet_received(std::move(packet), ts);
+        } else {
+            _on_rtp_packet_received(std::move(packet), ts);
         }
 
     }
 
     void DtlsSrtpTransport::_on_rtcp_packet_received(rtc::CopyOnWriteBuffer packet, int64_t ts) {
-        if(!is_srtp_active()){
-            RTC_LOG(LS_WARNING) << "Inactive SRTP transport received a rtp packet, drop it";
+        if (!is_srtp_active()) {
+            RTC_LOG(LS_WARNING) << "Inactive SRTP transport received a rtcp packet, drop it";
             return;
         }
-        char* data = packet.data<char>();
+        char *data = packet.data<char>();
         int len = packet.size();
-        if(!unprotect_rtcp(data,len,&len)){
+        if (!unprotect_rtcp(data, len, &len)) {
             int type = 0;
-            get_rtcp_type(data,len,&type);
-                RTC_LOG(LS_WARNING) << "Failed to unprotect rtcp packet: " <<
-                                    ", size=" << len <<
-                                    ", type=" << type;
+            get_rtcp_type(data, len, &type);
+            RTC_LOG(LS_WARNING) << "Failed to unprotect rtcp packet: " <<
+                                ", size=" << len <<
+                                ", type=" << type;
             return;
         }
         packet.SetSize(len);
-        signal_rtcp_packet_received(this,&packet,ts);
+        signal_rtcp_packet_received(this, &packet, ts);
 
     }
 
 
     void DtlsSrtpTransport::_on_rtp_packet_received(rtc::CopyOnWriteBuffer packet, int64_t ts) {
-        if(!is_srtp_active()){
+        if (!is_srtp_active()) {
             RTC_LOG(LS_WARNING) << "Inactive SRTP transport received a rtp packet, drop it";
             return;
         }
-        char* data = packet.data<char>();
+        char *data = packet.data<char>();
         int len = packet.size();
-        if(!unprotect_rtp(data,len,&len)){
+        if (!unprotect_rtp(data, len, &len)) {
             const int k_fail_log = 100;
-            if(_unprotect_fail_count % k_fail_log == 0){
+            if (_unprotect_fail_count % k_fail_log == 0) {
                 RTC_LOG(LS_WARNING) << "Failed to unprotect rtp packet: " <<
-                    ", size=" << len <<
-                    ", seqnum=" << parse_rtp_sequence_number(packet) <<
-                    ", ssrc=" << parse_rtp_ssrc(packet) <<
-                    ", unprotect_fail_count=" << _unprotect_fail_count;
+                                    ", size=" << len <<
+                                    ", seqnum=" << parse_rtp_sequence_number(packet) <<
+                                    ", ssrc=" << parse_rtp_ssrc(packet) <<
+                                    ", unprotect_fail_count=" << _unprotect_fail_count;
 
             }
             _unprotect_fail_count++;
             return;
         }
         packet.SetSize(len);
-        signal_rtp_packet_received(this,&packet,ts);
+        signal_rtp_packet_received(this, &packet, ts);
 
     }
 
-    void DtlsSrtpTransport::_on_dtls_state(DtlsTransport* /*dtls*/,
-                                           DtlsTransportState state)
-    {
+    void DtlsSrtpTransport::_on_dtls_state(DtlsTransport * /*dtls*/,
+                                           DtlsTransportState state) {
         if (state != DtlsTransportState::k_connected) {
             reset_params();
             return;
         }
         _maybe_setup_dtls_srtp();
     }
+
     bool DtlsSrtpTransport::is_dtls_writable() {
         // 根据是否复用
         auto rtcp_transport = _rtcp_mux_enabled ? nullptr : _rtcp_dtls_transport;
@@ -134,8 +134,7 @@ namespace xrtc {
             !set_rtp_params(selected_crypto_suite,
                             &send_key[0], send_key.size(), send_extension_ids,
                             selected_crypto_suite,
-                            &recv_key[0], recv_key.size(), recv_extension_ids))
-        {
+                            &recv_key[0], recv_key.size(), recv_extension_ids)) {
             RTC_LOG(LS_WARNING) << "DTLS-SRTP rtp param install failed";
         }
     }
@@ -165,8 +164,7 @@ namespace xrtc {
 
         rtc::ZeroOnFreeBuffer<unsigned char> dtls_buffer(key_len * 2 + salt_len * 2);
         if (!dtls_transport->export_keying_material(k_dtls_srtp_exporter_label,
-                                                    NULL, 0, false, &dtls_buffer[0], dtls_buffer.size()))
-        {
+                                                    NULL, 0, false, &dtls_buffer[0], dtls_buffer.size())) {
             RTC_LOG(LS_WARNING) << "Extracting DTLS-SRTP param failed";
             return false;
         }
@@ -190,8 +188,27 @@ namespace xrtc {
 
     }
 
-    int DtlsSrtpTransport::send_rtp(const char *data, size_t len) {
-        return -1;
+    int DtlsSrtpTransport::send_rtp(const char *buf, size_t size) {
+        if (!is_srtp_active()) {
+            RTC_LOG(LS_WARNING) << "Failed to send rtp packet : Inactive srtp transport";
+            return -1;
+        }
+        int rtp_auth_tag_len = 0;
+        get_send_auth_tag_len(&rtp_auth_tag_len, nullptr);
+        rtc::CopyOnWriteBuffer packet(buf,size,size + rtp_auth_tag_len);
+        char* data = (char*)packet.data();
+        int len = packet.size();
+        uint16_t seq_num = parse_rtp_sequence_number(packet);
+        if(!protect_rtp(data,len,packet.capacity(),&len)){
+            RTC_LOG(LS_WARNING) << "Failed to protect rtp packet,size=" << len <<
+                                ",seqnum=" << seq_num <<
+                                ",ssrc=" << parse_rtp_ssrc(packet) <<
+                                ",last_send_seq_num=" << _last_send_seq_num;
+            return -1;
+        }
+        _last_send_seq_num = seq_num;
+        packet.SetSize(len);
+        return _rtp_dtls_transport->send_packet(packet.cdata(),packet.size());
     }
 
 }

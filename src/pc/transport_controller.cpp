@@ -188,7 +188,7 @@ namespace xrtc {
 
         auto dtls_srtp = _get_dtls_srtp_transport(transport_name);
         if(dtls_srtp){
-            dtls_srtp->send_rtp(data,len);
+            return dtls_srtp->send_rtp(data,len);
         }
         return -1;
     }
