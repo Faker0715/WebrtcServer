@@ -56,8 +56,16 @@ namespace xrtc{
         _recv_session.reset(new SrtpSession());
     }
 
-    bool SrtpTransport::is_dtls_active() {
+    bool SrtpTransport::is_srtp_active() {
         return _send_session && _recv_session;
+    }
+
+    bool SrtpTransport::unprotect_rtp(void *p, int in_len, int *out_len) {
+        // 强校验
+        if(!is_srtp_active()){
+            return false;
+        }
+        return _recv_session->unprotect_rtp(p,in_len,out_len);
     }
 }
 

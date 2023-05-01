@@ -14,6 +14,9 @@ namespace xrtc{
         k_unknown
     };
     RtpPacketType infer_rtp_packet_type(rtc::ArrayView<const char> packet);
+    uint16_t parse_rtp_sequence_number(rtc::ArrayView<const uint8_t> packet);
+    uint32_t parse_rtp_ssrc(rtc::ArrayView<const uint8_t> packet);
+
 
 }
 

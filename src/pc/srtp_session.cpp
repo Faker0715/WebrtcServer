@@ -153,4 +153,15 @@ namespace xrtc{
         _rtcp_auth_tag_len = policy.rtcp.auth_tag_len;
         return true;
     }
+
+    bool SrtpSession::unprotect_rtp(void *p, int in_len, int *out_len) {
+        if(!_session){
+            RTC_LOG(LS_WARNING) << "Failed to unprotect rtp on non-existing SRTP session";
+            return false;
+        }
+        *out_len = in_len;
+        int err = srtp_unprotect(_session,p,out_len);
+        return err  == srtp_err_status_ok;
+
+    }
 }
