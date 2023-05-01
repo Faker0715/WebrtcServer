@@ -42,12 +42,34 @@ namespace xrtc {
         }
         rtc::CopyOnWriteBuffer packet(data,len);
         if(packet_type == RtpPacketType::k_rtcp){
-//            _on_rtcp_packet_received(std::move(packet),ts);
+            _on_rtcp_packet_received(std::move(packet),ts);
         }else{
-//            _on_rtp_packet_received(std::move(packet),ts);
+            _on_rtp_packet_received(std::move(packet),ts);
         }
 
     }
+
+    void DtlsSrtpTransport::_on_rtcp_packet_received(rtc::CopyOnWriteBuffer packet, int64_t ts) {
+        if(!is_srtp_active()){
+            RTC_LOG(LS_WARNING) << "Inactive SRTP transport received a rtp packet, drop it";
+            return;
+        }
+        char* data = packet.data<char>();
+        int len = packet.size();
+        if(!unprotect_rtcp(data,len,&len)){
+            int type = 0;
+            get_rtcp_type(data,len,&type);
+                RTC_LOG(LS_WARNING) << "Failed to unprotect rtcp packet: " <<
+                                    ", size=" << len <<
+                                    ", type=" << type;
+            return;
+        }
+        packet.SetSize(len);
+        signal_rtcp_packet_received(this,&packet,ts);
+
+    }
+
+
     void DtlsSrtpTransport::_on_rtp_packet_received(rtc::CopyOnWriteBuffer packet, int64_t ts) {
         if(!is_srtp_active()){
             RTC_LOG(LS_WARNING) << "Inactive SRTP transport received a rtp packet, drop it";
