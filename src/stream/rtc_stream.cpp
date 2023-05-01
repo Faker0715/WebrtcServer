@@ -11,7 +11,19 @@ namespace xrtc {
                                                   video(video),
                                                   log_id(log_id), pc(new PeerConnection(el,allocator)) {
         pc->signal_connection_state.connect(this,&RtcStream::_on_connection_state);
+        pc->signal_rtp_packet_received.connect(this,&RtcStream::_on_rtp_packet_received);
+        pc->signal_rtcp_packet_received.connect(this,&RtcStream::_on_rtcp_packet_received);
 
+    }
+    void RtcStream::_on_rtp_packet_received(PeerConnection*,rtc::CopyOnWriteBuffer* packet,int64_t /*ts*/){
+        if(_listener){
+            _listener->on_rtp_packet_received(this,(const char*)packet->data(),packet->size());
+        }
+    }
+    void RtcStream::_on_rtcp_packet_received(PeerConnection*,rtc::CopyOnWriteBuffer* packet,int64_t /*ts*/){
+        if(_listener){
+            _listener->on_rtcp_packet_received(this,(const char*)packet->data(),packet->size());
+        }
     }
     void RtcStream::_on_connection_state(PeerConnection*,PeerConnectionState state){
         if(_state == state){

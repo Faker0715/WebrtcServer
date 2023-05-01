@@ -20,9 +20,9 @@ namespace xrtc{
     };
     class RtcStreamListener{
     public:
-
         virtual void on_connection_state(RtcStream* stream,PeerConnectionState state) = 0;
-
+        virtual void on_rtp_packet_received(RtcStream* stream,const char* data,size_t len) = 0;
+        virtual void on_rtcp_packet_received(RtcStream* stream,const char* data,size_t len) = 0;
     };
 
 
@@ -48,6 +48,8 @@ namespace xrtc{
         std::string to_string();
     private:
         void _on_connection_state(PeerConnection *, PeerConnectionState state);
+        void _on_rtp_packet_received(PeerConnection *, rtc::CopyOnWriteBuffer *packet, int64_t);
+        void _on_rtcp_packet_received(PeerConnection *, rtc::CopyOnWriteBuffer *packet, int64_t);
     protected:
         EventLoop* el;
         uint64_t uid;
@@ -59,6 +61,7 @@ namespace xrtc{
         friend class RtcStreamManager;
         PeerConnectionState _state = PeerConnectionState::k_new;
         RtcStreamListener* _listener = nullptr;
+
     };
 
 }

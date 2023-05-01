@@ -35,10 +35,16 @@ namespace xrtc {
                                                                       &PeerConnection::_on_candidate_allocate_done);
         _transport_controller->signal_connection_state.connect(this,
                                                                &PeerConnection::_on_connection_state);
-
+        _transport_controller->signal_rtp_packet_received.connect(this,&PeerConnection::_on_rtp_packet_received);
+        _transport_controller->signal_rtcp_packet_received.connect(this,&PeerConnection::_on_rtcp_packet_received);
 
     }
-
+    void PeerConnection::_on_rtp_packet_received(TransportController* controller,rtc::CopyOnWriteBuffer* packet,int64_t ts){
+        signal_rtp_packet_received(this,packet,ts);
+    }
+    void PeerConnection::_on_rtcp_packet_received(TransportController* controller,rtc::CopyOnWriteBuffer* packet,int64_t ts){
+        signal_rtcp_packet_received(this,packet,ts);
+    }
     void PeerConnection::_on_connection_state(TransportController *, PeerConnectionState state) {
         signal_connection_state(this, state);
     }
