@@ -146,7 +146,6 @@ namespace xrtc {
                         return;
                     }
 
-                    RTC_LOG(LS_INFO) << "==============rtp received: " << len;
                     signal_read_packet(this, buf, len, ts);
                 }
 
