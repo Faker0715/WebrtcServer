@@ -22,6 +22,7 @@ public:
     bool is_dtls_writable();
     const std::string& transport_name() { return _transport_name; }
     int send_rtp(const char* data, size_t len);
+    int send_rtcp(const char* data, size_t len);
 
     sigslot::signal3<DtlsSrtpTransport*, rtc::CopyOnWriteBuffer*, int64_t>
         signal_rtp_packet_received;

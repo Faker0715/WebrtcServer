@@ -14,7 +14,7 @@ PullStream::PullStream(EventLoop* el, PortAllocator* allocator,
 }
 
 PullStream::~PullStream() {
-    RTC_LOG(LS_INFO) << to_string() << ": Push stream destroy.";
+    RTC_LOG(LS_INFO) << to_string() << ": Pull stream destroy.";
 }
 
 std::string PullStream::create_offer() {

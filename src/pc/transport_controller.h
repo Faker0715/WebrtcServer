@@ -23,6 +23,7 @@ public:
     int set_remote_description(SessionDescription* desc);
     void set_local_certificate(rtc::RTCCertificate* cert);
     int send_rtp(const std::string& transport_name, const char* data, size_t len);
+    int send_rtcp(const std::string& transport_name, const char* data, size_t len);
 
     sigslot::signal4<TransportController*, const std::string&, IceCandidateComponent,
         const std::vector<Candidate>&> signal_candidate_allocate_done;

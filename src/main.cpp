@@ -1,20 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file main.cpp
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
 #include <signal.h>
 
 #include "base/conf.h"

@@ -26,6 +26,7 @@ public:
     bool unprotect_rtp(void* p, int in_len, int* out_len);
     bool unprotect_rtcp(void* p, int in_len, int* out_len);
     bool protect_rtp(void* p, int in_len, int max_len, int* out_len);
+    bool protect_rtcp(void* p, int in_len, int max_len, int* out_len);
     void get_auth_tag_len(int* rtp_auth_tag_len, int* rtcp_auth_tag_len);
 
 private:

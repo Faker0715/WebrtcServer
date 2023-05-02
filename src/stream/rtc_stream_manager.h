@@ -35,7 +35,8 @@ public:
             const std::string& answer, const std::string& stream_type, 
             uint32_t log_id);
     int stop_push(uint64_t uid, const std::string& stream_name);
- 
+    int stop_pull(uint64_t uid, const std::string& stream_name);
+
     void on_connection_state(RtcStream* stream, PeerConnectionState state) override;
     void on_rtp_packet_received(RtcStream* stream, const char* data, size_t len) override;
     void on_rtcp_packet_received(RtcStream* stream, const char* data, size_t len) override;

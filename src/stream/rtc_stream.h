@@ -44,6 +44,7 @@ public:
     const std::string& get_stream_name() { return stream_name; }
     
     int send_rtp(const char* data, size_t len);
+    int send_rtcp(const char* data, size_t len);
 
     std::string to_string();
 
