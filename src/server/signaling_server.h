@@ -1,22 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file signaling_server.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __SIGNALING_SERVER_H_
 #define  __SIGNALING_SERVER_H_
 

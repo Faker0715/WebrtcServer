@@ -1,20 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file signaling_server.cpp
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
 #include <unistd.h>
 
 #include <rtc_base/logging.h>

@@ -1,75 +1,67 @@
-//
-// Created by faker on 23-4-4.
-//
 
-#ifndef XRTCSERVER_TRANSPORT_CONTROLLER_H
-#define XRTCSERVER_TRANSPORT_CONTROLLER_H
+#ifndef  __TRANSPORT_CONTROLLER_H_
+#define  __TRANSPORT_CONTROLLER_H_
 
-#include "base/event_loop.h"
+#include <map>
+
 #include "ice/ice_agent.h"
-#include "session_description.h"
-#include "ice/port_allocator.h"
-#include "dtls_transport.h"
+#include "pc/session_description.h"
 #include "pc/peer_connection_def.h"
-#include "dtls_srtp_transport.h"
 
 namespace xrtc {
-    enum class DtlsTransportState;
 
-    class TransportController : public sigslot::has_slots<> {
-    public:
-        TransportController(EventLoop *el, PortAllocator *allocator);
+class DtlsTransport;
+enum class DtlsTransportState;
+class DtlsSrtpTransport;
 
-        ~TransportController();
+class TransportController : public sigslot::has_slots<> {
+public:
+    TransportController(EventLoop* el, PortAllocator* allocator);
+    ~TransportController();
+    
+    int set_local_description(SessionDescription* desc);
+    int set_remote_description(SessionDescription* desc);
+    void set_local_certificate(rtc::RTCCertificate* cert);
+    int send_rtp(const std::string& transport_name, const char* data, size_t len);
 
-        int set_local_description(SessionDescription *desc);
+    sigslot::signal4<TransportController*, const std::string&, IceCandidateComponent,
+        const std::vector<Candidate>&> signal_candidate_allocate_done;
+    sigslot::signal2<TransportController*, PeerConnectionState> signal_connection_state;
+    sigslot::signal3<TransportController*, rtc::CopyOnWriteBuffer*, int64_t>
+        signal_rtp_packet_received;
+    sigslot::signal3<TransportController*, rtc::CopyOnWriteBuffer*, int64_t>
+        signal_rtcp_packet_received;
 
-        int set_remote_description(SessionDescription *desc);
+private:
+    void on_candidate_allocate_done(IceAgent* agent,
+            const std::string& transport_name,
+            IceCandidateComponent component,
+            const std::vector<Candidate>& candidates);
+    void _on_dtls_receiving_state(DtlsTransport*);
+    void _on_dtls_writable_state(DtlsTransport*);
+    void _on_dtls_state(DtlsTransport*, DtlsTransportState);
+    void _on_ice_state(IceAgent*, IceTransportState);
+    void _on_rtp_packet_received(DtlsSrtpTransport*,
+        rtc::CopyOnWriteBuffer* packet, int64_t ts);
+    void _on_rtcp_packet_received(DtlsSrtpTransport*,
+            rtc::CopyOnWriteBuffer* packet, int64_t ts);
+    void _update_state();
+    void _add_dtls_transport(DtlsTransport* dtls);
+    DtlsTransport* _get_dtls_transport(const std::string& transport_name);
+    void _add_dtls_srtp_transport(DtlsSrtpTransport* dtls);
+    DtlsSrtpTransport* _get_dtls_srtp_transport(const std::string& transport_name);
 
-        void set_local_certificate(rtc::RTCCertificate *cert);
+private:
+    EventLoop* _el;
+    IceAgent* _ice_agent;
+    std::map<std::string, DtlsTransport*> _dtls_transport_by_name;
+    std::map<std::string, DtlsSrtpTransport*> _dtls_srtp_transport_by_name;
+    rtc::RTCCertificate* _local_certificate = nullptr;
+    PeerConnectionState _pc_state = PeerConnectionState::k_new;
+};
 
-        DtlsTransport *_get_dtls_transport(const std::string &transport_name);
-        DtlsSrtpTransport* _get_dtls_srtp_transport(const std::string &transport_name);
+} // namespace xrtc
 
-        int send_rtp(const std::string &transport_name, const char *data, size_t len);
-
-        sigslot::signal4<TransportController *, const std::string &, IceCandidateComponent, const std::vector<Candidate> &> signal_candidate_allocate_done;
-        sigslot::signal2<TransportController *, PeerConnectionState> signal_connection_state;
-        sigslot::signal3<TransportController *, rtc::CopyOnWriteBuffer *, int64_t> signal_rtp_packet_received;
-        sigslot::signal3<TransportController *, rtc::CopyOnWriteBuffer *, int64_t> signal_rtcp_packet_received;
+#endif  //__TRANSPORT_CONTROLLER_H_
 
 
-    private:
-        void
-        on_candidate_allocate_done(IceAgent *agent, const std::string &transport_name, IceCandidateComponent component,
-                                   const std::vector<Candidate> &candidates);
-
-        void _add_dtls_transport(DtlsTransport *dtls);
-
-        void _on_dtls_receiving_state(DtlsTransport *);
-
-        void _on_dtls_writable_state(DtlsTransport *);
-
-        void _on_dtls_state(DtlsTransport *, DtlsTransportState);
-
-        void _update_state();
-
-        void _on_ice_state(IceAgent *, IceTransportState);
-
-        void _on_rtp_packet_received(DtlsSrtpTransport *, rtc::CopyOnWriteBuffer *packet, int64_t ts);
-
-        void _on_rtcp_packet_received(DtlsSrtpTransport *, rtc::CopyOnWriteBuffer *packet, int64_t ts);
-
-        void _add_dtls_srtp_transport(DtlsSrtpTransport *pTransport);
-    private:
-        EventLoop *_el;
-        IceAgent *_ice_agent;
-        std::map<std::string, DtlsTransport *> _dtls_transport_by_name;
-        std::map<std::string, DtlsSrtpTransport*> _dtls_srtp_transport_by_name;
-        rtc::RTCCertificate *_local_certificate = nullptr;
-        PeerConnectionState _pc_state = PeerConnectionState::k_new;
-
-    };
-
-}
-#endif //XRTCSERVER_TRANSPORT_CONTROLLER_H

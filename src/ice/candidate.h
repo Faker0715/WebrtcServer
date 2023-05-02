@@ -1,33 +1,36 @@
-//
-// Created by faker on 23-4-8.
-//
-
-#ifndef XRTCSERVER_CANDIDATE_H
-#define XRTCSERVER_CANDIDATE_H
+#ifndef  __ICE_CANDIDATE_H_
+#define  __ICE_CANDIDATE_H_
 
 #include <string>
-#include "ice_def.h"
-#include "rtc_base/socket_address.h"
 
-namespace xrtc{
+#include <rtc_base/socket_address.h>
+
+#include "ice/ice_def.h"
+
+namespace xrtc {
+
 class Candidate {
 public:
     uint32_t get_priority(uint32_t type_preference,
-                          int network_adapter_preference,
-                            int relay_preference);
+            int network_adapter_preference,
+            int relay_preference);
+    
     std::string to_string() const;
+
 public:
     IceCandidateComponent component;
-    std::string  protocol;
+    std::string protocol;
     rtc::SocketAddress address;
+    int port = 0;
+    uint32_t priority;
     std::string username;
     std::string password;
     std::string type;
     std::string foundation;
-    int port = 0;
-    uint32_t priority;
 };
-}
+
+} // namespace xrtc
+
+#endif  //__ICE_CANDIDATE_H_
 
 
-#endif //XRTCSERVER_CANDIDATE_H

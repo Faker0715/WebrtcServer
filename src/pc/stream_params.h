@@ -1,29 +1,33 @@
-//
-// Created by faker on 23-4-29.
-//
 
-#ifndef XRTCSERVER_STREAM_PARAMS_H
-#define XRTCSERVER_STREAM_PARAMS_H
 
-#include <string>
+#ifndef  __PC_STREAM_PARAMS_H_
+#define  __PC_STREAM_PARAMS_H_
+
 #include <vector>
+#include <string>
 
-namespace xrtc{
+namespace xrtc {
 
-    struct SsrcGroup {
-        SsrcGroup(const std::string& semantics, const std::vector<uint32_t>& ssrcs);
-        std::string semantics;
-        std::vector<uint32_t> ssrcs;
-    };
-    struct StreamParams{
-        bool has_ssrc(uint32_t ssrc);
-        std::string id;
-        std::vector<uint32_t> ssrcs;
-        std::vector<SsrcGroup> ssrc_groups;
-        std::string cname;
-        std::string stream_id;
-    };
-}
+struct SsrcGroup {
+    SsrcGroup(const std::string& semantics, const std::vector<uint32_t>& ssrcs);
+
+    std::string semantics;
+    std::vector<uint32_t> ssrcs;
+};
+
+struct StreamParams {
+    bool has_ssrc(uint32_t ssrc);
+
+    std::string id;
+    std::vector<uint32_t> ssrcs;
+    std::vector<SsrcGroup> ssrc_groups;
+    std::string cname;
+    std::string stream_id;
+};
+
+} // namespace xrtc
 
 
-#endif //XRTCSERVER_STREAM_PARAMS_H
+#endif  //__PC_STREAM_PARAMS_H_
+
+

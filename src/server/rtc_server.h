@@ -1,22 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file rtc_server.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __RTC_SERVER_H_
 #define  __RTC_SERVER_H_
 
@@ -24,9 +5,10 @@
 #include <queue>
 #include <mutex>
 
+#include <rtc_base/rtc_certificate.h>
+
 #include "xrtcserver_def.h"
 #include "base/event_loop.h"
-#include <rtc_base/rtc_certificate.h>
 
 namespace xrtc {
 
@@ -64,6 +46,7 @@ private:
     int _create_worker(int worker_id);
     RtcWorker* _get_worker(const std::string& stream_name);
     int _generate_and_check_certificate();
+
 private:
     EventLoop* _el;
     RtcServerOptions _options;
@@ -79,7 +62,6 @@ private:
 
     std::vector<RtcWorker*> _workers;
     rtc::scoped_refptr<rtc::RTCCertificate> _certificate;
-
 };
 
 } // namespace xrtc

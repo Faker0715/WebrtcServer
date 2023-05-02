@@ -1,31 +1,13 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file tcp_connection.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __TCP_CONNECTION_H_
 #define  __TCP_CONNECTION_H_
 
-#include <rtc_base/sds.h>
 #include <list>
+
+#include <rtc_base/sds.h>
+#include <rtc_base/slice.h>
 
 #include "base/xhead.h"
 #include "base/event_loop.h"
-#include "rtc_base/slice.h"
 
 namespace xrtc {
 
