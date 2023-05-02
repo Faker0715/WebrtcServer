@@ -24,6 +24,7 @@ public:
     virtual void on_connection_state(RtcStream* stream, PeerConnectionState state) = 0;
     virtual void on_rtp_packet_received(RtcStream* stream, const char* data, size_t len) = 0;
     virtual void on_rtcp_packet_received(RtcStream* stream, const char* data, size_t len) = 0;
+    virtual void on_stream_exception(RtcStream* stream) = 0;
 };
 
 class RtcStream : public sigslot::has_slots<> {

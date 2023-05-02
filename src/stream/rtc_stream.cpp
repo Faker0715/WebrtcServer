@@ -61,7 +61,9 @@ namespace xrtc {
     void ice_timeout_cb(EventLoop */*el*/, TimerWatcher */*w*/, void *data) {
         RtcStream *stream = (RtcStream *) data;
         if (stream->_state != PeerConnectionState::k_connected) {
-            delete stream;
+            if(stream->_listener){
+                stream->_listener->on_stream_exception(stream);
+            }
         }
     }
 
