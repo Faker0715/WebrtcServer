@@ -64,10 +64,13 @@ protected:
     uint32_t log_id;
 
     PeerConnection* pc;
+private:
     PeerConnectionState _state = PeerConnectionState::k_new;
     RtcStreamListener* _listener = nullptr;
+    TimerWatcher* _ice_timeout_watcher = nullptr;
 
     friend class RtcStreamManager;
+    friend void ice_timeout_cb(EventLoop *el, TimerWatcher *w, void *data);
 };
 
 } // namespace xrtc

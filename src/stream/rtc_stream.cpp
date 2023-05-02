@@ -4,6 +4,7 @@
 
 namespace xrtc {
 
+    const size_t k_ice_timeout = 30000;
     RtcStream::RtcStream(EventLoop *el, PortAllocator *allocator,
                          uint64_t uid, const std::string &stream_name,
                          bool audio, bool video, uint32_t log_id) :
@@ -16,6 +17,10 @@ namespace xrtc {
     }
 
     RtcStream::~RtcStream() {
+        if (_ice_timeout_watcher) {
+            el->delete_timer(_ice_timeout_watcher);
+            _ice_timeout_watcher = nullptr;
+        }
         pc->destroy();
     }
 
@@ -27,6 +32,12 @@ namespace xrtc {
         RTC_LOG(LS_INFO) << to_string() << ": PeerConnectionState change from " << _state
                          << " to " << state;
         _state = state;
+        if (_state == PeerConnectionState::k_connected) {
+            if (_ice_timeout_watcher) {
+                el->delete_timer(_ice_timeout_watcher);
+                _ice_timeout_watcher = nullptr;
+            }
+        }
 
         if (_listener) {
             _listener->on_connection_state(this, state);
@@ -47,8 +58,16 @@ namespace xrtc {
         }
     }
 
+    void ice_timeout_cb(EventLoop */*el*/, TimerWatcher */*w*/, void *data) {
+        RtcStream *stream = (RtcStream *) data;
+        if (stream->_state != PeerConnectionState::k_connected) {
+            delete stream;
+        }
+    }
 
     int RtcStream::start(rtc::RTCCertificate *certificate) {
+        _ice_timeout_watcher = el->create_timer(ice_timeout_cb, this, false);
+        el->start_timer(_ice_timeout_watcher, k_ice_timeout * 1000);
         return pc->init(certificate);
     }
 
@@ -70,7 +89,7 @@ namespace xrtc {
     }
 
     int RtcStream::send_rtcp(const char *data, size_t len) {
-        if(pc){
+        if (pc) {
             return pc->send_rtcp(data, len);
         }
         return -1;

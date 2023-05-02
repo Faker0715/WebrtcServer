@@ -10,7 +10,13 @@ namespace xrtc {
     }
 
     SrtpSession::~SrtpSession() {
-
+        if(_session){
+            srtp_set_user_data(_session, nullptr);
+            srtp_dealloc(_session);
+        }
+        if(_inited){
+            _decrement_libsrtp_usage_count_and_maybe_deinit();
+        }
     }
 
     bool SrtpSession::set_send(int cs, const uint8_t *key, size_t key_len,
@@ -94,6 +100,17 @@ namespace xrtc {
         return true;
     }
 
+    void SrtpSession::_decrement_libsrtp_usage_count_and_maybe_deinit() {
+        webrtc::GlobalMutexLock ls(&g_libsrtp_lock);
+
+        if (--g_libsrtp_usage_count) {
+            int err = srtp_shutdown();
+            if (err) {
+                RTC_LOG(LS_WARNING) << "Failed to p, err: " << err;
+            }
+
+        }
+    }
     bool SrtpSession::_set_key(int type, int cs, const uint8_t *key, size_t key_len,
                                const std::vector<int> &extension_ids) {
         if (_session) {
