@@ -4,7 +4,7 @@
 #
 #add_executable(xrtcserver
 #    src/main.cpp)
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.16)
 project(xrtcserver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
