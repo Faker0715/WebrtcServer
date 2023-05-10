@@ -59,7 +59,8 @@ namespace xrtc {
         if (!_local_desc) {
             return;
         }
-
+        Candidate* candidate = const_cast<Candidate *>(&candidates[0]);
+        candidate->address.SetIP("public ip");
         auto content = _local_desc->get_content(transport_name);
         if (content) {
             content->add_candidates(candidates);
