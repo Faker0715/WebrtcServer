@@ -5,6 +5,8 @@
 #include "ice/udp_port.h"
 #include "ice/ice_transport_channel.h"
 #include "ice/ice_connection.h"
+#include "module/rtp_rtcp/rtp_utils.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace xrtc {
 
@@ -175,7 +177,21 @@ void IceTransportChannel::_add_connection(IceConnection* conn) {
 void IceTransportChannel::_on_read_packet(IceConnection* /*conn*/,
         const char* buf, size_t len, int64_t ts)
 {
-    signal_read_packet(this, buf, len, ts);
+
+    auto array_view = rtc::MakeArrayView(buf, len);
+    RtpPacketType packet_type = infer_rtp_packet_type(array_view);
+
+    if (packet_type == RtpPacketType::k_unknown) {
+        return;
+    }
+
+    rtc::CopyOnWriteBuffer packet(buf, len);
+    if (packet_type == RtpPacketType::k_rtcp) {
+        signal_rtcp_packet_received(this, &packet, ts);
+    } else {
+        signal_rtp_packet_received(this, &packet, ts);
+    }
+//    signal_read_packet(this, buf, len, ts);
 }
 
 void IceTransportChannel::_on_connection_destroyed(IceConnection* conn) {

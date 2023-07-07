@@ -42,10 +42,14 @@ private:
     void _on_dtls_writable_state(DtlsTransport*);
     void _on_dtls_state(DtlsTransport*, DtlsTransportState);
     void _on_ice_state(IceAgent*, IceTransportState);
-    void _on_rtp_packet_received(DtlsSrtpTransport*,
-        rtc::CopyOnWriteBuffer* packet, int64_t ts);
-    void _on_rtcp_packet_received(DtlsSrtpTransport*,
-            rtc::CopyOnWriteBuffer* packet, int64_t ts);
+//    void _on_rtp_packet_received(DtlsSrtpTransport*,
+//        rtc::CopyOnWriteBuffer* packet, int64_t ts);
+//    void _on_rtcp_packet_received(DtlsSrtpTransport*,
+//            rtc::CopyOnWriteBuffer* packet, int64_t ts);
+    void _on_rtp_packet_received(IceTransportChannel*,
+                                 rtc::CopyOnWriteBuffer* packet, int64_t ts);
+    void _on_rtcp_packet_received(IceTransportChannel*,
+                                  rtc::CopyOnWriteBuffer* packet, int64_t ts);
     void _update_state();
     void _add_dtls_transport(DtlsTransport* dtls);
     DtlsTransport* _get_dtls_transport(const std::string& transport_name);

@@ -56,27 +56,29 @@ namespace xrtc {
                                            IceParameters(td->ice_ufrag, td->ice_pwd));
             }
 
-            DtlsTransport *dtls = new DtlsTransport(
-                    _ice_agent->get_channel(mid, IceCandidateComponent::RTP));
-            dtls->set_local_certificate(_local_certificate);
-            dtls->signal_receiving_state.connect(this,
-                                                 &TransportController::_on_dtls_receiving_state);
-            dtls->signal_receiving_state.connect(this,
-                                                 &TransportController::_on_dtls_writable_state);
-            dtls->signal_dtls_state.connect(this,
-                                            &TransportController::_on_dtls_state);
-            _ice_agent->signal_ice_state.connect(this,
-                                                 &TransportController::_on_ice_state);
-            _add_dtls_transport(dtls);
+            _ice_agent->get_channel(mid, IceCandidateComponent::RTP)->signal_rtp_packet_received.connect(this,&TransportController::_on_rtp_packet_received);
 
-            DtlsSrtpTransport *dtls_srtp = new DtlsSrtpTransport(dtls->transport_name(),
-                                                                 true);
-            dtls_srtp->set_dtls_transports(dtls, nullptr);
-            dtls_srtp->signal_rtp_packet_received.connect(this,
-                                                          &TransportController::_on_rtp_packet_received);
-            dtls_srtp->signal_rtcp_packet_received.connect(this,
-                                                           &TransportController::_on_rtcp_packet_received);
-            _add_dtls_srtp_transport(dtls_srtp);
+//            DtlsTransport *dtls = new DtlsTransport(
+//                    _ice_agent->get_channel(mid, IceCandidateComponent::RTP));
+//            dtls->set_local_certificate(_local_certificate);
+//            dtls->signal_receiving_state.connect(this,
+//                                                 &TransportController::_on_dtls_receiving_state);
+//            dtls->signal_receiving_state.connect(this,
+//                                                 &TransportController::_on_dtls_writable_state);
+//            dtls->signal_dtls_state.connect(this,
+//                                            &TransportController::_on_dtls_state);
+//            _ice_agent->signal_ice_state.connect(this,
+//                                                 &TransportController::_on_ice_state);
+//            _add_dtls_transport(dtls);
+
+//            DtlsSrtpTransport *dtls_srtp = new DtlsSrtpTransport(dtls->transport_name(),
+//                                                                 true);
+//            dtls_srtp->set_dtls_transports(dtls, nullptr);
+//            dtls_srtp->signal_rtp_packet_received.connect(this,
+//                                                          &TransportController::_on_rtp_packet_received);
+//            dtls_srtp->signal_rtcp_packet_received.connect(this,
+//                                                           &TransportController::_on_rtcp_packet_received);
+//            _add_dtls_srtp_transport(dtls_srtp);
         }
 
         _ice_agent->gathering_candidate();
@@ -84,16 +86,24 @@ namespace xrtc {
         return 0;
     }
 
-    void TransportController::_on_rtp_packet_received(DtlsSrtpTransport *,
+//    void TransportController::_on_rtp_packet_received(DtlsSrtpTransport *,
+//                                                      rtc::CopyOnWriteBuffer *packet, int64_t ts) {
+//        signal_rtp_packet_received(this, packet, ts);
+//    }
+
+    void TransportController::_on_rtp_packet_received(IceTransportChannel*,
                                                       rtc::CopyOnWriteBuffer *packet, int64_t ts) {
         signal_rtp_packet_received(this, packet, ts);
     }
+//    void TransportController::_on_rtcp_packet_received(DtlsSrtpTransport *,
+//                                                       rtc::CopyOnWriteBuffer *packet, int64_t ts) {
+//        signal_rtcp_packet_received(this, packet, ts);
+//    }
 
-    void TransportController::_on_rtcp_packet_received(DtlsSrtpTransport *,
+    void TransportController::_on_rtcp_packet_received(IceTransportChannel*,
                                                        rtc::CopyOnWriteBuffer *packet, int64_t ts) {
         signal_rtcp_packet_received(this, packet, ts);
     }
-
     void TransportController::_on_dtls_receiving_state(DtlsTransport *) {
         _update_state();
     }
@@ -223,11 +233,13 @@ namespace xrtc {
 
     int TransportController::send_rtp(const std::string &transport_name,
                                       const char *data, size_t len) {
-        auto dtls_srtp = _get_dtls_srtp_transport(transport_name);
-        if (dtls_srtp) {
-            return dtls_srtp->send_rtp(data, len);
-        }
-        return -1;
+//        auto dtls_srtp = _get_dtls_srtp_transport(transport_name);
+        RTC_LOG(LS_INFO) << "TransportController::send_rtp" << transport_name;
+        return _ice_agent->get_channel(transport_name,IceCandidateComponent::RTP)->send_packet(data,len);
+//        if (dtls_srtp) {
+//            return dtls_srtp->send_rtp(data, len);
+//        }
+//        return -1;
     }
 
     int TransportController::send_rtcp(const std::string &transport_name, const char *data, size_t len) {

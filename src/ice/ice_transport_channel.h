@@ -15,6 +15,7 @@
 #include "ice/candidate.h"
 #include "ice/stun.h"
 #include "ice/ice_controller.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace xrtc {
 
@@ -56,6 +57,11 @@ public:
     sigslot::signal1<IceTransportChannel*> signal_writable_state;
     sigslot::signal1<IceTransportChannel*> signal_ice_state_changed;
     sigslot::signal4<IceTransportChannel*, const char*, size_t, int64_t> signal_read_packet;
+
+    sigslot::signal3<IceTransportChannel*, rtc::CopyOnWriteBuffer*, int64_t>
+            signal_rtp_packet_received;
+    sigslot::signal3<IceTransportChannel*, rtc::CopyOnWriteBuffer*, int64_t>
+            signal_rtcp_packet_received;
 
 private:
     void _on_unknown_address(UDPPort* port,
