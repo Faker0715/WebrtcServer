@@ -57,6 +57,7 @@ namespace xrtc {
             }
 
             _ice_agent->get_channel(mid, IceCandidateComponent::RTP)->signal_rtp_packet_received.connect(this,&TransportController::_on_rtp_packet_received);
+            _ice_agent->get_channel(mid, IceCandidateComponent::RTP)->signal_rtcp_packet_received.connect(this,&TransportController::_on_rtcp_packet_received);
 
 //            DtlsTransport *dtls = new DtlsTransport(
 //                    _ice_agent->get_channel(mid, IceCandidateComponent::RTP));
