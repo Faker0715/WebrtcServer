@@ -181,6 +181,7 @@ void IceTransportChannel::_on_read_packet(IceConnection* /*conn*/,
     auto array_view = rtc::MakeArrayView(buf, len);
     RtpPacketType packet_type = infer_rtp_packet_type(array_view);
 
+    RTC_LOG(LS_INFO) << "_on_read_packet: " << packet_type;
     if (packet_type == RtpPacketType::k_unknown) {
         return;
     }

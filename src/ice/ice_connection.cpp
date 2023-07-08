@@ -287,6 +287,7 @@ void IceConnection::send_stun_binding_response(StunMessage* stun_msg) {
     // 4 + 4
     response.add_fingerprint();
 
+    RTC_LOG(LS_WARNING) << "send_response_message";
     send_response_message(response);
 }
 
@@ -322,6 +323,7 @@ void IceConnection::on_read_packet(const char* buf, size_t len, int64_t ts) {
         signal_read_packet(this, buf, len, ts); 
     } else if (!stun_msg) {
     } else { // stun message
+        RTC_LOG(LS_INFO) << "stun message ";
         switch (stun_msg->type()) {
             case STUN_BINDING_REQUEST:
                 if (remote_ufrag != remote.username) {
