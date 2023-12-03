@@ -7,6 +7,6 @@ then
     echo "make clean"
     make clean
 else
-    echo "make"
+    echo "make -j4"
     make
 fi

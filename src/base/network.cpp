@@ -21,7 +21,7 @@ namespace xrtc {
             }
             struct sockaddr_in *addr = (struct sockaddr_in *) cur->ifa_addr;
             rtc::IPAddress ip_address(addr->sin_addr);
-            if(rtc::IPIsPrivateNetwork(ip_address) /*|| rtc::IPIsLoopback(ip_address) */){
+            if(rtc::IPIsLoopback(ip_address)){
                 continue;
             }
             Network *network = new Network(cur->ifa_name, ip_address);
