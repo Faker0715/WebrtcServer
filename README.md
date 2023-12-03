@@ -2,7 +2,7 @@
 
 ### 1. 预览
 
-![image.png](https://pic8.58cdn.com.cn/nowater/webim/big/n_v2b1a72931377b4c2e96470c02339fe3c4.png)
+![image](https://github.com/Faker0715/WebrtcServer/assets/36560441/230eb445-c48f-4bf7-af62-633cff895d4b)
 
 在线体验网址：
 
