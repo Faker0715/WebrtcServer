@@ -2,7 +2,7 @@
 
 ### 1. 预览
 
-![image](https://github.com/Faker0715/WebrtcServer/assets/36560441/230eb445-c48f-4bf7-af62-633cff895d4b)
+![image](https://github.com/Faker0715/WebrtcServer/assets/36560441/5aef68aa-f26a-4284-8302-94aa2e549c52)
 
 在线体验网址：
 
@@ -10,7 +10,7 @@
 
 拉流：https://faker.ink/webrtcclient/pull?uid=888&streamName=666&audio=1&video=1
 
-
+服务器和本地在同一城市 端到端延迟在50ms以内
 
 ### 1. 使用方法
 
