@@ -25,7 +25,7 @@ public:
     int send_rtp(const std::string& transport_name, const char* data, size_t len);
     int send_rtcp(const std::string& transport_name, const char* data, size_t len);
     void set_dtls(bool is_dtls){
-        is_dtls = is_dtls;
+        is_dtls_ = is_dtls;
     }
 
     sigslot::signal4<TransportController*, const std::string&, IceCandidateComponent,
@@ -58,6 +58,7 @@ private:
 private:
     EventLoop* _el;
     IceAgent* _ice_agent;
+    bool is_dtls_ = true;
     std::map<std::string, DtlsTransport*> _dtls_transport_by_name;
     std::map<std::string, DtlsSrtpTransport*> _dtls_srtp_transport_by_name;
     rtc::RTCCertificate* _local_certificate = nullptr;

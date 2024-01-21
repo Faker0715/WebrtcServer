@@ -106,8 +106,38 @@ namespace xrtc {
         _update_state();
     }
 
-    void TransportController::_on_ice_state(IceAgent *, IceTransportState) {
-        _update_state();
+    void TransportController::_on_ice_state(IceAgent *, IceTransportState ice_state) {
+        if(is_dtls_){
+            _update_state();
+        }else{
+            PeerConnectionState pc_state = PeerConnectionState::k_new;
+            switch (ice_state) {
+                case IceTransportState::k_new:
+                    break;
+                case IceTransportState::k_checking:
+                    pc_state = PeerConnectionState::k_connecting;
+                    break;
+                case IceTransportState::k_connected:
+                case IceTransportState::k_completed:
+                    pc_state = PeerConnectionState::k_connected;
+                    break;
+                case IceTransportState::k_failed:
+                    pc_state = PeerConnectionState::k_failed;
+                    break;
+                case IceTransportState::k_disconnected:
+                    pc_state = PeerConnectionState::k_disconnected;
+                    break;
+                case IceTransportState::k_closed:
+                    pc_state = PeerConnectionState::k_closed;
+                    break;
+                default:
+                    break;
+            }
+            if (_pc_state != pc_state ){
+                _pc_state = pc_state;
+                signal_connection_state(this, pc_state);
+            }
+        }
     }
 
     void TransportController::_update_state() {
