@@ -115,7 +115,8 @@ namespace xrtc {
     void RtcWorker::_process_push(std::shared_ptr<RtcMsg> msg) {
         std::string offer;
         int ret = _rtc_stream_mgr->create_push_stream(msg->uid, msg->stream_name,
-                                                      msg->audio, msg->video, msg->log_id,
+                                                      msg->audio, msg->video,msg->is_dtls,
+                                                      msg->log_id,
                                                       (rtc::RTCCertificate *) (msg->certificate),
                                                       offer);
 
@@ -136,7 +137,8 @@ namespace xrtc {
     void RtcWorker::_process_pull(std::shared_ptr<RtcMsg> msg) {
         std::string offer;
         int ret = _rtc_stream_mgr->create_pull_stream(msg->uid, msg->stream_name,
-                                                      msg->audio, msg->video, msg->log_id,
+                                                      msg->audio, msg->video, msg->is_dtls,
+                                                      msg->log_id,
                                                       (rtc::RTCCertificate *) (msg->certificate),
                                                       offer);
 

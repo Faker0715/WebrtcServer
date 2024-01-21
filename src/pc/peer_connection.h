@@ -69,6 +69,7 @@ private:
 
 private:
     EventLoop* _el;
+    bool is_dtls = true;
     std::unique_ptr<SessionDescription> _local_desc;
     std::unique_ptr<SessionDescription> _remote_desc;
     rtc::RTCCertificate* _certificate = nullptr;

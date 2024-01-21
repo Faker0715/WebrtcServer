@@ -24,6 +24,9 @@ public:
     void set_local_certificate(rtc::RTCCertificate* cert);
     int send_rtp(const std::string& transport_name, const char* data, size_t len);
     int send_rtcp(const std::string& transport_name, const char* data, size_t len);
+    void set_dtls(bool is_dtls){
+        is_dtls = is_dtls;
+    }
 
     sigslot::signal4<TransportController*, const std::string&, IceCandidateComponent,
         const std::vector<Candidate>&> signal_candidate_allocate_done;

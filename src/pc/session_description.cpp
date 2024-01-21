@@ -347,15 +347,20 @@ std::string SessionDescription::to_string() {
             fmt.append(std::to_string(codec->id));
         }
 
-        ss << "m=" << content->mid() << " 9 " << k_media_protocol_dtls_savpf
-            << fmt << "\r\n";
+
+        auto transport_info = get_transport_info(content->mid());
+        if(transport_info && transport_info->identity_fingerprint.get()){
+            ss << "m=" << content->mid() << " 9 " << k_media_protocol_dtls_savpf
+               << fmt << "\r\n";
+        }else{
+            ss << "m=" << content->mid() << " 9 " << k_meida_protocol_savpf
+               << fmt << "\r\n";
+        }
 
         ss << "c=IN IP4 0.0.0.0\r\n";
         ss << "a=rtcp:9 IN IP4 0.0.0.0\r\n";
         
         build_candidates(content, ss);
-
-        auto transport_info = get_transport_info(content->mid());
         if (transport_info) {
             ss << "a=ice-ufrag:" << transport_info->ice_ufrag << "\r\n";
             ss << "a=ice-pwd:" << transport_info->ice_pwd << "\r\n";

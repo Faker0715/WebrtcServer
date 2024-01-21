@@ -45,7 +45,7 @@ int init_log(const std::string& log_dir, const std::string& log_name,
 
 int init_signaling_server() {
     g_signaling_server = new xrtc::SignalingServer();
-    int ret = g_signaling_server->init("./conf/signaling_server.yaml");
+    int ret = g_signaling_server->init("../conf/signaling_server.yaml");
     if (ret != 0) {
         return -1;
     }
@@ -55,7 +55,7 @@ int init_signaling_server() {
 
 int init_rtc_server() {
     g_rtc_server = new xrtc::RtcServer();
-    int ret = g_rtc_server->init("./conf/rtc_server.yaml");
+    int ret = g_rtc_server->init("../conf/rtc_server.yaml");
     if (ret != 0) {
         return -1;
     }
@@ -76,7 +76,7 @@ static void process_signal(int sig) {
     }
 }
 int main() {
-    int ret = init_general_conf("./conf/general.yaml");
+    int ret = init_general_conf("../conf/general.yaml");
     if (ret != 0) {
         return -1;
     }

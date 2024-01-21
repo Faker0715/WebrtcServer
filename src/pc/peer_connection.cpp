@@ -60,7 +60,7 @@ namespace xrtc {
             return;
         }
         Candidate* candidate = const_cast<Candidate *>(&candidates[0]);
-        candidate->address.SetIP("public ip");
+        //candidate->address.SetIP("public ip");
         auto content = _local_desc->get_content(transport_name);
         if (content) {
             content->add_candidates(candidates);
@@ -82,8 +82,13 @@ namespace xrtc {
     }
 
     int PeerConnection::init(rtc::RTCCertificate *certificate) {
-        _certificate = certificate;
-        _transport_controller->set_local_certificate(certificate);
+        if(certificate){
+            _certificate = certificate;
+            _transport_controller->set_local_certificate(certificate);
+        }else{
+            is_dtls = false;
+            _transport_controller->set_dtls(is_dtls);
+        }
         return 0;
     }
 
@@ -103,7 +108,7 @@ namespace xrtc {
     }
 
     std::string PeerConnection::create_offer(const RTCOfferAnswerOptions &options) {
-        if (options.dtls_on && !_certificate) {
+        if (is_dtls && !_certificate) {
             RTC_LOG(LS_WARNING) << "certificate is null";
             return "";
         }

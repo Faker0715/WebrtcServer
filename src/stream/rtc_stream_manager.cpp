@@ -69,7 +69,7 @@ namespace xrtc {
     }
 
     int RtcStreamManager::create_push_stream(uint64_t uid, const std::string &stream_name,
-                                             bool audio, bool video, uint32_t log_id,
+                                             bool audio, bool video,bool is_dtls, uint32_t log_id,
                                              rtc::RTCCertificate *certificate,
                                              std::string &offer) {
         PushStream *stream = _find_push_stream(stream_name);
@@ -81,7 +81,13 @@ namespace xrtc {
         stream = new PushStream(_el, _allocator.get(), uid, stream_name,
                                 audio, video, log_id);
         stream->register_listener(this);
-        stream->start(certificate);
+        if(is_dtls){
+            stream->start(certificate);
+        }
+        else{
+            stream->start(nullptr);
+        }
+
         offer = stream->create_offer();
 
         _push_streams[stream_name] = stream;
@@ -89,7 +95,7 @@ namespace xrtc {
     }
 
     int RtcStreamManager::create_pull_stream(uint64_t uid, const std::string &stream_name,
-                                             bool audio, bool video, uint32_t log_id,
+                                             bool audio, bool video,bool is_dtls, uint32_t log_id,
                                              rtc::RTCCertificate *certificate,
                                              std::string &offer) {
         PushStream *push_stream = _find_push_stream(stream_name);
@@ -111,7 +117,11 @@ namespace xrtc {
         stream->register_listener(this);
         stream->add_audio_source(audio_source);
         stream->add_video_source(video_source);
-        stream->start(certificate);
+        if(is_dtls){
+            stream->start(certificate);
+        }else{
+            stream->start(nullptr);
+        }
         offer = stream->create_offer();
 
         _pull_streams[stream_name] = stream;
