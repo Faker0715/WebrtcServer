@@ -49,6 +49,10 @@ private:
         rtc::CopyOnWriteBuffer* packet, int64_t ts);
     void _on_rtcp_packet_received(DtlsSrtpTransport*,
             rtc::CopyOnWriteBuffer* packet, int64_t ts);
+    void _on_read_packet(IceTransportChannel* channel,
+            const char* data,
+            size_t len,
+            int64_t ts);
     void _update_state();
     void _add_dtls_transport(DtlsTransport* dtls);
     DtlsTransport* _get_dtls_transport(const std::string& transport_name);
