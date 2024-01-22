@@ -7,6 +7,7 @@
 
 #include "base/event_loop.h"
 #include "rtp_rtcp_config.h"
+#include "rtcp_sender.h"
 
 namespace xrtc{
     class RtpRtcpImpl{
@@ -15,6 +16,7 @@ namespace xrtc{
         ~RtpRtcpImpl();
     private:
         EventLoop* el_;
+        RTCSender rtcp_sender_;
     };
 }
 

@@ -10,7 +10,8 @@ namespace xrtc {
 
     }
 
-    xrtc::RtpRtcpImpl::RtpRtcpImpl(const RtpRtcpConfig &config) {
+    xrtc::RtpRtcpImpl::RtpRtcpImpl(const RtpRtcpConfig &config) : el_(config.el_),
+                                                                  rtcp_sender_(config) {
 
     }
 }

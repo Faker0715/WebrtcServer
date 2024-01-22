@@ -36,7 +36,10 @@ add_executable(xrtcserver ${all_src} src/module/rtp_rtcp/rtp_utils.cpp
         src/module/rtp_rtcp/rtp_rtcp_impl.h
         src/module/rtp_rtcp/rtp_rtcp_impl.h
         src/module/rtp_rtcp/rtp_rtcp_config.cpp
-        src/module/rtp_rtcp/rtp_rtcp_config.h)
+        src/module/rtp_rtcp/rtp_rtcp_config.h
+        src/module/rtp_rtcp/rtcp_sender.cpp
+        src/module/rtp_rtcp/rtcp_sender.h
+)
 
 target_link_libraries(xrtcserver libyaml-cpp.a librtcbase.a
     libabsl_strings.a libabsl_throw_delegate.a libabsl_bad_optional_access.a
