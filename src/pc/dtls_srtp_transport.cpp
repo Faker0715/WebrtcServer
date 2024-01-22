@@ -64,7 +64,7 @@ namespace xrtc {
             return;
         }
 
-        char *data = packet.data<char>();
+        char* data = packet.MutableData<char>();
         int len = packet.size();
         if (!unprotect_rtp(data, len, &len)) {
             const int k_fail_log = 100;
@@ -90,7 +90,7 @@ namespace xrtc {
             return;
         }
 
-        char *data = packet.data<char>();
+        char* data = packet.MutableData<char>();
         int len = packet.size();
         if (!unprotect_rtcp(data, len, &len)) {
             int type = 0;

@@ -16,7 +16,7 @@ namespace xrtc{
         ~RtpRtcpImpl();
     private:
         EventLoop* el_;
-        RTCSender rtcp_sender_;
+        RTCPSender rtcp_sender_;
     };
 }
 

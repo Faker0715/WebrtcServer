@@ -82,6 +82,7 @@ namespace xrtc {
             }else{
                 auto ice_channel = _ice_agent->get_channel(mid, IceCandidateComponent::RTP);
                 if(ice_channel){
+                    _ice_agent->signal_ice_state.connect(this,&TransportController::_on_ice_state);
                     ice_channel->signal_read_packet.connect(this,&TransportController::_on_read_packet);
                 }
             }
