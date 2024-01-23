@@ -15,12 +15,21 @@ namespace xrtc{
         ~RTCPSender();
         void SendRTCP(webrtc::RTCPPacketType packet_type);
         void SetRtcpStatus(webrtc::RtcpMode method);
-        void SetFlag(uint32_t type,bool is_valatile);
+        void SetSendingStatus(bool sending){
+            sending_ = sending;
+        };
     private:
         absl::optional<int32_t> ComputeCompoundRTCPPacket(webrtc::RTCPPacketType packet_type);
+        bool PrepareReport();
+
+
+        bool ConsumeFlag(uint32_t type,bool force);
+        bool IsFlagPresent(uint32_t type);
+        void SetFlag(uint32_t type,bool is_valatile);
     private:
         webrtc::Clock* clock_;
         webrtc::RtcpMode method_ = webrtc::RtcpMode::kOff;
+        bool sending_ = false;
         struct ReportFlag{
             ReportFlag(uint32_t type,bool is_valatile):type(type),is_valatile(is_valatile){}
             bool operator<(const ReportFlag& other) const{
