@@ -26,8 +26,8 @@ namespace xrtc {
         }
 
     private:
-        webrtc::rtcp::RtcpPacket::PacketReadyCallback callback_;
         size_t max_packet_size_;
+        webrtc::rtcp::RtcpPacket::PacketReadyCallback callback_;;
         size_t index_ = 0; // 复合包的索引位置
         uint8_t buffer_[IP_PACKET_SIZE];
     };

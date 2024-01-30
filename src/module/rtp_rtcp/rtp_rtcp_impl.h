@@ -14,9 +14,12 @@ namespace xrtc{
     public:
         RtpRtcpImpl(const RtpRtcpConfig& config);
         ~RtpRtcpImpl();
+        void SetRTCPStatus(webrtc::RtcpMode method);
+        void TimeToSendRTCP();
     private:
         EventLoop* el_;
         RTCPSender rtcp_sender_;
+        TimerWatcher* rtcp_report_time_ = nullptr;
     };
 }
 

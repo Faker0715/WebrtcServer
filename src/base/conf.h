@@ -31,6 +31,7 @@ struct GeneralConf {
     bool log_to_stderr;
     int ice_min_port = 0;
     int ice_max_port = 0;
+    int rtcp_report_timer_interval = 100;
 
 };
 

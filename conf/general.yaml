@@ -7,3 +7,6 @@ log:
 ice:
     min_port: 10025
     max_port: 65535
+
+rtp_rtcp:
+    rtcp_report_timer_interval: 100
