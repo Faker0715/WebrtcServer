@@ -14,4 +14,8 @@ namespace xrtc {
     RtpVideoStreamReceiver::~RtpVideoStreamReceiver() {
 
     }
+
+    void RtpVideoStreamReceiver::OnRtpPacket(const webrtc::RtpPacketReceived &packet) {
+
+    }
 }

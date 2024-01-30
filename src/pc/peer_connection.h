@@ -11,6 +11,7 @@
 #include "pc/transport_controller.h"
 #include "pc/stream_params.h"
 #include "video/video_receive_stream.h"
+#include "api/media_types.h"
 
 namespace xrtc {
 
@@ -66,6 +67,7 @@ private:
     void _on_rtcp_packet_received(TransportController*,
             rtc::CopyOnWriteBuffer* packet, int64_t ts);
 
+    webrtc::MediaType GetMediaType(uint32_t ssrc) const;
     void CreateVideoReceiveStream(VideoContentDescription* video_content);
     friend void destroy_timer_cb(EventLoop* el, TimerWatcher* w, void* data);
 
@@ -80,6 +82,9 @@ private:
     TimerWatcher* _destroy_timer = nullptr;
     std::vector<StreamParams> _audio_source;
     std::vector<StreamParams> _video_source;
+    uint32_t remote_audio_ssrc_ = 0;
+    uint32_t remote_video_ssrc_ = 0;
+    uint32_t remote_video_rtx_ssrc_ = 0;
     std::unique_ptr<VideoReceiveStream> video_receive_stream_;
 };
 

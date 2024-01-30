@@ -4,6 +4,7 @@
 #include "ice/ice_credentials.h"
 #include "pc/peer_connection.h"
 #include "video/video_receive_stream_config.h"
+#include <modules/rtp_rtcp/source/rtp_packet_received.h>
 
 namespace xrtc {
 
@@ -75,7 +76,26 @@ namespace xrtc {
 
     void PeerConnection::_on_rtp_packet_received(TransportController *,
                                                  rtc::CopyOnWriteBuffer *packet, int64_t ts) {
-        signal_rtp_packet_received(this, packet, ts);
+        webrtc::RtpPacketReceived parsed_packet;
+        if(!parsed_packet.Parse(std::move(*packet))){
+            RTC_LOG(LS_WARNING) << "invaild rtp packet";
+            return;
+        }
+        if(ts > 0){
+            parsed_packet.set_arrival_time(webrtc::Timestamp::Micros(ts));
+        }else{
+            parsed_packet.set_arrival_time(clock_->CurrentTime());
+        }
+
+        webrtc::MediaType packet_type = GetMediaType(parsed_packet.Ssrc());
+        if(packet_type == webrtc::MediaType::VIDEO){
+            if(video_receive_stream_){
+                video_receive_stream_->OnRtpPacket(parsed_packet);
+            }
+        }
+
+
+//        signal_rtp_packet_received(this, packet, ts);
     }
 
     void PeerConnection::_on_rtcp_packet_received(TransportController *,
@@ -458,6 +478,10 @@ namespace xrtc {
         for(auto send_stream: video_content->streams()){
             uint32_t ssrc = send_stream.FirstSsrc();
             if(ssrc != 0){
+                remote_video_ssrc_ = ssrc;
+                if(send_stream.ssrcs.size() >= 2){
+                    remote_video_rtx_ssrc_ = send_stream.ssrcs[1];
+                }
                 VideoReceiveStreamConfig config;
                 config.el = _el;
                 config.clock = clock_;
@@ -485,6 +509,15 @@ namespace xrtc {
         }
 
         return -1;
+    }
+
+    webrtc::MediaType PeerConnection::GetMediaType(uint32_t ssrc) const {
+        if(ssrc == remote_video_ssrc_ || ssrc == remote_video_rtx_ssrc_) {
+            return webrtc::MediaType::VIDEO;
+        }else if(ssrc == remote_audio_ssrc_){
+            return webrtc::MediaType::AUDIO;
+        }
+        return webrtc::MediaType::ANY;
     }
 
 } // namespace xrtc
