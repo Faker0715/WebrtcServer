@@ -16,7 +16,7 @@ namespace xrtc {
 
         ~RTCPSender();
 
-        void SendRTCP(webrtc::RTCPPacketType packet_type);
+        int SendRTCP(webrtc::RTCPPacketType packet_type);
 
         void SetRtcpStatus(webrtc::RtcpMode method);
 
@@ -24,10 +24,12 @@ namespace xrtc {
             sending_ = sending;
         };
     private:
-        absl::optional<int32_t> ComputeCompoundRTCPPacket(webrtc::RTCPPacketType packet_type);
+        class PacketSender;
+        absl::optional<int32_t> ComputeCompoundRTCPPacket(webrtc::RTCPPacketType packet_type,
+                                                          PacketSender& sender);
 
         bool PrepareReport();
-        void BuildRR();
+        void BuildRR(PacketSender& sender);
 
         bool ConsumeFlag(uint32_t type, bool force = false);
 
@@ -40,6 +42,7 @@ namespace xrtc {
         webrtc::RtcpMode method_ = webrtc::RtcpMode::kOff;
         bool sending_ = false;
 
+        size_t max_packet_size_;
         struct ReportFlag {
             ReportFlag(uint32_t type, bool is_valatile) : type(type), is_valatile(is_valatile) {}
 
@@ -58,7 +61,7 @@ namespace xrtc {
 
         // 当前发送的rtcp包的类型
         std::set<ReportFlag> report_flags_;
-        typedef void (RTCPSender::*BuilderFunc)();
+        typedef void (RTCPSender::*BuilderFunc)(PacketSender& sender);
         std::map<uint32_t,BuilderFunc> builders_;
     };
 }
