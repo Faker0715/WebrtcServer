@@ -8,6 +8,7 @@
 #include "base/event_loop.h"
 #include "rtp_rtcp_config.h"
 #include "rtcp_sender.h"
+#include "rtcp_receiver.h"
 
 namespace xrtc{
     class RtpRtcpImpl{
@@ -19,6 +20,7 @@ namespace xrtc{
     private:
         EventLoop* el_;
         RTCPSender rtcp_sender_;
+        RTCPReceiver rtcp_receiver_;
         TimerWatcher* rtcp_report_time_ = nullptr;
     };
 }

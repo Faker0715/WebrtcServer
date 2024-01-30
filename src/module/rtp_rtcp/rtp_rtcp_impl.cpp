@@ -15,11 +15,15 @@ namespace xrtc {
         }
     }
     xrtc::RtpRtcpImpl::~RtpRtcpImpl() {
-
+        if(rtcp_report_time_){
+            el_->delete_timer(rtcp_report_time_);
+            rtcp_report_time_ = nullptr;
+        }
     }
 
     xrtc::RtpRtcpImpl::RtpRtcpImpl(const RtpRtcpConfig &config) : el_(config.el_),
-                                                                  rtcp_sender_(config) {
+                                                                  rtcp_sender_(config),
+                                                                  rtcp_receiver_(config){
 
     }
 
