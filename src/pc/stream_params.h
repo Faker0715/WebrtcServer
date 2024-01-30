@@ -18,6 +18,12 @@ struct SsrcGroup {
 struct StreamParams {
     bool has_ssrc(uint32_t ssrc);
 
+    uint32_t FirstSsrc() const{
+        if(ssrcs.empty()){
+            return 0;
+        }
+        return ssrcs[0];
+    }
     std::string id;
     std::vector<uint32_t> ssrcs;
     std::vector<SsrcGroup> ssrc_groups;

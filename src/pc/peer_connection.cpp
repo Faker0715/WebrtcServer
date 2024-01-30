@@ -3,6 +3,7 @@
 
 #include "ice/ice_credentials.h"
 #include "pc/peer_connection.h"
+#include "video/video_receive_stream_config.h"
 
 namespace xrtc {
 
@@ -27,6 +28,7 @@ namespace xrtc {
 
     PeerConnection::PeerConnection(EventLoop *el, PortAllocator *allocator) :
             _el(el),
+            clock_(webrtc::Clock::GetRealTimeClock()),
             _transport_controller(new TransportController(el, allocator)) {
         _transport_controller->signal_candidate_allocate_done.connect(this,
                                                                       &PeerConnection::_on_candidate_allocate_done);
@@ -445,9 +447,26 @@ namespace xrtc {
 
         _remote_desc->add_transport_info(audio_td);
         _remote_desc->add_transport_info(video_td);
+        CreateVideoReceiveStream(video_content.get());
 
         _transport_controller->set_remote_description(_remote_desc.get());
         return 0;
+    }
+    void PeerConnection::CreateVideoReceiveStream(VideoContentDescription* video_content){
+        //video_content可以拿到当前流的个数
+        // 根据推拉流原子能力的设计原则，一个peerconnection仅支持推一路音视频或拉一路
+        for(auto send_stream: video_content->streams()){
+            uint32_t ssrc = send_stream.FirstSsrc();
+            if(ssrc != 0){
+                VideoReceiveStreamConfig config;
+                config.el = _el;
+                config.clock = clock_;
+                video_receive_stream_ = std::make_unique<VideoReceiveStream>(config);
+
+            }
+            break;
+        }
+
     }
 
     int PeerConnection::send_rtp(const char *data, size_t len) {

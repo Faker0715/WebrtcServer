@@ -10,6 +10,7 @@
 #include "pc/session_description.h"
 #include "pc/transport_controller.h"
 #include "pc/stream_params.h"
+#include "video/video_receive_stream.h"
 
 namespace xrtc {
 
@@ -65,11 +66,13 @@ private:
     void _on_rtcp_packet_received(TransportController*,
             rtc::CopyOnWriteBuffer* packet, int64_t ts);
 
+    void CreateVideoReceiveStream(VideoContentDescription* video_content);
     friend void destroy_timer_cb(EventLoop* el, TimerWatcher* w, void* data);
 
 private:
     EventLoop* _el;
     bool is_dtls = true;
+    webrtc::Clock* clock_;
     std::unique_ptr<SessionDescription> _local_desc;
     std::unique_ptr<SessionDescription> _remote_desc;
     rtc::RTCCertificate* _certificate = nullptr;
@@ -77,6 +80,7 @@ private:
     TimerWatcher* _destroy_timer = nullptr;
     std::vector<StreamParams> _audio_source;
     std::vector<StreamParams> _video_source;
+    std::unique_ptr<VideoReceiveStream> video_receive_stream_;
 };
 
 } // namespace xrtc
