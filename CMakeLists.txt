@@ -41,6 +41,9 @@ add_executable(xrtcserver ${all_src} src/module/rtp_rtcp/rtp_utils.cpp
         src/module/rtp_rtcp/rtcp_sender.h
         src/module/rtp_rtcp/rtcp_receiver.cpp
         src/module/rtp_rtcp/rtcp_receiver.h
+        src/video/video_receive_stream.h
+        src/video/video_receive_stream.cpp
+        src/video/rtp_video_stream_receiver.h
 )
 
 target_link_libraries(xrtcserver libyaml-cpp.a librtcbase.a
