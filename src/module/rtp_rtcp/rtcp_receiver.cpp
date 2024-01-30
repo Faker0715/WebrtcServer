@@ -4,7 +4,8 @@
 
 #include "rtcp_receiver.h"
 #include "rtc_base/logging.h"
-
+#include <modules/rtp_rtcp/source/rtcp_packet/sender_report.h>
+#include <modules/rtp_rtcp/source/rtcp_packet/receiver_report.h>
 namespace xrtc{
 
     struct RTCPReceiver::PacketInformation{
@@ -44,8 +45,30 @@ namespace xrtc{
                 ++num_skipped_packets_;
                 break;
             }
+            switch (rtcp_block.type()) {
+                case webrtc::rtcp::SenderReport::kPacketType:
+                    HandleSr(rtcp_block,packet_information);
+                    break;
+                case webrtc::rtcp::ReceiverReport::kPacketType:
+                    HandleRr(rtcp_block,packet_information);
+                    break;
+                default:
+                    RTC_LOG(LS_WARNING) << "unknown rtcp packet type: " << rtcp_block.type();
+                    ++num_skipped_packets_;
+                    break;
+            }
         }
         return true;
+    }
+
+    void RTCPReceiver::HandleSr(const webrtc::rtcp::CommonHeader &rtcp_block,
+                                RTCPReceiver::PacketInformation *packet_information) {
+
+    }
+
+    void RTCPReceiver::HandleRr(const webrtc::rtcp::CommonHeader &rtcp_block,
+                                RTCPReceiver::PacketInformation *packet_information) {
+
     }
 
 }

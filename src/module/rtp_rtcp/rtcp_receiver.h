@@ -20,6 +20,10 @@ namespace xrtc{
         struct PacketInformation;
         bool ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
                                  PacketInformation* packet_information);
+        void HandleSr(const webrtc::rtcp::CommonHeader& rtcp_block,
+                      PacketInformation* packet_information);
+        void HandleRr(const webrtc::rtcp::CommonHeader& rtcp_block,
+                        PacketInformation* packet_information);
     private:
         int num_skipped_packets_ = 0;
     };
