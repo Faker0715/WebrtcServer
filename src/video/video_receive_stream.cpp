@@ -8,7 +8,8 @@ namespace xrtc {
 
     VideoReceiveStream::VideoReceiveStream(const VideoReceiveStreamConfig &config):
             config_(config),
-            rtp_video_stream_receiver_(config){
+            rtp_receive_stat_(ReceiveStat::Create(config.clock)),
+            rtp_video_stream_receiver_(config,rtp_receive_stat_.get()){
 
     }
 

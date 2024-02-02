@@ -7,15 +7,18 @@
 
 #include "video_receive_stream_config.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "module/rtp_rtcp/receive_stat.h"
 
 namespace xrtc{
     class RtpVideoStreamReceiver{;
     public:
-        RtpVideoStreamReceiver(const VideoReceiveStreamConfig& config);
+        RtpVideoStreamReceiver(const VideoReceiveStreamConfig& config,
+                               ReceiveStat* rtp_receive_stat);
         ~RtpVideoStreamReceiver();
         void OnRtpPacket(const webrtc::RtpPacketReceived& packet);
     private:
         VideoReceiveStreamConfig config_;
+        ReceiveStat* rtp_receive_stat_;
     };
 }
 
