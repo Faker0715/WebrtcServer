@@ -33,6 +33,8 @@ namespace xrtc{
         int32_t cumulative_loss;
         int64_t received_seq_first_ = -1;
         int64_t received_seq_max_ = -1;
+        int max_reordering_threshold_;
+        absl::optional<uint16_t> received_seq_out_of_order_;
     };
     class ReceiveStat{
     public:
