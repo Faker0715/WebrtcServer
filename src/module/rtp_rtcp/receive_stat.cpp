@@ -60,6 +60,12 @@ namespace xrtc{
         cumulative_loss += (sequence_number - received_seq_max_);
         received_seq_max_ = sequence_number;
         seq_unwrapper_.UpdateLast(sequence_number);
+        // 计算jitter
+        if(packet.Timestamp() != last_received_timestamp_ && (receive_counters_.transmitted.packets > - receive_counters_.retransmitted.packets) > 1){
+            UpdateJitter(packet, now_ms);
+        }
+        last_received_timestamp_ = packet.Timestamp();
+        last_received_frame_time_ms_ = now_ms;
     }
     bool StreamStat::UpdateOutOfOrder(const webrtc::RtpPacketReceived& packet,
                                       int64_t sequence_number,
@@ -74,7 +80,7 @@ namespace xrtc{
             }
         }
         // 有可能流序列号发生突变
-        if(abs(sequence_number, received_seq_max_) > max_reordering_threshold_){
+        if(abs(sequence_number -  received_seq_max_) > max_reordering_threshold_){
             received_seq_out_of_order_ = packet.SequenceNumber();
             ++cumulative_loss;
             return true;
@@ -86,5 +92,19 @@ namespace xrtc{
         // 表示乱序
         return true;
 
+    }
+
+    void StreamStat::UpdateJitter(const webrtc::RtpPacketReceived &packet, int64_t receive_time) {
+
+        // RTP包到达接收端时间差
+        int64_t receive_time_diff = receive_time - last_received_frame_time_ms_;
+        uint32_t receive_rtp_diff =static_cast<uint32_t> (receive_time_diff * packet.payload_type_frequency() / 1000);;
+        int32_t time_diff_samples = receive_time_diff - (packet.Timestamp() - last_received_timestamp_);
+        time_diff_samples = std::abs(time_diff_samples);
+        // 5s,video: 90k
+        if(time_diff_samples < 450000){
+            int32_t jitter_q4_diff = (time_diff_samples << 4) - jitter_q4_;
+            jitter_q4_ += ((jitter_q4_diff + 8) >> 4);
+        }
     }
 }

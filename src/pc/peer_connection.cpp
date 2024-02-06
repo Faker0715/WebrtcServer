@@ -89,6 +89,7 @@ namespace xrtc {
 
         webrtc::MediaType packet_type = GetMediaType(parsed_packet.Ssrc());
         if(packet_type == webrtc::MediaType::VIDEO){
+            parsed_packet.set_payload_type_frequency(webrtc::kVideoPayloadTypeFrequency);
             if(video_receive_stream_){
                 video_receive_stream_->OnRtpPacket(parsed_packet);
             }
