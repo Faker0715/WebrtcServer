@@ -43,6 +43,29 @@ namespace xrtc{
     }
 
     void StreamStat::UpdateCounters(const webrtc::RtpPacketReceived &packet) {
+        int64_t now_ms = clock_->TimeInMilliseconds();
+
+        receive_counters_.transmitted.AddPacket(packet);
+        --cumulative_loss;
+
+        int64_t sequence_number = seq_unwrapper_.UnwrapWithoutUpdate(packet.SequenceNumber());
+        // 收到第一个包
+        if (!ReceiveRtpPacket()){
+            received_seq_first_ = sequence_number;
+            received_seq_max_ = sequence_number - 1;
+        }else if(UpdateOutOfOrder(packet,sequence_number,now_ms)){
+            return;
+        }
+        // 顺序到达rtp
+        cumulative_loss += (sequence_number - received_seq_max_);
+        received_seq_max_ = sequence_number;
+        seq_unwrapper_.UpdateLast(sequence_number);
+    }
+    bool StreamStat::UpdateOutOfOrder(const webrtc::RtpPacketReceived& packet,
+                                      int64_t sequence_number,
+                                      int64_t now_ms) {
+        // 表示乱序
+        return true;
 
     }
 }
