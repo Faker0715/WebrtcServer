@@ -65,7 +65,7 @@ namespace xrtc{
             UpdateJitter(packet, now_ms);
         }
         last_received_timestamp_ = packet.Timestamp();
-        last_received_frame_time_ms_ = now_ms;
+        last_received_time_ms_ = now_ms;
     }
     bool StreamStat::UpdateOutOfOrder(const webrtc::RtpPacketReceived& packet,
                                       int64_t sequence_number,
@@ -97,14 +97,17 @@ namespace xrtc{
     void StreamStat::UpdateJitter(const webrtc::RtpPacketReceived &packet, int64_t receive_time) {
 
         // RTP包到达接收端时间差
-        int64_t receive_time_diff = receive_time - last_received_frame_time_ms_;
-        uint32_t receive_rtp_diff =static_cast<uint32_t> (receive_time_diff * packet.payload_type_frequency() / 1000);;
-        int32_t time_diff_samples = receive_time_diff - (packet.Timestamp() - last_received_timestamp_);
+        int64_t receive_diff_ms = receive_time - last_received_time_ms_;//R2-R1的时间
+        uint32_t receive_diff_rtp = static_cast<uint32_t>(
+                (receive_diff_ms * packet.payload_type_frequency()) / 1000); //换算成rtp时间
+        int32_t time_diff_samples =
+                receive_diff_rtp - (packet.Timestamp() - last_received_timestamp_);
         time_diff_samples = std::abs(time_diff_samples);
         // 5s,video: 90k
-        if(time_diff_samples < 450000){
-            int32_t jitter_q4_diff = (time_diff_samples << 4) - jitter_q4_;
-            jitter_q4_ += ((jitter_q4_diff + 8) >> 4);
+        if (time_diff_samples < 450000) {
+            // Note we calculate in Q4 to avoid using float.
+            int32_t jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
+            jitter_q4_ += ((jitter_diff_q4 + 8) >> 4);
         }
     }
 }

@@ -41,7 +41,7 @@ namespace xrtc {
         int64_t received_seq_max_ = -1;
         int max_reordering_threshold_;
         uint32_t last_received_timestamp_ = 0;
-        int64_t last_received_frame_time_ms_ = 0;
+        int64_t last_received_time_ms_= 0;
         uint32_t jitter_q4_ = 0;
 
         absl::optional<uint16_t> received_seq_out_of_order_;
