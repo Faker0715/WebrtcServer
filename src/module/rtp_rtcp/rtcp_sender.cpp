@@ -63,7 +63,7 @@ namespace xrtc {
         if (method_ == webrtc::RtcpMode::kOff) {
             RTC_LOG(LS_WARNING) << "Can't send rtcp packet when rtcp is off";
         }
-        SetFlag(packet_type, true);
+        SetFlag(packet_type, false);
         PrepareReport();
         auto it = report_flags_.begin();
         while (it != report_flags_.end()) {
@@ -98,7 +98,7 @@ namespace xrtc {
         if (IsFlagPresent(webrtc::kRtcpSr) || IsFlagPresent(webrtc::kRtcpRr)) {
             generate_report = true;
         } else {
-            generate_report = (method_ == webrtc::RtcpMode::kReducedSize && ConsumeFlag(webrtc::kRtcpReport)) ||
+            generate_report = (ConsumeFlag(webrtc::kRtcpReport,true) && method_ == webrtc::RtcpMode::kReducedSize) ||
                               (method_ == webrtc::RtcpMode::kCompound);
             if (generate_report) {
                 SetFlag(sending_ ? webrtc::kRtcpSr : webrtc::kRtcpRr, true);
