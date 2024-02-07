@@ -5,6 +5,7 @@
 #include "rtcp_sender.h"
 #include "rtc_base/logging.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 
 namespace xrtc {
     class RTCPSender::PacketSender {

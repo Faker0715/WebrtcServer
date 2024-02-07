@@ -37,13 +37,19 @@ namespace xrtc {
         webrtc::StreamDataCounters receive_counters_;
         webrtc::Unwrapper<uint16_t> seq_unwrapper_;
         // 累计丢报数 当存在非rtx的重传包，这个值可能是负值
-        int32_t cumulative_loss;
+        int32_t cumulative_loss_;
         int64_t received_seq_first_ = -1;
         int64_t received_seq_max_ = -1;
         int max_reordering_threshold_;
         uint32_t last_received_timestamp_ = 0;
         int64_t last_received_time_ms_= 0;
         uint32_t jitter_q4_ = 0;
+
+
+        int64_t last_report_seq_max_ = -1;
+        int32_t last_report_cumulative_loss_ = 0;
+        int cumulative_loss_rtcp_offset_ = 0;
+        bool cumulative_loss_is_capped_ = false;
 
         absl::optional<uint16_t> received_seq_out_of_order_;
     };
