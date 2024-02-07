@@ -126,16 +126,34 @@ namespace xrtc {
     }
 
     void RTCPSender::BuildRR(PacketSender &sender) {
+        FeedbackState feedback_state;
         webrtc::rtcp::ReceiverReport rr;
         rr.SetSenderSsrc(ssrc_);
+        rr.SetReportBlocks(CreateRtcpReportBlocks(feedback_state));
     }
 
-    std::vector<webrtc::rtcp::ReportBlock> RTCPSender::CreateRtcpReportBlocks() {
+    std::vector<webrtc::rtcp::ReportBlock> RTCPSender::CreateRtcpReportBlocks(const FeedbackState &feedback_state) {
         std::vector<webrtc::rtcp::ReportBlock> result;
         if(!receive_stat_){
             return result;
         }
         result = receive_stat_->RtcpReportBlocks(webrtc::RTCP_MAX_REPORT_BLOCKS);
+
+        // 进一步设置lastst和delaySinceLastSr
+        if(!result.empty() &&((feedback_state.last_rr_ntp_secs > 0 ) || (feedback_state.last_rr_ntp_frac > 0))){
+            // 计算delay since last sr
+            // 当前发送RR包时，接收端压缩后的32位NTP时间
+            int32_t now = webrtc::CompactNtp(clock_->CurrentNtpTime());
+            // 收到最近一次SR包时，接收端压缩后的32位NTP时间
+            int32_t receive_time = feedback_state.last_rr_ntp_secs & 0x0000FFFF;
+            receive_time <= 16;
+            receive_time += ((feedback_state.last_rr_ntp_frac & 0xFFFF0000) >= 16);
+            int32_t delay_since_last_sr = now - receive_time;
+            for(auto& report_block: result){
+                report_block.SetLastSr(feedback_state.remote_sr);
+                report_block.SetDelayLastSr(delay_since_last_sr);
+            }
+        }
         return result;
     }
 }

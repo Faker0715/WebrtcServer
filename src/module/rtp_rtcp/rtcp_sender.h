@@ -10,10 +10,17 @@
 #include "receive_stat.h"
 #include <modules/rtp_rtcp/include/rtp_rtcp_defines.h>
 #include <set>
+#include <modules/rtp_rtcp/source/time_util.h>
 
 namespace xrtc {
     class RTCPSender {
     public:
+        struct FeedbackState{
+            int32_t last_rr_ntp_secs = 0; // 记录了最近一次收到sr包时，接收端的ntp时间
+            int32_t last_rr_ntp_frac = 0;
+            int64_t remote_sr = 0; // 从最近的一次SR包中，提取的NTP时间（发送端）
+
+        };
         RTCPSender(const RtpRtcpConfig &config);
 
         ~RTCPSender();
@@ -33,7 +40,7 @@ namespace xrtc {
         bool PrepareReport();
         void BuildRR(PacketSender& sender);
 
-        std::vector<webrtc::rtcp::ReportBlock>  CreateRtcpReportBlocks();
+        std::vector<webrtc::rtcp::ReportBlock>  CreateRtcpReportBlocks(const FeedbackState& feedback_state);
         bool ConsumeFlag(uint32_t type, bool force = false);
 
         bool IsFlagPresent(uint32_t type);
