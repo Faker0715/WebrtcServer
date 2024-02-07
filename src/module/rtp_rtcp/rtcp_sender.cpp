@@ -35,6 +35,7 @@ namespace xrtc {
     // -28 是为了去掉ip udp 包头
     RTCPSender::RTCPSender(const RtpRtcpConfig &config) : clock_(config.clock_),
                                                           ssrc_(config.local_media_ssrc),
+                                                            receive_stat_(config.receive_stat),
                                                           max_packet_size_(IP_PACKET_SIZE - 28) {
         builders_[webrtc::kRtcpReport] = &RTCPSender::BuildRR;
     }
@@ -98,7 +99,7 @@ namespace xrtc {
         if (IsFlagPresent(webrtc::kRtcpSr) || IsFlagPresent(webrtc::kRtcpRr)) {
             generate_report = true;
         } else {
-            generate_report = (ConsumeFlag(webrtc::kRtcpReport,true) && method_ == webrtc::RtcpMode::kReducedSize) ||
+            generate_report = (ConsumeFlag(webrtc::kRtcpReport) && method_ == webrtc::RtcpMode::kReducedSize) ||
                               (method_ == webrtc::RtcpMode::kCompound);
             if (generate_report) {
                 SetFlag(sending_ ? webrtc::kRtcpSr : webrtc::kRtcpRr, true);
@@ -126,6 +127,15 @@ namespace xrtc {
     void RTCPSender::BuildRR(PacketSender &sender) {
         webrtc::rtcp::ReceiverReport rr;
         rr.SetSenderSsrc(ssrc_);
+    }
+
+    std::vector<webrtc::rtcp::ReportBlock> RTCPSender::CreateRtcpReportBlocks() {
+        std::vector<webrtc::rtcp::ReportBlock> result;
+        if(!receive_stat_){
+            return result;
+        }
+        result = receive_stat_->RtcpReportBlocks(webrtc::RTCP_MAX_REPORT_BLOCKS);
+        return result;
     }
 }
 

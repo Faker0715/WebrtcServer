@@ -9,6 +9,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include <rtc_base/containers/flat_map.h>
 #include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 
 namespace xrtc {
     class StreamStat {
@@ -18,7 +19,7 @@ namespace xrtc {
         ~StreamStat();
 
         void UpdateCounters(const webrtc::RtpPacketReceived &packet);
-
+        void MaybeAppendReportBlockAndReset(std::vector<webrtc::rtcp::ReportBlock>& result);
     private:
         bool ReceiveRtpPacket() const {
             return received_seq_first_ >= 0;
@@ -57,6 +58,8 @@ namespace xrtc {
 
         void OnRtpPacket(const webrtc::RtpPacketReceived &packet);
 
+        std::vector<webrtc::rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks);
+
         // 如果有就创建 没有就返回
         StreamStat *GetOrCreateStat(uint32_t ssrc);
 
@@ -64,6 +67,8 @@ namespace xrtc {
         webrtc::Clock *clock_;
         // 需求主要是查询
         webrtc::flat_map<uint32_t, std::unique_ptr<StreamStat>> stats_;
+        std::vector<uint32_t> all_ssrcs_;
+        size_t last_returned_ssrc_idx_ = 0;
 
     };
 }

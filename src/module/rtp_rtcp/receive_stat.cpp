@@ -30,8 +30,22 @@ namespace xrtc{
         std::unique_ptr<StreamStat>& stat = stats_[ssrc];
         if(nullptr == stat){
             stat = std::make_unique<StreamStat>(ssrc, clock_);
+            all_ssrcs_.push_back(ssrc);
         }
         return stat.get();
+    }
+
+    std::vector<webrtc::rtcp::ReportBlock> ReceiveStat::RtcpReportBlocks(size_t max_blocks) {
+        std::vector<webrtc::rtcp::ReportBlock> result;
+        result.reserve(std::min(max_blocks,all_ssrcs_.size()));
+        size_t ssrc_idx = 0;
+        for(size_t i = 0; i < all_ssrcs_.size() && result.size() < all_ssrcs_.size(); ++i){
+            ssrc_idx = (last_returned_ssrc_idx_ + 1 + i) % all_ssrcs_.size();
+            uint32_t media_ssrc = all_ssrcs_[ssrc_idx];
+            auto stat_it = stats_.find(media_ssrc);
+            stat_it->second->MaybeAppendReportBlockAndReset(result);
+        }
+        return result;
     }
 
     StreamStat::StreamStat(uint32_t ssrc, webrtc::Clock *clock): ssrc_(ssrc), clock_(clock), max_reordering_threshold_(kMaxReorderingThreshold){
@@ -109,5 +123,9 @@ namespace xrtc{
             int32_t jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
             jitter_q4_ += ((jitter_diff_q4 + 8) >> 4);
         }
+    }
+
+    void StreamStat::MaybeAppendReportBlockAndReset(std::vector<webrtc::rtcp::ReportBlock> &result) {
+
     }
 }

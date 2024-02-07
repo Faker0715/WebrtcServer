@@ -6,6 +6,8 @@
 #define XRTCSERVER_RTCP_SENDER_H
 
 #include "module/rtp_rtcp/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "receive_stat.h"
 #include <modules/rtp_rtcp/include/rtp_rtcp_defines.h>
 #include <set>
 
@@ -31,6 +33,7 @@ namespace xrtc {
         bool PrepareReport();
         void BuildRR(PacketSender& sender);
 
+        std::vector<webrtc::rtcp::ReportBlock>  CreateRtcpReportBlocks();
         bool ConsumeFlag(uint32_t type, bool force = false);
 
         bool IsFlagPresent(uint32_t type);
@@ -40,6 +43,7 @@ namespace xrtc {
     private:
         webrtc::Clock *clock_;
         uint32_t ssrc_;
+        ReceiveStat* receive_stat_;
         webrtc::RtcpMode method_ = webrtc::RtcpMode::kOff;
         bool sending_ = false;
 
