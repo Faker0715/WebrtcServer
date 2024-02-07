@@ -4,6 +4,7 @@
 
 #include "rtcp_sender.h"
 #include "rtc_base/logging.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 
 namespace xrtc {
     class RTCPSender::PacketSender {
@@ -33,6 +34,7 @@ namespace xrtc {
     };
     // -28 是为了去掉ip udp 包头
     RTCPSender::RTCPSender(const RtpRtcpConfig &config) : clock_(config.clock_),
+                                                          ssrc_(config.local_media_ssrc),
                                                           max_packet_size_(IP_PACKET_SIZE - 28) {
         builders_[webrtc::kRtcpSr] = &RTCPSender::BuildRR;
     }
@@ -122,7 +124,8 @@ namespace xrtc {
     }
 
     void RTCPSender::BuildRR(PacketSender &sender) {
-
+        webrtc::rtcp::ReceiverReport rr;
+        rr.SetSenderSsrc(ssrc_);
     }
 }
 

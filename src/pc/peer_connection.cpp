@@ -8,6 +8,9 @@
 
 namespace xrtc {
 
+    namespace{
+        const uint32_t kDefaultVideoSsrc = 1;
+    }
     struct SsrcInfo {
         uint32_t ssrc_id;
         std::string cname;
@@ -486,6 +489,7 @@ namespace xrtc {
                 VideoReceiveStreamConfig config;
                 config.el = _el;
                 config.clock = clock_;
+                config.rtp.local_ssrc = kDefaultVideoSsrc;
                 video_receive_stream_ = std::make_unique<VideoReceiveStream>(config);
 
             }

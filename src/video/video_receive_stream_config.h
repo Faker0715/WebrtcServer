@@ -11,6 +11,9 @@ class VideoReceiveStreamConfig{
 public:
     EventLoop* el = nullptr;
     webrtc::Clock *clock = nullptr;
+    struct Rtp{
+        uint32_t local_ssrc = 0;
+    }rtp;
 };
 }
 

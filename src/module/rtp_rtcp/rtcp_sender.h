@@ -39,6 +39,7 @@ namespace xrtc {
 
     private:
         webrtc::Clock *clock_;
+        uint32_t ssrc_;
         webrtc::RtcpMode method_ = webrtc::RtcpMode::kOff;
         bool sending_ = false;
 

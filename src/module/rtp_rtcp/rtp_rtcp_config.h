@@ -12,6 +12,7 @@ namespace xrtc{
     struct RtpRtcpConfig{
         EventLoop* el_ = nullptr;
         webrtc::Clock* clock_ = nullptr;
+        uint32_t local_media_ssrc = 0;
     };
 }
 
