@@ -44,7 +44,7 @@ int load_general_conf(const char* filename, GeneralConf* conf) {
         conf->log_to_stderr = config["log"]["log_to_stderr"].as<bool>();
         conf->ice_max_port = config["ice"]["max_port"].as<int>();
         conf->ice_min_port = config["ice"]["min_port"].as<int>();
-        conf->rtcp_report_timer_interval = config["rtp_rtcp"]["report_timer_interval"].as<int>();
+        conf->rtcp_report_timer_interval = config["rtp_rtcp"]["rtcp_report_timer_interval"].as<int>();
     } catch (YAML::Exception e) {
         fprintf(stderr, "catch a YAML::Exception, line: %d, column: %d"
                 ", error:%s\n", e.mark.line + 1, e.mark.column + 1, e.msg.c_str());
