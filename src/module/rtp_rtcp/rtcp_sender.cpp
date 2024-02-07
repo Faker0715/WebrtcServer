@@ -36,7 +36,7 @@ namespace xrtc {
     RTCPSender::RTCPSender(const RtpRtcpConfig &config) : clock_(config.clock_),
                                                           ssrc_(config.local_media_ssrc),
                                                           max_packet_size_(IP_PACKET_SIZE - 28) {
-        builders_[webrtc::kRtcpSr] = &RTCPSender::BuildRR;
+        builders_[webrtc::kRtcpReport] = &RTCPSender::BuildRR;
     }
 
     RTCPSender::~RTCPSender() {
@@ -63,7 +63,7 @@ namespace xrtc {
         if (method_ == webrtc::RtcpMode::kOff) {
             RTC_LOG(LS_WARNING) << "Can't send rtcp packet when rtcp is off";
         }
-        SetFlag(packet_type, false);
+        SetFlag(packet_type, true);
         PrepareReport();
         auto it = report_flags_.begin();
         while (it != report_flags_.end()) {
