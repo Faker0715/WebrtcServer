@@ -63,7 +63,7 @@ namespace xrtc {
                 dtls->set_local_certificate(_local_certificate);
                 dtls->signal_receiving_state.connect(this,
                                                      &TransportController::_on_dtls_receiving_state);
-                dtls->signal_receiving_state.connect(this,
+                dtls->signal_writable_state.connect(this,
                                                      &TransportController::_on_dtls_writable_state);
                 dtls->signal_dtls_state.connect(this,
                                                 &TransportController::_on_dtls_state);
