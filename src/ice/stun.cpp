@@ -226,7 +226,7 @@ bool StunMessage::read(rtc::ByteBufferReader* buf) {
     }
     
     // rtp/rtcp 10(2)
-    if (_type & 0x0800) {
+    if (_type & 0x8000) {
         return false;
     }
     
