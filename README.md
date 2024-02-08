@@ -14,8 +14,8 @@
 
 ### 1. 使用方法
 
-1. 下载浏览器插件 Screensharing Extension
-2. 在manifest.json中添加你的域名
-3. 全局替换public ip 为你的服务器公网地址
-4. 运行build.sh
+1. clone项目
+2. 全局替换public ip 为你的服务器公网地址
+3. 运行build.sh
+4. 进入out目录 执行二进制文件
 

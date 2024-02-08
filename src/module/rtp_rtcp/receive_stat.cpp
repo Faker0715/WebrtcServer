@@ -7,6 +7,8 @@
 
 namespace xrtc{
     const int kMaxReorderingThreshold = 450;
+    const int kStreamStatTimeoutMs = 8000;
+
     ReceiveStat::ReceiveStat(webrtc::Clock *clock): clock_(clock) {
 
     }
@@ -60,7 +62,7 @@ namespace xrtc{
         int64_t now_ms = clock_->TimeInMilliseconds();
 
         receive_counters_.transmitted.AddPacket(packet);
-        --cumulative_loss;
+        --cumulative_loss_;
 
         int64_t sequence_number = seq_unwrapper_.UnwrapWithoutUpdate(packet.SequenceNumber());
         // 收到第一个包
@@ -71,7 +73,7 @@ namespace xrtc{
             return;
         }
         // 顺序到达rtp
-        cumulative_loss += (sequence_number - received_seq_max_);
+        cumulative_loss_ += (sequence_number - received_seq_max_);
         received_seq_max_ = sequence_number;
         seq_unwrapper_.UpdateLast(sequence_number);
         // 计算jitter
@@ -96,7 +98,7 @@ namespace xrtc{
         // 有可能流序列号发生突变
         if(abs(sequence_number -  received_seq_max_) > max_reordering_threshold_){
             received_seq_out_of_order_ = packet.SequenceNumber();
-            ++cumulative_loss;
+            ++cumulative_loss_;
             return true;
         }
         if(sequence_number > received_seq_max_){
@@ -126,6 +128,44 @@ namespace xrtc{
     }
 
     void StreamStat::MaybeAppendReportBlockAndReset(std::vector<webrtc::rtcp::ReportBlock> &result) {
+        int64_t now_ms = clock_->TimeInMilliseconds();
+        // 如果最近8s没有接受到数据
+        if(now_ms - last_received_time_ms_ > kStreamStatTimeoutMs){
+            return;
+        }
+        // 如果没有收到任何数据包
+        if(!ReceiveRtpPacket()){
+            return;
+        }
+        result.emplace_back();
+        webrtc::rtcp::ReportBlock& stats = result.back();
+        stats.SetMediaSsrc(ssrc_);
+        // 设置丢包指数
+        // 计算期望收到的数据包个数
+        int64_t exp_since_last = received_seq_max_ - last_report_seq_max_ + 1;
+        int32_t loss_since_last = cumulative_loss_ - last_report_cumulative_loss_;
+        if(exp_since_last > 0 && loss_since_last > 0){
+            stats.SetFractionLost((loss_since_last << 8) / exp_since_last);
+        }
+        // 设置累计丢包的个数
+        int32_t packets_lost = cumulative_loss_ + cumulative_loss_rtcp_offset_;
+        if(packets_lost < 0){
+            packets_lost = 0;
+            cumulative_loss_rtcp_offset_ = -cumulative_loss_;
+        }
+        if(packets_lost > 0x7FFFFF){
+            if(!cumulative_loss_is_capped_){
+                cumulative_loss_is_capped_ = true;
+                RTC_LOG(LS_WARNING) << "cumulative packet loss reached max value for ssrc: " << ssrc_;
+            }
+            packets_lost = 0x7FFFFF;
+        }
+        stats.SetCumulativeLost(packets_lost);
+        stats.SetExtHighestSeqNum(received_seq_max_);
+        stats.SetJitter(jitter_q4_ >> 4);
+
+        last_report_seq_max_ = received_seq_max_;
+        last_report_cumulative_loss_ = cumulative_loss_;
 
     }
 }
