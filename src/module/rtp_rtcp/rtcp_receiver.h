@@ -19,6 +19,9 @@ namespace xrtc{
         void SetRemoteSSRC(uint32_t ssrc){
             remote_ssrc_ = ssrc;
         };
+        bool NTP(uint32_t* received_ntp_secs, uint32_t* received_ntp_frac,
+                 uint32_t* rtcp_arrival_time_secs, uint32_t* rtcp_arrival_time_frac,
+                 uint32_t* rtp_timestamp) const;
     private:
         struct PacketInformation;
         bool ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
@@ -28,8 +31,14 @@ namespace xrtc{
         void HandleRr(const webrtc::rtcp::CommonHeader& rtcp_block,
                         PacketInformation* packet_information);
     private:
+        webrtc::Clock* clock_;
         int num_skipped_packets_ = 0;
         uint32_t remote_ssrc_ = 0;
+        webrtc::NtpTime remote_sender_ntp_time_;
+        uint32_t remote_sender_rtp_time_ = 0;
+        webrtc::NtpTime last_received_sr_ntp_;
+        uint32_t remote_sender_packet_count_ = 0;
+        uint32_t remote_sender_octet_count_ = 0;
     };
 
 }

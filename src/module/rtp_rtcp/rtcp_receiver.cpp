@@ -11,7 +11,8 @@ namespace xrtc{
     struct RTCPReceiver::PacketInformation{
 
     };
-    RTCPReceiver::RTCPReceiver(const RtpRtcpConfig &config) {
+    RTCPReceiver::RTCPReceiver(const RtpRtcpConfig &config):
+        clock_(config.clock_){
     }
 
     RTCPReceiver::~RTCPReceiver() {
@@ -72,12 +73,44 @@ namespace xrtc{
         if(remote_ssrc == remote_ssrc_){
             RTC_LOG(LS_WARNING) << "=======sr ssrc: " << sr.sender_ssrc()
                                 << ", packet_count: "<< sr.sender_packet_count();
+            remote_sender_ntp_time_ = sr.ntp();
+            remote_sender_rtp_time_ = sr.rtp_timestamp();
+            last_received_sr_ntp_ = clock_->CurrentNtpTime();
+            remote_sender_packet_count_ = sr.sender_packet_count();
+            remote_sender_octet_count_ = sr.sender_octet_count();
         }
     }
 
     void RTCPReceiver::HandleRr(const webrtc::rtcp::CommonHeader &rtcp_block,
                                 RTCPReceiver::PacketInformation *packet_information) {
 
+    }
+
+    bool RTCPReceiver::NTP(uint32_t *received_ntp_secs, uint32_t *received_ntp_frac, uint32_t *rtcp_arrival_time_secs,
+                           uint32_t *rtcp_arrival_time_frac, uint32_t *rtp_timestamp) const {
+        if(!last_received_sr_ntp_.Valid()){ //此时还没有收到任何sr包
+            return false;
+        }
+        // SR包中的NTP时间秒数部分
+        if(received_ntp_secs){
+            *received_ntp_secs = remote_sender_ntp_time_.seconds();
+        }
+        // SR包中的NTP时间分数部分
+        if(received_ntp_frac){
+            *received_ntp_frac = remote_sender_ntp_time_.fractions();
+        }
+        // SR包到达时的本地 NTP 时间
+        if(rtcp_arrival_time_secs){
+            *rtcp_arrival_time_secs = last_received_sr_ntp_.seconds();
+        }
+        if(rtcp_arrival_time_frac){
+            *rtcp_arrival_time_frac = last_received_sr_ntp_.fractions();
+        }
+        if(rtp_timestamp){
+            *rtp_timestamp = remote_sender_rtp_time_;
+        }
+
+        return true;
     }
 
 }
