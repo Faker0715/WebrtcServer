@@ -104,7 +104,10 @@ namespace xrtc {
 
     void PeerConnection::_on_rtcp_packet_received(TransportController *,
                                                   rtc::CopyOnWriteBuffer *packet, int64_t ts) {
-        signal_rtcp_packet_received(this, packet, ts);
+        if (video_receive_stream_){
+            video_receive_stream_->DeliverRtcp(packet->cdata(), packet->size());
+        }
+//        signal_rtcp_packet_received(this, packet, ts);
     }
 
     int PeerConnection::init(rtc::RTCCertificate *certificate) {
@@ -490,6 +493,7 @@ namespace xrtc {
                 config.el = _el;
                 config.clock = clock_;
                 config.rtp.local_ssrc = kDefaultVideoSsrc;
+                config.rtp.remote_ssrc = remote_video_ssrc_;
                 video_receive_stream_ = std::make_unique<VideoReceiveStream>(config);
 
             }

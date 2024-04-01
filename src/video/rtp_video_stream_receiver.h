@@ -17,6 +17,7 @@ namespace xrtc{
                                ReceiveStat* rtp_receive_stat);
         ~RtpVideoStreamReceiver();
         void OnRtpPacket(const webrtc::RtpPacketReceived& packet);
+        void DeliverRtcp(const uint8_t* data, size_t length);
     private:
         VideoReceiveStreamConfig config_;
         ReceiveStat* rtp_receive_stat_;

@@ -16,6 +16,7 @@ namespace xrtc {
         VideoReceiveStream(const VideoReceiveStreamConfig& config);
         ~VideoReceiveStream();
         void OnRtpPacket(const webrtc::RtpPacketReceived& packet);
+        void DeliverRtcp(const uint8_t* data, size_t length);
 
     private:
         VideoReceiveStreamConfig config_;

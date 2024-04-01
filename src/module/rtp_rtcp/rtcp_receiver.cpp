@@ -63,7 +63,16 @@ namespace xrtc{
 
     void RTCPReceiver::HandleSr(const webrtc::rtcp::CommonHeader &rtcp_block,
                                 RTCPReceiver::PacketInformation *packet_information) {
-
+        webrtc::rtcp::SenderReport sr;
+        if(!sr.Parse(rtcp_block)){
+            ++num_skipped_packets_;
+            return;
+        }
+        uint32_t remote_ssrc = sr.sender_ssrc();
+        if(remote_ssrc == remote_ssrc_){
+            RTC_LOG(LS_WARNING) << "=======sr ssrc: " << sr.sender_ssrc()
+                                << ", packet_count: "<< sr.sender_packet_count();
+        }
     }
 
     void RTCPReceiver::HandleRr(const webrtc::rtcp::CommonHeader &rtcp_block,

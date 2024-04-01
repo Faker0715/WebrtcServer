@@ -17,6 +17,8 @@ namespace xrtc{
         ~RtpRtcpImpl();
         void SetRTCPStatus(webrtc::RtcpMode method);
         void TimeToSendRTCP();
+        void IncomingRTCPPacket(const uint8_t* data, size_t length);
+        void SetRemoteSSRC(uint32_t ssrc);
     private:
         EventLoop* el_;
         RTCPSender rtcp_sender_;

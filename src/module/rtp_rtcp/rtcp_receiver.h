@@ -16,6 +16,9 @@ namespace xrtc{
         ~RTCPReceiver();
         void IncomingRtcpPacket(const uint8_t* packet, size_t palength);
         void IncomingRtcpPacket(rtc::ArrayView<const uint8_t> packet);
+        void SetRemoteSSRC(uint32_t ssrc){
+            remote_ssrc_ = ssrc;
+        };
     private:
         struct PacketInformation;
         bool ParseCompoundPacket(rtc::ArrayView<const uint8_t> packet,
@@ -26,6 +29,7 @@ namespace xrtc{
                         PacketInformation* packet_information);
     private:
         int num_skipped_packets_ = 0;
+        uint32_t remote_ssrc_ = 0;
     };
 
 }

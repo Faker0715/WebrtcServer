@@ -56,8 +56,6 @@ namespace xrtc {
                                            IceParameters(td->ice_ufrag, td->ice_pwd));
             }
             if (is_dtls_) {
-
-
                 DtlsTransport *dtls = new DtlsTransport(
                         _ice_agent->get_channel(mid, IceCandidateComponent::RTP));
                 dtls->set_local_certificate(_local_certificate);

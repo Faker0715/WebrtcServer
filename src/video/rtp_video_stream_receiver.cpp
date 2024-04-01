@@ -37,5 +37,10 @@ namespace xrtc {
                                                    config_(config),
                                                    rtp_receive_stat_(rtp_receive_stat),
                                                    rtp_rtcp_(CreateRtpRtcpModule(config,rtp_receive_stat)){
+        rtp_rtcp_->SetRemoteSSRC(config.rtp.remote_ssrc);
+    }
+
+    void RtpVideoStreamReceiver::DeliverRtcp(const uint8_t *data, size_t length) {
+        rtp_rtcp_->IncomingRTCPPacket(data, length);
     }
 }

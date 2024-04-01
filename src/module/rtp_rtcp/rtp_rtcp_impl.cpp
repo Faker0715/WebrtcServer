@@ -46,4 +46,12 @@ namespace xrtc {
         RTC_LOG(LS_WARNING) << "TimeToSendRTCP---";
         rtcp_sender_.SendRTCP(webrtc::kRtcpReport);
     }
+
+    void RtpRtcpImpl::IncomingRTCPPacket(const uint8_t *data, size_t length) {
+        rtcp_receiver_.IncomingRtcpPacket(data,length);
+    }
+
+    void RtpRtcpImpl::SetRemoteSSRC(uint32_t ssrc) {
+        rtcp_receiver_.SetRemoteSSRC(ssrc);
+    }
 }
