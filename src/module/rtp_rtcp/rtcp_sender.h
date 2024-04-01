@@ -16,16 +16,15 @@ namespace xrtc {
     class RTCPSender {
     public:
         struct FeedbackState{
-            int32_t last_rr_ntp_secs = 0; // 记录了最近一次收到sr包时，接收端的ntp时间
-            int32_t last_rr_ntp_frac = 0;
-            int64_t remote_sr = 0; // 从最近的一次SR包中，提取的NTP时间（发送端）
-
+            uint32_t last_rr_ntp_secs = 0; // 记录了最近一次收到sr包时，接收端的ntp时间
+            uint32_t last_rr_ntp_frac = 0;
+            uint32_t remote_sr = 0; // 从最近的一次SR包中，提取的NTP时间（发送端）
         };
         RTCPSender(const RtpRtcpConfig &config);
 
         ~RTCPSender();
 
-        int SendRTCP(webrtc::RTCPPacketType packet_type);
+        int SendRTCP(const FeedbackState& feedback_state, webrtc::RTCPPacketType packet_type);
 
         void SetRtcpStatus(webrtc::RtcpMode method);
 
@@ -34,11 +33,11 @@ namespace xrtc {
         };
     private:
         class PacketSender;
-        absl::optional<int32_t> ComputeCompoundRTCPPacket(webrtc::RTCPPacketType packet_type,
+        absl::optional<int32_t> ComputeCompoundRTCPPacket(const FeedbackState& feedback_state,webrtc::RTCPPacketType packet_type,
                                                           PacketSender& sender);
 
         bool PrepareReport();
-        void BuildRR(PacketSender& sender);
+        void BuildRR(const FeedbackState& feedback_state,PacketSender& sender);
 
         std::vector<webrtc::rtcp::ReportBlock>  CreateRtcpReportBlocks(const FeedbackState& feedback_state);
         bool ConsumeFlag(uint32_t type, bool force = false);
@@ -73,7 +72,7 @@ namespace xrtc {
 
         // 当前发送的rtcp包的类型
         std::set<ReportFlag> report_flags_;
-        typedef void (RTCPSender::*BuilderFunc)(PacketSender& sender);
+        typedef void (RTCPSender::*BuilderFunc)(const FeedbackState& feedback_state,PacketSender& sender);
         std::map<uint32_t,BuilderFunc> builders_;
     };
 }

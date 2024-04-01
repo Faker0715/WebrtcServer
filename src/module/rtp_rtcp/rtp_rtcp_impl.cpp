@@ -44,7 +44,7 @@ namespace xrtc {
 
     void RtpRtcpImpl::TimeToSendRTCP() {
         RTC_LOG(LS_WARNING) << "TimeToSendRTCP---";
-        rtcp_sender_.SendRTCP(webrtc::kRtcpReport);
+        rtcp_sender_.SendRTCP(GetFeedbackState(),webrtc::kRtcpReport);
     }
 
     void RtpRtcpImpl::IncomingRTCPPacket(const uint8_t *data, size_t length) {
@@ -53,5 +53,24 @@ namespace xrtc {
 
     void RtpRtcpImpl::SetRemoteSSRC(uint32_t ssrc) {
         rtcp_receiver_.SetRemoteSSRC(ssrc);
+    }
+
+    RTCPSender::FeedbackState RtpRtcpImpl::GetFeedbackState() {
+        RTCPSender::FeedbackState state;
+        uint32_t receive_ntp_secs;
+        uint32_t receive_ntp_frac;
+        state.remote_sr = 0;
+        if(rtcp_receiver_.NTP(&receive_ntp_secs,
+                              &receive_ntp_frac,
+                              &state.last_rr_ntp_secs,
+                              &state.last_rr_ntp_frac,
+                              nullptr)){
+            state.remote_sr = ((receive_ntp_secs & 0x0000FFFF) << 16) +
+                    ((receive_ntp_frac & 0xFFFF0000)>> 16);
+        }
+
+
+
+        return state;
     }
 }

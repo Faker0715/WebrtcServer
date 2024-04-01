@@ -45,14 +45,14 @@ namespace xrtc {
 
     }
 
-    int RTCPSender::SendRTCP(webrtc::RTCPPacketType packet_type) {
+    int RTCPSender::SendRTCP(const FeedbackState& feedback_state,webrtc::RTCPPacketType packet_type) {
         auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
             RTC_LOG(LS_WARNING) << "====build rtcp packet, size: " << packet.size();
         };
         absl::optional<PacketSender> sender;
         sender.emplace(max_packet_size_, callback);
 
-        auto result = ComputeCompoundRTCPPacket(packet_type,*sender);
+        auto result = ComputeCompoundRTCPPacket(feedback_state,packet_type,*sender);
         if(result){
             return *result;
         }
@@ -60,7 +60,7 @@ namespace xrtc {
         return 0;
     }
 
-    absl::optional<int32_t> RTCPSender::ComputeCompoundRTCPPacket(webrtc::RTCPPacketType packet_type,
+    absl::optional<int32_t> RTCPSender::ComputeCompoundRTCPPacket(const FeedbackState& feedback_state,webrtc::RTCPPacketType packet_type,
                                                                   PacketSender &sender) {
         if (method_ == webrtc::RtcpMode::kOff) {
             RTC_LOG(LS_WARNING) << "Can't send rtcp packet when rtcp is off";
@@ -80,7 +80,7 @@ namespace xrtc {
                 RTC_LOG(LS_WARNING) << "Can't find builder for rtcp packet type: " << rtcp_packet_type;
             } else {
                 BuilderFunc func = builder_it->second;
-                (this->*func)(sender);
+                (this->*func)(feedback_state,sender);
             }
         }
         return absl::nullopt;
@@ -125,8 +125,7 @@ namespace xrtc {
         return report_flags_.find(ReportFlag(type, false)) != report_flags_.end();
     }
 
-    void RTCPSender::BuildRR(PacketSender &sender) {
-        FeedbackState feedback_state;
+    void RTCPSender::BuildRR(const FeedbackState& feedback_state,PacketSender &sender) {
         webrtc::rtcp::ReceiverReport rr;
         rr.SetSenderSsrc(ssrc_);
         rr.SetReportBlocks(CreateRtcpReportBlocks(feedback_state));
@@ -146,8 +145,8 @@ namespace xrtc {
             int32_t now = webrtc::CompactNtp(clock_->CurrentNtpTime());
             // 收到最近一次SR包时，接收端压缩后的32位NTP时间
             int32_t receive_time = feedback_state.last_rr_ntp_secs & 0x0000FFFF;
-            receive_time <= 16;
-            receive_time += ((feedback_state.last_rr_ntp_frac & 0xFFFF0000) >= 16);
+            receive_time <<= 16;
+            receive_time += ((feedback_state.last_rr_ntp_frac & 0xFFFF0000) >> 16);
             int32_t delay_since_last_sr = now - receive_time;
             for(auto& report_block: result){
                 report_block.SetLastSr(feedback_state.remote_sr);

@@ -20,6 +20,8 @@ namespace xrtc{
         void IncomingRTCPPacket(const uint8_t* data, size_t length);
         void SetRemoteSSRC(uint32_t ssrc);
     private:
+        RTCPSender::FeedbackState GetFeedbackState();
+    private:
         EventLoop* el_;
         RTCPSender rtcp_sender_;
         RTCPReceiver rtcp_receiver_;
