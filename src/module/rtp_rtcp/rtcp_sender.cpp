@@ -46,7 +46,8 @@ namespace xrtc {
                                                           max_packet_size_(IP_PACKET_SIZE - 28),
                                                           report_interval_ms_(config.rtcp_report_interval_ms.value_or(audio_? kDefaultAudioReportInterval : kDefaultVideoReportInterval)),
                                                           cur_report_interval_ms_(report_interval_ms_/2),
-                                                          random_(clock_->TimeInMicroseconds()){
+                                                          random_(clock_->TimeInMicroseconds()),
+                                                          rtp_rtcp_module_observer_(config.rtp_rtcp_module_observer){
         builders_[webrtc::kRtcpReport] = &RTCPSender::BuildRR;
     }
 
@@ -57,6 +58,9 @@ namespace xrtc {
     int RTCPSender::SendRTCP(const FeedbackState &feedback_state, webrtc::RTCPPacketType packet_type) {
         auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
             RTC_LOG(LS_WARNING) << "====build rtcp packet, size: " << packet.size();
+            if(rtp_rtcp_module_observer_){
+                rtp_rtcp_module_observer_->OnLocalRtcpPacket(audio_?webrtc::MediaType::AUDIO : webrtc::MediaType::VIDEO,packet.data(),packet.size());
+            }
         };
         absl::optional<PacketSender> sender;
         sender.emplace(max_packet_size_, callback);
@@ -119,8 +123,6 @@ namespace xrtc {
         uint32_t min_interval = report_interval_ms_;
         // 发一次 sr 和 rr包后，随机下次发送时间
         cur_report_interval_ms_ = random_.Rand(min_interval * 1 / 2, min_interval * 3 / 2);
-
-
     }
 
     bool RTCPSender::ConsumeFlag(uint32_t type, bool force) {

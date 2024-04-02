@@ -25,7 +25,7 @@ struct RTCOfferAnswerOptions {
     bool dtls_on = true;
 };
 
-class PeerConnection : public sigslot::has_slots<> {
+class PeerConnection : public sigslot::has_slots<>,public RtpRtcpModuleObserver{
 public:
     PeerConnection(EventLoop* el, PortAllocator* allocator);
     
@@ -69,6 +69,8 @@ private:
 
     webrtc::MediaType GetMediaType(uint32_t ssrc) const;
     void CreateVideoReceiveStream(VideoContentDescription* video_content);
+    void OnLocalRtcpPacket(webrtc::MediaType mediaType,
+                           const uint8_t* data,size_t len) override;
     friend void destroy_timer_cb(EventLoop* el, TimerWatcher* w, void* data);
 
 private:

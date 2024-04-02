@@ -13,6 +13,7 @@ namespace xrtc {
             config.clock_ = vconf.clock;
             config.local_media_ssrc = vconf.rtp.local_ssrc;
             config.receive_stat = receive_stat;
+            config.rtp_rtcp_module_observer = vconf.rtp_rtcp_module_observer;
             auto rtp_rtcp = std::make_unique<RtpRtcpImpl>(config);
             rtp_rtcp->SetRTCPStatus(webrtc::RtcpMode::kCompound);
             return rtp_rtcp;

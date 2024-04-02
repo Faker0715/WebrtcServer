@@ -58,6 +58,7 @@ namespace xrtc {
         uint32_t report_interval_ms_;
         uint32_t cur_report_interval_ms_;
         webrtc::Random random_;
+        RtpRtcpModuleObserver* rtp_rtcp_module_observer_;
 
         size_t max_packet_size_;
         struct ReportFlag {
