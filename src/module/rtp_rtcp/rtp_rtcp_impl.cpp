@@ -43,8 +43,10 @@ namespace xrtc {
     }
 
     void RtpRtcpImpl::TimeToSendRTCP() {
-        RTC_LOG(LS_WARNING) << "TimeToSendRTCP---";
         rtcp_sender_.SendRTCP(GetFeedbackState(),webrtc::kRtcpReport);
+        uint32_t interval = rtcp_sender_.cur_report_interval_ms();
+        RTC_LOG(LS_WARNING) << "====rtcp report interval: " << interval;
+        el_->start_timer(rtcp_report_time_,interval * 1000);
     }
 
     void RtpRtcpImpl::IncomingRTCPPacket(const uint8_t *data, size_t length) {

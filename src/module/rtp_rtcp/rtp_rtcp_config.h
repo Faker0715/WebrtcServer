@@ -13,8 +13,10 @@ namespace xrtc{
     struct RtpRtcpConfig{
         EventLoop* el_ = nullptr;
         webrtc::Clock* clock_ = nullptr;
+        bool audio = false;
         uint32_t local_media_ssrc = 0;
         ReceiveStat* receive_stat = nullptr;
+        absl::optional<uint32_t> rtcp_report_interval_ms;
     };
 }
 

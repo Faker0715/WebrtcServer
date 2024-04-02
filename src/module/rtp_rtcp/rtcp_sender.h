@@ -11,6 +11,7 @@
 #include <modules/rtp_rtcp/include/rtp_rtcp_defines.h>
 #include <set>
 #include <modules/rtp_rtcp/source/time_util.h>
+#include <rtc_base/random.h>
 
 namespace xrtc {
     class RTCPSender {
@@ -31,6 +32,7 @@ namespace xrtc {
         void SetSendingStatus(bool sending) {
             sending_ = sending;
         };
+        uint32_t cur_report_interval_ms() const{return cur_report_interval_ms_;}
     private:
         class PacketSender;
         absl::optional<int32_t> ComputeCompoundRTCPPacket(const FeedbackState& feedback_state,webrtc::RTCPPacketType packet_type,
@@ -48,10 +50,14 @@ namespace xrtc {
 
     private:
         webrtc::Clock *clock_;
+        bool audio_;
         uint32_t ssrc_;
         ReceiveStat* receive_stat_;
         webrtc::RtcpMode method_ = webrtc::RtcpMode::kOff;
         bool sending_ = false;
+        uint32_t report_interval_ms_;
+        uint32_t cur_report_interval_ms_;
+        webrtc::Random random_;
 
         size_t max_packet_size_;
         struct ReportFlag {
