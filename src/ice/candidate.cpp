@@ -1,6 +1,6 @@
-#include <sstream>
-
 #include "ice/candidate.h"
+
+#include <sstream>
 
 namespace xrtc {
 
@@ -15,7 +15,7 @@ priority = (2^24)*(type preference) +
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // NIC type：3G/wifi
 // Addr pref: 定义在RFC3484
-uint32_t Candidate::get_priority(uint32_t type_preference,
+uint32_t Candidate::GetPriority(uint32_t type_preference,
         int network_adapter_preference,
         int relay_preference)
 {
@@ -24,7 +24,7 @@ uint32_t Candidate::get_priority(uint32_t type_preference,
     return (type_preference << 24) | (local_pref << 8) | (256 - (int)component);
 }
 
-std::string Candidate::to_string() const {
+std::string Candidate::ToString() const {
     std::stringstream ss;
     ss << "Cand[" << foundation << ":" << (int)component << ":" << protocol
         << ":" << priority << ":" << address.ToString() << ":" << type

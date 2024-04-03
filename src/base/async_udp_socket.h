@@ -1,73 +1,71 @@
-//
-// Created by faker on 23-4-11.
-//
+#ifndef  __XRTCSERVER_BASE_ASYNC_UDP_SOCKET_H_
+#define  __XRTCSERVER_BASE_ASYNC_UDP_SOCKET_H_
 
-#ifndef XRTCSERVER_ASYNC_UDP_SOCKET_H
-#define XRTCSERVER_ASYNC_UDP_SOCKET_H
-
-#include "event_loop.h"
-#include <rtc_base/socket_address.h>
-#include "socket.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include <list>
 
+#include <rtc_base/third_party/sigslot/sigslot.h>
+#include <rtc_base/socket_address.h>
+
+#include "base/event_loop.h"
+
 namespace xrtc {
-    struct UdpPacketData {
-    public:
-        UdpPacketData(const char *data, size_t size, const rtc::SocketAddress &addr) : _data(new char[size]),
-                                                                                       _size(size), _addr(addr) {
-            memcpy(_data, data, size);
+
+class UdpPacketData {
+public:
+    UdpPacketData(const char* data, size_t size, const rtc::SocketAddress& addr) :
+        data_(new char[size]),
+        size_(size),
+        addr_(addr)
+    {
+        memcpy(data_, data, size);
+    }
+    
+    ~UdpPacketData() {
+        if (data_) {
+            delete[] data_;
+            data_ = nullptr;
         }
+    }
+    
+    char* data() { return data_; }
+    size_t size() { return size_; }
+    const rtc::SocketAddress& addr() { return addr_; }
 
-        ~UdpPacketData() {
-            if (_data) {
-                delete[] _data;
-                _data = nullptr;
-            }
-        };
+private:
+    char* data_;
+    size_t size_;
+    rtc::SocketAddress addr_;
+};
 
-        char *data() { return _data; };
+class AsyncUdpSocket {
+public:
+    AsyncUdpSocket(EventLoop* el, int socket);
+    ~AsyncUdpSocket();
+    
+    void RecvData();
+    void SendData();
 
-        size_t size() const { return _size; }
+    int SendTo(const char* data, size_t size, const rtc::SocketAddress& addr);
 
-        const rtc::SocketAddress &addr() {
-            return _addr;
-        };
+    sigslot::signal5<AsyncUdpSocket*, char*, size_t, const rtc::SocketAddress&, int64_t>
+        SignalReadPacket;
 
-    private:
-        char *_data;
-        size_t _size;
-        rtc::SocketAddress _addr;
-    };
+private:
+    int AddUdpPacket(const char* data, size_t size, const rtc::SocketAddress& addr);
 
-    class AsyncUdpSocket {
-    public:
-        AsyncUdpSocket(EventLoop *el, int socket);
+private:
+    EventLoop* el_;
+    int socket_;
+    IOWatcher* socket_watcher_;
+    char* buf_;
+    size_t size_;
 
-        ~AsyncUdpSocket();
+    std::list<UdpPacketData*> udp_packet_list_;
+};
 
-        void recv_data();
-
-        void send_data();
-
-        sigslot::signal5<AsyncUdpSocket *, char *, size_t, const rtc::SocketAddress &, int64_t>
-                signal_read_packet;
-
-        int send_to(const char *data, size_t size, const rtc::SocketAddress &addr);
-
-    private:
-        int _add_udp_packet(const char *data, size_t size, const rtc::SocketAddress &addr);
-
-    private:
-        EventLoop *_el;
-        int _socket;
-        char *_buf;
-        size_t _size;
-        IOWatcher *_socket_watcher;
-
-        std::list<UdpPacketData *> _udp_packet_list;
-    };
-}
+} // namespace xrtc
 
 
-#endif //XRTCSERVER_ASYNC_UDP_SOCKET_H
+#endif  //__XRTCSERVER_BASE_ASYNC_UDP_SOCKET_H_
+
+

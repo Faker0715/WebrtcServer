@@ -1,5 +1,5 @@
-#ifndef  __SIGNALING_WORKER_H_
-#define  __SIGNALING_WORKER_H_
+#ifndef  __XRTCSERVER_SERVER_SIGNALING_WORKER_H_
+#define  __XRTCSERVER_SERVER_SIGNALING_WORKER_H_
 
 #include <thread>
 #include <queue>
@@ -15,107 +15,80 @@
 
 namespace xrtc {
 
-    class TcpConnection;
+class TcpConnection;
 
-    class SignalingWorker {
-    public:
-        enum {
-            QUIT = 0,
-            NEW_CONN = 1,
-            RTC_MSG = 2
-        };
-
-        SignalingWorker(int worker_id, const SignalingServerOptions &options);
-
-        ~SignalingWorker();
-
-        int init();
-
-        bool start();
-
-        void stop();
-
-        int notify(int msg);
-
-        void join();
-
-        int notify_new_conn(int fd);
-
-        void push_msg(std::shared_ptr<RtcMsg> msg);
-
-        std::shared_ptr<RtcMsg> pop_msg();
-
-        int send_rtc_msg(std::shared_ptr<RtcMsg> msg);
-
-        friend void signaling_worker_recv_notify(EventLoop *el, IOWatcher *w, int fd,
-                                                 int events, void *data);
-
-        friend void conn_io_cb(EventLoop *, IOWatcher *, int fd, int events, void *data);
-
-        friend void conn_time_cb(EventLoop *el, TimerWatcher * /*w*/, void *data);
-
-    private:
-        void _process_notify(int msg);
-
-        void _stop();
-
-        void _new_conn(int fd);
-
-        void _read_query(int fd);
-
-        int _process_query_buffer(TcpConnection *c);
-
-        int _process_request(TcpConnection *c,
-                             const rtc::Slice &header,
-                             const rtc::Slice &body);
-
-        void _close_conn(TcpConnection *c);
-
-        void _remove_conn(TcpConnection *c);
-
-        void _process_timeout(TcpConnection *c);
-
-        int _process_push(int cmdno, TcpConnection *c,
-                          const Json::Value &root, uint32_t log_id);
-
-        int _process_pull(int cmdno, TcpConnection *c,
-                          const Json::Value &root, uint32_t log_id);
-
-        int _process_stop_push(int cmdno, TcpConnection *c,
-                               const Json::Value &root, uint32_t log_id);
-
-        int _process_stop_pull(int cmdno, TcpConnection *c,
-                               const Json::Value &root, uint32_t log_id);
-
-        int _process_answer(int cmdno, TcpConnection *c,
-                            const Json::Value &root, uint32_t log_id);
-
-        void _process_rtc_msg();
-
-        void _response_server_offer(std::shared_ptr<RtcMsg> msg);
-
-        void _add_reply(TcpConnection *c, const rtc::Slice &reply);
-
-        void _write_reply(int fd);
-
-    private:
-        int _worker_id;
-        SignalingServerOptions _options;
-        EventLoop *_el;
-        IOWatcher *_pipe_watcher = nullptr;
-        int _notify_recv_fd = -1;
-        int _notify_send_fd = -1;
-
-        std::thread *_thread = nullptr;
-        LockFreeQueue<int> _q_conn;
-        std::vector<TcpConnection *> _conns;
-
-        std::queue<std::shared_ptr<RtcMsg>> _q_msg;
-        std::mutex _q_msg_mtx;
+class SignalingWorker {
+public:
+    enum {
+        QUIT = 0,
+        NEW_CONN = 1,
+        RTC_MSG = 2
     };
+
+    SignalingWorker(int worker_id, const SignalingServerOptions& options);
+    ~SignalingWorker();
+    
+    int Init();
+    bool Start();
+    void Stop();
+    int Notify(int msg);
+    void Join();
+    int NotifyNewConn(int fd);
+    void PushMsg(std::shared_ptr<RtcMsg> msg);
+    std::shared_ptr<RtcMsg> PopMsg();
+    int SendRtcMsg(std::shared_ptr<RtcMsg> msg);
+
+    friend void SignalingWorkerRecvNotify(EventLoop* el, IOWatcher* w, int fd, 
+        int events, void *data);
+
+    friend void ConnIOCb(EventLoop*, IOWatcher*, int fd, int events, void* data);
+    friend void ConnTimeCb(EventLoop* el, TimerWatcher* /*w*/, void* data);
+
+private:
+    void ProcessNotify(int msg);
+    void InnerStop();
+    void NewConn(int fd);
+    void ReadQuery(int fd);
+    int ProcessQueryBuffer(TcpConnection* c);
+    int ProcessRequest(TcpConnection* c, 
+            const rtc::Slice& header,
+            const rtc::Slice& body);
+    void CloseConn(TcpConnection* c);
+    void RemoveConn(TcpConnection* c);
+    void ProcessTimeout(TcpConnection* c);
+    int ProcessPush(int cmdno, TcpConnection* c,
+            const Json::Value& root, uint32_t log_id);
+    int ProcessPull(int cmdno, TcpConnection* c,
+            const Json::Value& root, uint32_t log_id);
+    int ProcessStopPush(int cmdno, TcpConnection* c,
+            const Json::Value& root, uint32_t log_id);
+    int ProcessStopPull(int cmdno, TcpConnection* c,
+            const Json::Value& root, uint32_t log_id);
+    int ProcessAnswer(int cmdno, TcpConnection* c,
+            const Json::Value& root, uint32_t log_id);
+    void ProcessRtcMsg();
+    void ResponseServerOffer(std::shared_ptr<RtcMsg> msg);
+    void AddReply(TcpConnection* c, const rtc::Slice& reply);
+    void WriteReply(int fd);
+
+private:
+    int worker_id_;
+    SignalingServerOptions options_;
+    EventLoop* el_;
+    IOWatcher* pipe_watcher_ = nullptr;
+    int notify_recv_fd_ = -1;
+    int notify_send_fd_ = -1;
+
+    std::thread* thread_ = nullptr;
+    LockFreeQueue<int> q_conn_;
+    std::vector<TcpConnection*> conns_;
+
+    std::queue<std::shared_ptr<RtcMsg>> q_msg_;
+    std::mutex q_msg_mtx_;
+};
 
 } // namespace xrtc
 
-#endif  //__SIGNALING_WORKER_H_
+#endif  //__XRTCSERVER_SERVER_SIGNALING_WORKER_H_
 
 

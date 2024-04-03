@@ -1,24 +1,5 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file log.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
-#ifndef  __BASE_LOG_H_
-#define  __BASE_LOG_H_
+#ifndef  __XRTCSERVER_BASE_LOG_H_
+#define  __XRTCSERVER_BASE_LOG_H_
 
 #include <fstream>
 #include <queue>
@@ -36,38 +17,38 @@ public:
             const std::string& log_level);
     ~XrtcLog() override;
     
-    int init();
-    void set_log_to_stderr(bool on);
-    bool start();
-    void stop();
-    void join();
+    int Init();
+    void SetLogToStderr(bool on);
+    bool Start();
+    void Stop();
+    void Join();
 
     void OnLogMessage(const std::string& message, rtc::LoggingSeverity severity) override;
     void OnLogMessage(const std::string& message) override;
 
 private:
-    std::string _log_dir;
-    std::string _log_name;
-    std::string _log_level;
-    std::string _log_file;
-    std::string _log_file_wf;
+    std::string log_dir_;
+    std::string log_name_;
+    std::string log_level_;
+    std::string log_file_;
+    std::string log_file_wf_;
 
-    std::ofstream _out_file;
-    std::ofstream _out_file_wf;
+    std::ofstream out_file_;
+    std::ofstream out_file_wf_;
 
-    std::queue<std::string> _log_queue;
-    std::mutex _mtx;
+    std::queue<std::string> log_queue_;
+    std::mutex mtx_;
 
-    std::queue<std::string> _log_queue_wf;
-    std::mutex _mtx_wf;
+    std::queue<std::string> log_queue_wf_;
+    std::mutex mtx_wf_;
 
-    std::thread* _thread = nullptr;
-    std::atomic<bool> _running{false};
+    std::thread* thread_ = nullptr;
+    std::atomic<bool> running_{false};
 };
 
 } // namespace xrtc
 
 
-#endif  //__BASE_LOG_H_
+#endif  //__XRTCSERVER_BASE_LOG_H_
 
 

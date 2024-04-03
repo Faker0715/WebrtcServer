@@ -1,7 +1,6 @@
 
-
-#ifndef  __ICE_TRANSPORT_CHANNEL_H_
-#define  __ICE_TRANSPORT_CHANNEL_H_
+#ifndef  __XRTCSERVER_ICE_ICE_TRANSPORT_CHANNEL_H_
+#define  __XRTCSERVER_ICE_ICE_TRANSPORT_CHANNEL_H_
 
 #include <vector>
 #include <string>
@@ -21,13 +20,13 @@ namespace xrtc {
 class UDPPort;
 
 enum class IceTransportState {
-    k_new,
-    k_checking,
-    k_connected,
-    k_completed,
-    k_failed,
-    k_disconnected,
-    k_closed,
+    kNew,
+    kChecking,
+    kConnected,
+    kCompleted,
+    kFailed,
+    kDisconnected,
+    kClosed,
 };
 
 class IceTransportChannel : public sigslot::has_slots<> {
@@ -37,74 +36,73 @@ public:
             IceCandidateComponent component);
     virtual ~IceTransportChannel();
     
-    const std::string& transport_name() { return _transport_name; }
-    IceCandidateComponent component() { return _component; }
-    bool writable() { return _writable; }
-    bool receiving() { return _receiving; }
-    IceTransportState state() { return _state; }
+    const std::string& transport_name() { return transport_name_; }
+    IceCandidateComponent component() { return component_; }
+    bool writable() { return writable_; }
+    bool receiving() { return receiving_; }
+    IceTransportState state() { return state_; }
 
     void set_ice_params(const IceParameters& ice_params);
     void set_remote_ice_params(const IceParameters& ice_params);
-    void gathering_candidate();
-    int send_packet(const char* data, size_t len);
+    void GatheringCandidate();
+    int SendPacket(const char* data, size_t len);
 
-    std::string to_string();
+    std::string ToString();
 
     sigslot::signal2<IceTransportChannel*, const std::vector<Candidate>&>
-        signal_candidate_allocate_done;
-    sigslot::signal1<IceTransportChannel*> signal_receiving_state;
-    sigslot::signal1<IceTransportChannel*> signal_writable_state;
-    sigslot::signal1<IceTransportChannel*> signal_ice_state_changed;
-    sigslot::signal4<IceTransportChannel*, const char*, size_t, int64_t> signal_read_packet;
+        SignalCandidateAllocateDone;
+    sigslot::signal1<IceTransportChannel*> SignalReceivingState;
+    sigslot::signal1<IceTransportChannel*> SignalWritableState;
+    sigslot::signal1<IceTransportChannel*> SignalIceStateChanged;
+    sigslot::signal4<IceTransportChannel*, const char*, size_t, int64_t> SignalReadPacket;
 
 private:
-    void _on_unknown_address(UDPPort* port,
+    void OnUnknownAddress(UDPPort* port,
         const rtc::SocketAddress& addr,
         StunMessage* msg,
         const std::string& remote_ufrag);
-    void _add_connection(IceConnection* conn);
-    void _sort_connections_and_update_state();
-    void _maybe_start_pinging();
-    void _on_check_and_ping();
-    void _on_connection_state_change(IceConnection* conn);
-    void _on_connection_destroyed(IceConnection* conn);
-    void _on_read_packet(IceConnection* conn, const char* buf, size_t len, int64_t ts);
+    void AddConnection(IceConnection* conn);
+    void SortConnectionsAndUpdateState();
+    void MaybeStartPinging();
+    void OnCheckAndPing();
+    void OnConnectionStateChange(IceConnection* conn);
+    void OnConnectionDestroyed(IceConnection* conn);
+    void OnReadPacket(IceConnection* conn, const char* buf, size_t len, int64_t ts);
+    void PingConnection(IceConnection* conn);
+    void MaybeSwitchSelectedConnection(IceConnection* conn);
+    void SwitchSelectedConnection(IceConnection* conn);
+    void UpdateConnectionStates();
+    void UpdateState();
+    void set_receiving(bool receiving);
+    void set_writable(bool writable);
+    IceTransportState ComputeIceTransportState();
 
-    void _ping_connection(IceConnection* conn);
-    void _maybe_switch_selected_connection(IceConnection* conn);
-    void _switch_selected_connection(IceConnection* conn);
-    void _update_connection_states();
-    void _update_state();
-    void _set_receiving(bool receiving);
-    void _set_writable(bool writable);
-    IceTransportState _compute_ice_transport_state();
-
-    friend void ice_ping_cb(EventLoop* /*el*/, TimerWatcher* /*w*/, void* data);
+    friend void IcePingCb(EventLoop* /*el*/, TimerWatcher* /*w*/, void* data);
 
 private:
-    EventLoop* _el;
-    std::string _transport_name;
-    IceCandidateComponent _component;
-    PortAllocator* _allocator;
-    IceParameters _ice_params;
-    IceParameters _remote_ice_params;
-    std::vector<Candidate> _local_candidates;
-    std::vector<UDPPort*> _ports;
-    std::unique_ptr<IceController> _ice_controller;
-    bool _start_pinging = false;
-    TimerWatcher* _ping_watcher = nullptr;
-    int _cur_ping_interval = WEAK_PING_INTERVAL;
-    int64_t _last_ping_sent_ms = 0;
-    IceConnection* _selected_connection = nullptr;
-    bool _receiving = false;
-    bool _writable = false;
-    IceTransportState _state = IceTransportState::k_new;
-    bool _had_connection = false;
-    bool _has_been_connection = false;
+    EventLoop* el_;
+    std::string transport_name_;
+    IceCandidateComponent component_;
+    PortAllocator* allocator_;
+    IceParameters ice_params_;
+    IceParameters remote_ice_params_;
+    std::vector<Candidate> local_candidates_;
+    std::vector<UDPPort*> ports_;
+    std::unique_ptr<IceController> ice_controller_;
+    bool start_pinging_ = false;
+    TimerWatcher* ping_watcher_ = nullptr;
+    int cur_ping_interval_ = WEAK_PING_INTERVAL;
+    int64_t last_ping_sent_ms_ = 0;
+    IceConnection* selected_connection_ = nullptr;
+    bool receiving_ = false;
+    bool writable_ = false;
+    IceTransportState state_ = IceTransportState::kNew;
+    bool had_connection_ = false;
+    bool has_been_connection_ = false;
 };
 
 } // namespace xrtc
 
-#endif  //__ICE_TRANSPORT_CHANNEL_H_
+#endif  //__XRTCSERVER_ICE_ICE_TRANSPORT_CHANNEL_H_
 
 

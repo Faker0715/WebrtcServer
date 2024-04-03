@@ -1,3 +1,5 @@
+#include "server/rtc_server.h"
+
 #include <unistd.h>
 
 #include <rtc_base/logging.h>
@@ -6,13 +8,12 @@
 #include <yaml-cpp/yaml.h>
 
 #include "server/rtc_worker.h"
-#include "server/rtc_server.h"
 
 namespace xrtc {
 
-const uint64_t k_year_in_ms = 365 * 24 * 3600 * 1000L;
+const uint64_t kYearInMs = 365 * 24 * 3600 * 1000L;
 
-void rtc_server_recv_notify(EventLoop* /*el*/, IOWatcher* /*w*/, 
+void RtcServerRecvNotify(EventLoop* /*el*/, IOWatcher* /*w*/, 
         int fd, int /*events*/, void* data)
 {
     int msg;
@@ -23,47 +24,47 @@ void rtc_server_recv_notify(EventLoop* /*el*/, IOWatcher* /*w*/,
     }
 
     RtcServer* server = (RtcServer*)data;
-    server->_process_notify(msg);
+    server->ProcessNotify(msg);
 }
 
 RtcServer::RtcServer() :
-    _el(new EventLoop(this))
+    el_(new EventLoop(this))
 {
 }
 
 RtcServer::~RtcServer() {
-    if (_el) {
-        delete _el;
-        _el = nullptr;
+    if (el_) {
+        delete el_;
+        el_ = nullptr;
     }
 
-    if (_thread) {
-        delete _thread;
-        _thread = nullptr;
+    if (thread_) {
+        delete thread_;
+        thread_ = nullptr;
     }
 
-    for (auto worker : _workers) {
+    for (auto worker : workers_) {
         if (worker) {
             delete worker;
         }
     }
 
-    _workers.clear();
+    workers_.clear();
 }
 
-int RtcServer::_generate_and_check_certificate() {
-    if (!_certificate || _certificate->HasExpired(time(NULL) * 1000)) {
+int RtcServer::GenerateAndCheckCertificate() {
+    if (!certificate_ || certificate_->HasExpired(time(NULL) * 1000)) {
         rtc::KeyParams key_params;
         RTC_LOG(LS_INFO) << "dtls enabled, key type: " << key_params.type();
-        _certificate = rtc::RTCCertificateGenerator::GenerateCertificate(key_params,
-                k_year_in_ms);
-        if (_certificate) {
-            rtc::RTCCertificatePEM pem = _certificate->ToPEM();
+        certificate_ = rtc::RTCCertificateGenerator::GenerateCertificate(key_params,
+                kYearInMs);
+        if (certificate_) {
+            rtc::RTCCertificatePEM pem = certificate_->ToPEM();
             RTC_LOG(LS_INFO) << "rtc certificate: \n" << pem.certificate();
         }
     }
     
-    if (!_certificate) {
+    if (!certificate_) {
         RTC_LOG(LS_WARNING) << "get certificate error";
         return -1;
     }
@@ -71,7 +72,7 @@ int RtcServer::_generate_and_check_certificate() {
     return 0;
 }
 
-int RtcServer::init(const char* conf_file) { 
+int RtcServer::Init(const char* conf_file) { 
     if (!conf_file) {
         RTC_LOG(LS_WARNING) << "conf_file is null";
         return -1;
@@ -80,15 +81,15 @@ int RtcServer::init(const char* conf_file) {
     try {
         YAML::Node config = YAML::LoadFile(conf_file);
         RTC_LOG(LS_INFO) << "rtc server options:\n" << config;
-        _options.worker_num = config["worker_num"].as<int>();
+        options_.worker_num = config["worker_num"].as<int>();
 
-    } catch (YAML::Exception e) {
+    } catch (const YAML::Exception& e) {
         RTC_LOG(LS_WARNING) << "rtc server load conf file error: " << e.msg;
         return -1;
     }
    
     // 生成证书
-    if (_generate_and_check_certificate() != 0) {
+    if (GenerateAndCheckCertificate() != 0) {
         return -1;
     }
 
@@ -99,14 +100,14 @@ int RtcServer::init(const char* conf_file) {
         return -1;
     }
     
-    _notify_recv_fd = fds[0];
-    _notify_send_fd = fds[1];
+    notify_recv_fd_ = fds[0];
+    notify_send_fd_ = fds[1];
 
-    _pipe_watcher = _el->create_io_event(rtc_server_recv_notify, this);
-    _el->start_io_event(_pipe_watcher, _notify_recv_fd, EventLoop::READ);
+    pipe_watcher_ = el_->CreateIOEvent(RtcServerRecvNotify, this);
+    el_->StartIOEvent(pipe_watcher_, notify_recv_fd_, EventLoop::READ);
     
-    for (int i = 0; i < _options.worker_num; ++i) {
-        if (_create_worker(i) != 0) {
+    for (int i = 0; i < options_.worker_num; ++i) {
+        if (CreateWorker(i) != 0) {
             return -1;
         }
     }
@@ -114,124 +115,124 @@ int RtcServer::init(const char* conf_file) {
     return 0;
 }
 
-int RtcServer::_create_worker(int worker_id) {
+int RtcServer::CreateWorker(int worker_id) {
     RTC_LOG(LS_INFO) << "rtc server create worker, worker_id: " << worker_id;
-    RtcWorker* worker = new RtcWorker(worker_id, _options);
+    RtcWorker* worker = new RtcWorker(worker_id, options_);
     
-    if (worker->init() != 0) {
+    if (worker->Init() != 0) {
         return -1;
     }
 
-    if (!worker->start()) {
+    if (!worker->Start()) {
         return -1;
     }
 
-    _workers.push_back(worker);
+    workers_.push_back(worker);
 
     return 0;
 }
 
-bool RtcServer::start() {
-    if (_thread) {
+bool RtcServer::Start() {
+    if (thread_) {
         RTC_LOG(LS_WARNING) << "rtc server already start";
         return false;
     }
 
-    _thread = new std::thread([=]() {
+    thread_ = new std::thread([=]() {
         RTC_LOG(LS_INFO) << "rtc server event loop start";
-        _el->start();
+        el_->Start();
         RTC_LOG(LS_INFO) << "rtc server event loop stop";
     });
 
     return true;
 }
 
-void RtcServer::stop() {
-    notify(QUIT);
+void RtcServer::Stop() {
+    Notify(QUIT);
 }
 
-int RtcServer::notify(int msg) {
-    int written = write(_notify_send_fd, &msg, sizeof(int));
+int RtcServer::Notify(int msg) {
+    int written = write(notify_send_fd_, &msg, sizeof(int));
     return written == sizeof(int) ? 0 : -1;
 }
 
-void RtcServer::join() {
-    if (_thread && _thread->joinable()) {
-        _thread->join();
+void RtcServer::Join() {
+    if (thread_ && thread_->joinable()) {
+        thread_->join();
     }
 }
 
-void RtcServer::push_msg(std::shared_ptr<RtcMsg> msg) {
-    std::unique_lock<std::mutex> lock(_q_msg_mtx);
-    _q_msg.push(msg);
+void RtcServer::PushMsg(std::shared_ptr<RtcMsg> msg) {
+    std::unique_lock<std::mutex> lock(q_msg_mtx_);
+    q_msg_.push(msg);
 }
 
-std::shared_ptr<RtcMsg> RtcServer::pop_msg() {
-    std::unique_lock<std::mutex> lock(_q_msg_mtx);
+std::shared_ptr<RtcMsg> RtcServer::PopMsg() {
+    std::unique_lock<std::mutex> lock(q_msg_mtx_);
     
-    if (_q_msg.empty()) {
+    if (q_msg_.empty()) {
         return nullptr;
     }
 
-    std::shared_ptr<RtcMsg> msg = _q_msg.front();
-    _q_msg.pop();
+    std::shared_ptr<RtcMsg> msg = q_msg_.front();
+    q_msg_.pop();
     return msg;
 }
 
-void RtcServer::_stop() {
-    _el->delete_io_event(_pipe_watcher);
-    _el->stop();
-    close(_notify_recv_fd);
-    close(_notify_send_fd);
+void RtcServer::InnerStop() {
+    el_->DeleteIOEvent(pipe_watcher_);
+    el_->Stop();
+    close(notify_recv_fd_);
+    close(notify_send_fd_);
 
-    for (auto worker : _workers) {
+    for (auto worker : workers_) {
         if (worker) {
-            worker->stop();
-            worker->join();
+            worker->Stop();
+            worker->Join();
         }
     }
 }
 
-int RtcServer::send_rtc_msg(std::shared_ptr<RtcMsg> msg) {
-    push_msg(msg);
-    return notify(RTC_MSG);
+int RtcServer::SendRtcMsg(std::shared_ptr<RtcMsg> msg) {
+    PushMsg(msg);
+    return Notify(RTC_MSG);
 }
 
-RtcWorker* RtcServer::_get_worker(const std::string& stream_name) {
-    if (_workers.size() == 0 || _workers.size() != (size_t)_options.worker_num) {
+RtcWorker* RtcServer::GetWorker(const std::string& stream_name) {
+    if (workers_.size() == 0 || workers_.size() != (size_t)options_.worker_num) {
         return nullptr;
     }
 
     uint32_t num = rtc::ComputeCrc32(stream_name);
-    size_t index = num % _options.worker_num;
-    return _workers[index];
+    size_t index = num % options_.worker_num;
+    return workers_[index];
 }
 
-void RtcServer::_process_rtc_msg() {
-    std::shared_ptr<RtcMsg> msg = pop_msg();
+void RtcServer::ProcessRtcMsg() {
+    std::shared_ptr<RtcMsg> msg = PopMsg();
     if (!msg) {
         return;
     }
     
-    if (_generate_and_check_certificate() != 0) {
+    if (GenerateAndCheckCertificate() != 0) {
         return;
     }
     
-    msg->certificate = _certificate.get();
+    msg->certificate = certificate_.get();
 
-    RtcWorker* worker = _get_worker(msg->stream_name);
+    RtcWorker* worker = GetWorker(msg->stream_name);
     if (worker) {
-        worker->send_rtc_msg(msg);
+        worker->SendRtcMsg(msg);
     }
 }
 
-void RtcServer::_process_notify(int msg) {
+void RtcServer::ProcessNotify(int msg) {
     switch (msg) {
         case QUIT:
-            _stop();
+            InnerStop();
             break;
         case RTC_MSG:
-            _process_rtc_msg();
+            ProcessRtcMsg();
             break;
         default:
             RTC_LOG(LS_WARNING) << "unknown msg: " << msg;

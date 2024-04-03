@@ -1,42 +1,45 @@
-//
-// Created by faker on 23-4-4.
-//
 
-#ifndef XRTCSERVER_NETWORK_H
-#define XRTCSERVER_NETWORK_H
+#ifndef  __XRTCSERVER_BASE_NETWORK_H_
+#define  __XRTCSERVER_BASE_NETWORK_H_
 
-#include <string>
-#include <rtc_base/ip_address.h>
 #include <vector>
 
-namespace xrtc{
-    class Network{
-    public:
-        Network(const std::string& name, const rtc::IPAddress& ip):
-                _name(name),_ip(ip){}
-                ~Network() = default;
-        const std::string& name(){ return _name;}
-        const rtc::IPAddress& ip(){ return _ip;}
-        std::string to_string(){
-            return _name + ":" + _ip.ToString();
-        }
-    private:
-        std::string _name;
-        rtc::IPAddress _ip;
-    };
+#include <rtc_base/ip_address.h>
 
-    class NetworkManager{
-    public:
-        NetworkManager();
-        ~NetworkManager();
-        const std::vector<Network*>& get_networks(){
-            return _network_list;
-        }
-        int create_networks();
-    private:
-        std::vector<Network*> _network_list;
-    };
-}
+namespace xrtc {
+
+class Network {
+public:
+    Network(const std::string& name, const rtc::IPAddress& ip) :
+        name_(name), ip_(ip) {}
+    ~Network() = default;
+
+    const std::string& name() { return name_; } 
+    const rtc::IPAddress& ip() { return ip_; }
+    
+    std::string ToString() {
+        return name_ + ":" + ip_.ToString();
+    }
+
+private:
+    std::string name_;
+    rtc::IPAddress ip_;
+};
+
+class NetworkManager {
+public:
+    NetworkManager();
+    ~NetworkManager();
+   
+    const std::vector<Network*>& GetNetworks() { return network_list_; }
+    int CreateNetworks();
+
+private:
+    std::vector<Network*> network_list_;
+};
+
+} // namespace xrtc
+
+#endif  //__XRTCSERVER_BASE_NETWORK_H_
 
 
-#endif //XRTCSERVER_NETWORK_H

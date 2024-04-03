@@ -1,3 +1,5 @@
+#include "server/signaling_server.h"
+
 #include <unistd.h>
 
 #include <rtc_base/logging.h>
@@ -5,11 +7,10 @@
 
 #include "base/socket.h"
 #include "server/signaling_worker.h"
-#include "server/signaling_server.h"
 
 namespace xrtc {
 
-void signaling_server_recv_notify(EventLoop* /*el*/, IOWatcher* /*w*/, 
+void SignalingServerRecvNotify(EventLoop* /*el*/, IOWatcher* /*w*/, 
         int fd, int /*events*/, void* data) 
 {
     int msg;
@@ -20,15 +21,15 @@ void signaling_server_recv_notify(EventLoop* /*el*/, IOWatcher* /*w*/,
     }
 
     SignalingServer* server = (SignalingServer*)data;
-    server->_process_notify(msg);
+    server->ProcessNotify(msg);
 }
 
-void accept_new_conn(EventLoop* /*el*/, IOWatcher* /*w*/, int fd, int /*events*/, void* data) {
+void AcceptNewConn(EventLoop* /*el*/, IOWatcher* /*w*/, int fd, int /*events*/, void* data) {
     int cfd;
     char cip[128];
     int cport;
 
-    cfd = tcp_accept(fd, cip, &cport);
+    cfd = TcpAccept(fd, cip, &cport);
     if (-1 == cfd) {
         return;
     }
@@ -37,33 +38,33 @@ void accept_new_conn(EventLoop* /*el*/, IOWatcher* /*w*/, int fd, int /*events*/
         << ", port: " << cport;
 
     SignalingServer* server = (SignalingServer*)data;
-    server->_dispatch_new_conn(cfd);
+    server->DispatchNewConn(cfd);
 }
 
-SignalingServer::SignalingServer() : _el(new EventLoop(this)) {
+SignalingServer::SignalingServer() : el_(new EventLoop(this)) {
 }
 
 SignalingServer::~SignalingServer() {
-    if (_el) {
-        delete _el;
-        _el = nullptr;
+    if (el_) {
+        delete el_;
+        el_ = nullptr;
     }
 
-    if (_thread) {
-        delete _thread;
-        _thread = nullptr;
+    if (thread_) {
+        delete thread_;
+        thread_ = nullptr;
     }
 
-    for (auto worker : _workers) {
+    for (auto worker : workers_) {
         if (worker) {
             delete worker;
         }
     }
 
-    _workers.clear();
+    workers_.clear();
 }
 
-int SignalingServer::init(const char* conf_file) {
+int SignalingServer::Init(const char* conf_file) {
     if (!conf_file) {
         RTC_LOG(LS_WARNING) << "signaling server conf_file is null";
         return -1;
@@ -73,12 +74,12 @@ int SignalingServer::init(const char* conf_file) {
         YAML::Node config = YAML::LoadFile(conf_file);
         RTC_LOG(LS_INFO) << "signaling server options:\n" << config;
 
-        _options.host = config["host"].as<std::string>();
-        _options.port = config["port"].as<int>();
-        _options.worker_num = config["worker_num"].as<int>();
-        _options.connection_timeout = config["connection_timeout"].as<int>();
+        options_.host = config["host"].as<std::string>();
+        options_.port = config["port"].as<int>();
+        options_.worker_num = config["worker_num"].as<int>();
+        options_.connection_timeout = config["connection_timeout"].as<int>();
 
-    } catch (YAML::Exception e) {
+    } catch (const YAML::Exception& e) {
         RTC_LOG(LS_WARNING) << "catch a YAML exception, line:" << e.mark.line + 1
             << ", column: " << e.mark.column + 1 << ", error: " << e.msg;
         return -1;
@@ -92,24 +93,24 @@ int SignalingServer::init(const char* conf_file) {
         return -1;
     }
     
-    _notify_recv_fd = fds[0];
-    _notify_send_fd = fds[1];
+    notify_recv_fd_ = fds[0];
+    notify_send_fd_ = fds[1];
     // 将recv_fd添加到事件循环，进行管理
-    _pipe_watcher = _el->create_io_event(signaling_server_recv_notify, this);
-    _el->start_io_event(_pipe_watcher, _notify_recv_fd, EventLoop::READ);
+    pipe_watcher_ = el_->CreateIOEvent(SignalingServerRecvNotify, this);
+    el_->StartIOEvent(pipe_watcher_, notify_recv_fd_, EventLoop::READ);
 
     // 创建tcp server
-    _listen_fd = create_tcp_server(_options.host.c_str(), _options.port); 
-    if (-1 == _listen_fd) {
+    listen_fd_ = CreateTcpServer(options_.host.c_str(), options_.port); 
+    if (-1 == listen_fd_) {
         return -1;
     }
     
-    _io_watcher = _el->create_io_event(accept_new_conn, this); 
-    _el->start_io_event(_io_watcher, _listen_fd, EventLoop::READ); 
+    io_watcher_ = el_->CreateIOEvent(AcceptNewConn, this); 
+    el_->StartIOEvent(io_watcher_, listen_fd_, EventLoop::READ); 
     
     // 创建worker
-    for (int i = 0; i < _options.worker_num; ++i) {
-        if (_create_worker(i) != 0) {
+    for (int i = 0; i < options_.worker_num; ++i) {
+        if (CreateWorker(i) != 0) {
             return -1;
         }
     }
@@ -117,62 +118,62 @@ int SignalingServer::init(const char* conf_file) {
     return 0;
 }
 
-int SignalingServer::_create_worker(int worker_id) {
+int SignalingServer::CreateWorker(int worker_id) {
     RTC_LOG(LS_INFO) << "signaling server create worker, worker_id: " << worker_id;
-    SignalingWorker* worker = new SignalingWorker(worker_id, _options);
+    SignalingWorker* worker = new SignalingWorker(worker_id, options_);
 
-    if (worker->init() != 0) {
+    if (worker->Init() != 0) {
         return -1;
     }
 
-    if (!worker->start()) {
+    if (!worker->Start()) {
         return -1;
     }
     
-    _workers.push_back(worker);
+    workers_.push_back(worker);
 
     return 0;
 }
 
-void SignalingServer::_dispatch_new_conn(int fd) {
-    int index = _next_worker_index;
-    _next_worker_index++;
-    if ((size_t)_next_worker_index >= _workers.size()) {
-        _next_worker_index = 0;
+void SignalingServer::DispatchNewConn(int fd) {
+    int index = next_worker_index_;
+    next_worker_index_++;
+    if ((size_t)next_worker_index_ >= workers_.size()) {
+        next_worker_index_ = 0;
     }
 
-    SignalingWorker* worker = _workers[index];
-    worker->notify_new_conn(fd);
+    SignalingWorker* worker = workers_[index];
+    worker->NotifyNewConn(fd);
 }
 
-bool SignalingServer::start() {
-    if (_thread) {
+bool SignalingServer::Start() {
+    if (thread_) {
         RTC_LOG(LS_WARNING) << "signalling server already start";
         return false;
     }
 
-    _thread = new std::thread([=]() {
+    thread_ = new std::thread([=]() {
         RTC_LOG(LS_INFO) << "signaling server event loop run";
-        _el->start();
+        el_->Start();
         RTC_LOG(LS_INFO) << "signaling server event loop stop";
     });
 
     return true;
 }
 
-void SignalingServer::stop() {
-    notify(SignalingServer::QUIT);
+void SignalingServer::Stop() {
+    Notify(SignalingServer::QUIT);
 }
 
-int SignalingServer::notify(int msg) {
-    int written = write(_notify_send_fd, &msg, sizeof(int));
+int SignalingServer::Notify(int msg) {
+    int written = write(notify_send_fd_, &msg, sizeof(int));
     return written == sizeof(int) ? 0 : -1;
 }
 
-void SignalingServer::_process_notify(int msg) {
+void SignalingServer::ProcessNotify(int msg) {
     switch (msg) {
         case QUIT:
-            _stop();
+            InnerStop();
             break;
         default:
             RTC_LOG(LS_WARNING) << "unknown msg: " << msg;
@@ -180,33 +181,33 @@ void SignalingServer::_process_notify(int msg) {
     }
 }
 
-void SignalingServer::_stop() {
-    if (!_thread) {
+void SignalingServer::InnerStop() {
+    if (!thread_) {
         RTC_LOG(LS_WARNING) << "signaling server not running";
         return;
     }
 
-    _el->delete_io_event(_pipe_watcher);
-    _el->delete_io_event(_io_watcher);
-    _el->stop();
+    el_->DeleteIOEvent(pipe_watcher_);
+    el_->DeleteIOEvent(io_watcher_);
+    el_->Stop();
 
-    close(_notify_recv_fd);
-    close(_notify_send_fd);
-    close(_listen_fd);
+    close(notify_recv_fd_);
+    close(notify_send_fd_);
+    close(listen_fd_);
 
     RTC_LOG(LS_INFO) << "signaling server stop";
 
-    for (auto worker : _workers) {
+    for (auto worker : workers_) {
         if (worker) {
-            worker->stop();
-            worker->join();
+            worker->Stop();
+            worker->Join();
         }
     }
 }
 
-void SignalingServer::join() {
-    if (_thread && _thread->joinable()) {
-        _thread->join();
+void SignalingServer::Join() {
+    if (thread_ && thread_->joinable()) {
+        thread_->join();
     }
 }
 

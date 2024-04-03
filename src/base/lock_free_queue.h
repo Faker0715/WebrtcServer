@@ -1,24 +1,5 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file lock_free_queue.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
-#ifndef  __LOCK_FREE_QUEUE_H_
-#define  __LOCK_FREE_QUEUE_H_
+#ifndef  __XRTCSERVER_SERVER_LOCK_FREE_QUEUE_H_
+#define  __XRTCSERVER_SERVER_LOCK_FREE_QUEUE_H_
 
 #include <atomic>
 
@@ -40,12 +21,12 @@ private:
     Node* first;
     Node* divider;
     Node* last;
-    std::atomic<int> _size;
+    std::atomic<int> size_;
 
 public:
     LockFreeQueue() {
         first = divider = last = new Node(T());
-        _size = 0;
+        size_ = 0;
     }
 
     ~LockFreeQueue() {
@@ -55,13 +36,13 @@ public:
             delete temp;
         }
 
-        _size = 0;
+        size_ = 0;
     }
 
-    void produce(const T& t) {
+    void Produce(const T& t) {
         last->next = new Node(t);
         last = last->next;
-        ++_size;
+        ++size_;
 
         while (divider != first) {
             Node* temp = first;
@@ -70,11 +51,11 @@ public:
         }
     }
 
-    bool consume(T* result) {
+    bool Consume(T* result) {
         if (divider != last) {
             *result = divider->next->value;
             divider = divider->next;
-            --_size;
+            --size_;
             return true;
         }
 
@@ -82,16 +63,16 @@ public:
     }
 
     bool empty() {
-        return _size == 0;
+        return size_ == 0;
     }
 
     int size() {
-        return _size;
+        return size_;
     }
 };
 
 } // namespace xrtc
 
-#endif  //__LOCK_FREE_QUEUE_H_
+#endif  //__XRTCSERVER_SERVER_LOCK_FREE_QUEUE_H_
 
 

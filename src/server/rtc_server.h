@@ -1,5 +1,5 @@
-#ifndef  __RTC_SERVER_H_
-#define  __RTC_SERVER_H_
+#ifndef  __XRTCSERVER_SERVER_RTC_SERVER_H_
+#define  __XRTCSERVER_SERVER_RTC_SERVER_H_
 
 #include <thread>
 #include <queue>
@@ -28,44 +28,44 @@ public:
     RtcServer();
     ~RtcServer();
     
-    int init(const char* conf_file);
-    bool start();
-    void stop();
-    int notify(int msg);
-    void join();
-    int send_rtc_msg(std::shared_ptr<RtcMsg>);
-    void push_msg(std::shared_ptr<RtcMsg>);
-    std::shared_ptr<RtcMsg> pop_msg();
+    int Init(const char* conf_file);
+    bool Start();
+    void Stop();
+    int Notify(int msg);
+    void Join();
+    int SendRtcMsg(std::shared_ptr<RtcMsg>);
+    void PushMsg(std::shared_ptr<RtcMsg>);
+    std::shared_ptr<RtcMsg> PopMsg();
 
-    friend void rtc_server_recv_notify(EventLoop*, IOWatcher*, int, int, void*);
-
-private:
-    void _process_notify(int msg);
-    void _stop();
-    void _process_rtc_msg();
-    int _create_worker(int worker_id);
-    RtcWorker* _get_worker(const std::string& stream_name);
-    int _generate_and_check_certificate();
+    friend void RtcServerRecvNotify(EventLoop*, IOWatcher*, int, int, void*);
 
 private:
-    EventLoop* _el;
-    RtcServerOptions _options;
+    void ProcessNotify(int msg);
+    void InnerStop();
+    void ProcessRtcMsg();
+    int CreateWorker(int worker_id);
+    RtcWorker* GetWorker(const std::string& stream_name);
+    int GenerateAndCheckCertificate();
+
+private:
+    EventLoop* el_;
+    RtcServerOptions options_;
     
-    std::thread* _thread = nullptr;
+    std::thread* thread_ = nullptr;
 
-    IOWatcher* _pipe_watcher = nullptr;
-    int _notify_recv_fd = -1;
-    int _notify_send_fd = -1;
+    IOWatcher* pipe_watcher_ = nullptr;
+    int notify_recv_fd_ = -1;
+    int notify_send_fd_ = -1;
 
-    std::queue<std::shared_ptr<RtcMsg>> _q_msg;
-    std::mutex _q_msg_mtx;
+    std::queue<std::shared_ptr<RtcMsg>> q_msg_;
+    std::mutex q_msg_mtx_;
 
-    std::vector<RtcWorker*> _workers;
-    rtc::scoped_refptr<rtc::RTCCertificate> _certificate;
+    std::vector<RtcWorker*> workers_;
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
 };
 
 } // namespace xrtc
 
-#endif  //__RTC_SERVER_H_
+#endif  //__XRTCSERVER_SERVER_RTC_SERVER_H_
 
 

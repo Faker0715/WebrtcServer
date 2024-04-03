@@ -1,24 +1,5 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file conf.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
-#ifndef  __BASE_CONF_H_
-#define  __BASE_CONF_H_
+#ifndef  __XRTCSERVER_BASE_CONF_H_
+#define  __XRTCSERVER_BASE_CONF_H_
 
 #include <string>
 
@@ -32,14 +13,13 @@ struct GeneralConf {
     int ice_min_port = 0;
     int ice_max_port = 0;
     int rtcp_report_timer_interval = 100;
-
 };
 
-int load_general_conf(const char* filename, GeneralConf* conf);
+int LoadGeneralConf(const char* filename, GeneralConf* conf);
 
 } // namespace xrtc
 
 
-#endif  //__BASE_CONF_H_
+#endif  //__XRTCSERVER_BASE_CONF_H_
 
 

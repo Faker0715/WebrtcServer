@@ -1,6 +1,5 @@
-
-#ifndef  __STUN_REQUEST_H_
-#define  __STUN_REQUEST_H_
+#ifndef  __XRTCSERVER_ICE_STUN_REQUEST_H_
+#define  __XRTCSERVER_ICE_STUN_REQUEST_H_
 
 #include <map>
 
@@ -17,15 +16,15 @@ public:
     StunRequestManager() = default;
     ~StunRequestManager();
 
-    void send(StunRequest* request);
-    void remove(StunRequest* request);
-    bool check_response(StunMessage* msg);
+    void Send(StunRequest* request);
+    void Remove(StunRequest* request);
+    bool CheckResponse(StunMessage* msg);
 
-    sigslot::signal3<StunRequest*, const char*, size_t> signal_send_packet;
+    sigslot::signal3<StunRequest*, const char*, size_t> SignalSendPacket;
 
 private:
     typedef std::map<std::string, StunRequest*> RequestMap;
-    RequestMap _requests;
+    RequestMap requests_;
 };
 
 class StunRequest {
@@ -33,28 +32,28 @@ public:
     StunRequest(StunMessage* request);
     virtual ~StunRequest();
    
-    int type() { return _msg->type(); }
-    const std::string& id() { return _msg->transaction_id(); }
-    void set_manager(StunRequestManager* manager) { _manager = manager; }
-    void construct();
-    void send();
+    int type() { return msg_->type(); }
+    const std::string& id() { return msg_->transaction_id(); }
+    void set_manager(StunRequestManager* manager) { manager_ = manager; }
+    void Construct();
+    void Send();
     int elapsed();
 
 protected:
-    virtual void prepare(StunMessage*) {}
-    virtual void on_request_response(StunMessage*) {}
-    virtual void on_request_error_response(StunMessage*) {}
+    virtual void Prepare(StunMessage*) {}
+    virtual void OnRequestResponse(StunMessage*) {}
+    virtual void OnRequestErrorResponse(StunMessage*) {}
     
     friend class StunRequestManager;
 
 private:
-    StunMessage* _msg;
-    StunRequestManager* _manager = nullptr;
-    int64_t _ts = 0;
+    StunMessage* msg_;
+    StunRequestManager* manager_ = nullptr;
+    int64_t ts_ = 0;
 };
 
 } // namespace xrtc
 
-#endif  //__STUN_REQUEST_H_
+#endif  //__XRTCSERVER_ICE_STUN_REQUEST_H_
 
 

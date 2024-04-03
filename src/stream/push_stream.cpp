@@ -1,7 +1,6 @@
+#include "stream/push_stream.h"
 
 #include <rtc_base/logging.h>
-
-#include "stream/push_stream.h"
 
 namespace xrtc {
 
@@ -13,28 +12,28 @@ PushStream::PushStream(EventLoop* el, PortAllocator* allocator,
 }
 
 PushStream::~PushStream() {
-    RTC_LOG(LS_INFO) << to_string() << ": Push stream destroy.";
+    RTC_LOG(LS_INFO) << ToString() << ": Push stream destroy.";
 }
 
-std::string PushStream::create_offer() {
+std::string PushStream::CreateOffer() {
     RTCOfferAnswerOptions options;
     options.send_audio = false;
     options.send_video = false;
     options.recv_audio = audio;
     options.recv_video = video;
 
-    return pc->create_offer(options);
+    return pc->CreateOffer(options);
 }
 
-bool PushStream::get_audio_source(std::vector<StreamParams>& source) {
-    return _get_source("audio", source);
+bool PushStream::GetAudioSource(std::vector<StreamParams>& source) {
+    return GetSource("audio", source);
 }
 
-bool PushStream::get_video_source(std::vector<StreamParams>& source) {
-    return _get_source("video", source);
+bool PushStream::GetVideoSource(std::vector<StreamParams>& source) {
+    return GetSource("video", source);
 }
 
-bool PushStream::_get_source(const std::string& mid, std::vector<StreamParams>& source) {
+bool PushStream::GetSource(const std::string& mid, std::vector<StreamParams>& source) {
     if (!pc) {
         return false;
     }
@@ -44,7 +43,7 @@ bool PushStream::_get_source(const std::string& mid, std::vector<StreamParams>& 
         return false;
     }
 
-    auto content = remote_desc->get_content(mid);
+    auto content = remote_desc->GetContent(mid);
     if (!content) {
         return false;
     }

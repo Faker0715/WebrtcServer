@@ -1,6 +1,5 @@
-
-#ifndef  __RTC_STREAM_MANAGER_H_
-#define  __RTC_STREAM_MANAGER_H_
+#ifndef  __XRTCSERVER_STREAM_RTC_STREAM_MANAGER_H_
+#define  __XRTCSERVER_STREAM_RTC_STREAM_MANAGER_H_
 
 #include <string>
 #include <unordered_map>
@@ -21,45 +20,47 @@ public:
     RtcStreamManager(EventLoop* el);
     ~RtcStreamManager();
     
-    int create_push_stream(uint64_t uid, const std::string& stream_name,
-            bool audio, bool video, bool is_dtls,uint32_t log_id,
+    int CreatePushStream(uint64_t uid, const std::string& stream_name,
+            bool audio, bool video, 
+            bool is_dtls, uint32_t log_id,
             rtc::RTCCertificate* certificate,
             std::string& offer);
     
-    int create_pull_stream(uint64_t uid, const std::string& stream_name,
-            bool audio, bool video,bool is_dtls,uint32_t log_id,
+    int CreatePullStream(uint64_t uid, const std::string& stream_name,
+            bool audio, bool video, 
+            bool is_dtls, uint32_t log_id,
             rtc::RTCCertificate* certificate,
             std::string& offer);
 
-    int set_answer(uint64_t uid, const std::string& stream_name,
+    int SetAnswer(uint64_t uid, const std::string& stream_name,
             const std::string& answer, const std::string& stream_type, 
             uint32_t log_id);
-    int stop_push(uint64_t uid, const std::string& stream_name);
-    int stop_pull(uint64_t uid, const std::string& stream_name);
-
-    void on_connection_state(RtcStream* stream, PeerConnectionState state) override;
-    void on_rtp_packet_received(RtcStream* stream, const char* data, size_t len) override;
-    void on_rtcp_packet_received(RtcStream* stream, const char* data, size_t len) override;
-    void on_stream_exception(RtcStream* stream) override;
-
-private:
-    PushStream* _find_push_stream(const std::string& stream_name);
-    void _remove_push_stream(RtcStream* stream);
-    void _remove_push_stream(uint64_t uid, const std::string& stream_name);
-    PullStream* _find_pull_stream(const std::string& stream_name);
-    void _remove_pull_stream(RtcStream* stream);
-    void _remove_pull_stream(uint64_t uid, const std::string& stream_name);
+    int StopPush(uint64_t uid, const std::string& stream_name);
+    int StopPull(uint64_t uid, const std::string& stream_name);
+ 
+    void OnConnectionState(RtcStream* stream, PeerConnectionState state) override;
+    void OnRtpPacketReceived(RtcStream* stream, const char* data, size_t len) override;
+    void OnRtcpPacketReceived(RtcStream* stream, const char* data, size_t len) override;
+    void OnStreamException(RtcStream* stream) override;
 
 private:
-    EventLoop* _el;
-    std::unordered_map<std::string, PushStream*> _push_streams;
-    std::unordered_map<std::string, PullStream*> _pull_streams;
-    std::unique_ptr<PortAllocator> _allocator;
+    PushStream* FindPushStream(const std::string& stream_name);
+    void RemovePushStream(RtcStream* stream);
+    void RemovePushStream(uint64_t uid, const std::string& stream_name);
+    PullStream* FindPullStream(const std::string& stream_name);
+    void RemovePullStream(RtcStream* stream);
+    void RemovePullStream(uint64_t uid, const std::string& stream_name);
+
+private:
+    EventLoop* el_;
+    std::unordered_map<std::string, PushStream*> push_streams_;
+    std::unordered_map<std::string, PullStream*> pull_streams_;
+    std::unique_ptr<PortAllocator> allocator_;
 };
 
 } // namespace xrtc
 
 
-#endif  //__RTC_STREAM_MANAGER_H_
+#endif  //__XRTCSERVER_STREAM_RTC_STREAM_MANAGER_H_
 
 

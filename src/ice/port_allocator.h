@@ -1,9 +1,5 @@
-
-
-
-
-#ifndef  __PORT_ALLOCATOR_H_
-#define  __PORT_ALLOCATOR_H_
+#ifndef  __XRTCSERVER_ICE_PORT_ALLOCATOR_H_
+#define  __XRTCSERVER_ICE_PORT_ALLOCATOR_H_
 
 #include <memory>
 
@@ -16,21 +12,21 @@ public:
     PortAllocator();
     ~PortAllocator();
     
-    const std::vector<Network*>& get_networks();
+    const std::vector<Network*>& GetNetworks();
     
-    void set_port_range(int min_port, int max_port);
+    void SetPortRange(int min_port, int max_port);
 
-    int min_port() { return _min_port; }
-    int max_port() { return _max_port; }
+    int min_port() { return min_port_; }
+    int max_port() { return max_port_; }
 
 private:
-    std::unique_ptr<NetworkManager> _network_manager;
-    int _min_port = 0;
-    int _max_port = 0;
+    std::unique_ptr<NetworkManager> network_manager_;
+    int min_port_ = 0;
+    int max_port_ = 0;
 };
 
 } // namespace xrtc
 
-#endif  //__PORT_ALLOCATOR_H_
+#endif  //__XRTCSERVER_ICE_PORT_ALLOCATOR_H_
 
 

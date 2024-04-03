@@ -1,28 +1,26 @@
-
-
 #include "ice/port_allocator.h"
 
 namespace xrtc {
 
 PortAllocator::PortAllocator() :
-    _network_manager(new NetworkManager())
+    network_manager_(new NetworkManager())
 {
-    _network_manager->create_networks();
+    network_manager_->CreateNetworks();
 }
 
 PortAllocator::~PortAllocator() = default;
 
-const std::vector<Network*>& PortAllocator::get_networks() {
-    return _network_manager->get_networks();
+const std::vector<Network*>& PortAllocator::GetNetworks() {
+    return network_manager_->GetNetworks();
 }
 
-void PortAllocator::set_port_range(int min_port, int max_port) {
+void PortAllocator::SetPortRange(int min_port, int max_port) {
     if (min_port > 0) {
-        _min_port = min_port;
+        min_port_ = min_port;
     }
 
     if (max_port > 0) {
-        _max_port = max_port;
+        max_port_ = max_port;
     }
 }
 

@@ -1,22 +1,22 @@
+#include "pc/dtls_transport.h"
+
 #include <rtc_base/logging.h>
 #include <api/crypto/crypto_options.h>
 
-#include "pc/dtls_transport.h"
-
 namespace xrtc {
 
-const size_t k_dtls_record_header_len = 13;
-const size_t k_max_dtls_packet_len = 2048;
-const size_t k_max_pending_packets = 2;
-const size_t k_min_rtp_packet_len = 12;
+const size_t kDtlsRecordHeaderLen = 13;
+const size_t kMaxDtlsPacketLen = 2048;
+const size_t kMaxPendingPackets = 2;
+const size_t kMinRtpPacketLen = 12;
 
-bool is_dtls_packet(const char* buf, size_t len) {
+bool IsDtlsPacket(const char* buf, size_t len) {
     const uint8_t* u = reinterpret_cast<const uint8_t*>(buf);
-    return len >= k_dtls_record_header_len && (u[0] > 19 && u[0] < 64);
+    return len >= kDtlsRecordHeaderLen && (u[0] > 19 && u[0] < 64);
 }
 
-bool is_dtls_client_hello_packet(const char* buf, size_t len) {
-    if (!is_dtls_packet(buf, len)) {
+bool IsDtlsClientHelloPacket(const char* buf, size_t len) {
+    if (!IsDtlsPacket(buf, len)) {
         return false;
     }
 
@@ -24,23 +24,23 @@ bool is_dtls_client_hello_packet(const char* buf, size_t len) {
     return len > 17 && (u[0] == 22 && u[13] == 1);
 }
 
-bool is_rtp_packet(const char* buf, size_t len) {
+bool IsRtpPacket(const char* buf, size_t len) {
     const uint8_t* u = reinterpret_cast<const uint8_t*>(buf);
-    return len >= k_min_rtp_packet_len && ((u[0] & 0xC0) == 0x80);
+    return len >= kMinRtpPacketLen && ((u[0] & 0xC0) == 0x80);
 }
 
 StreamInterfaceChannel::StreamInterfaceChannel(IceTransportChannel* ice_channel) :
-    _ice_channel(ice_channel),
-    _packets(k_max_pending_packets, k_max_dtls_packet_len)
+    ice_channel_(ice_channel),
+    packets_(kMaxPendingPackets, kMaxDtlsPacketLen)
 {
 }
 
-bool StreamInterfaceChannel::on_received_packet(const char* data, size_t size) {  
-    if (_packets.size() > 0) {
+bool StreamInterfaceChannel::OnReceivedPacket(const char* data, size_t size) {  
+    if (packets_.size() > 0) {
         RTC_LOG(LS_INFO) << ": Packet already in buffer queue";
     }
     
-    if (!_packets.WriteBack(data, size, NULL)) {
+    if (!packets_.WriteBack(data, size, NULL)) {
         RTC_LOG(LS_WARNING) << ": Failed to write packet to queue";
     }
     
@@ -50,7 +50,7 @@ bool StreamInterfaceChannel::on_received_packet(const char* data, size_t size) {
 }
 
 rtc::StreamState StreamInterfaceChannel::GetState() const {
-    return _state;
+    return state_;
 }
 
 rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
@@ -58,15 +58,15 @@ rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
         size_t* read,
         int* /*error*/)
 {
-    if (_state == rtc::SS_CLOSED) {
+    if (state_ == rtc::SS_CLOSED) {
         return rtc::SR_EOS;
     }
 
-    if (_state == rtc::SS_OPENING) {
+    if (state_ == rtc::SS_OPENING) {
         return rtc::SR_BLOCK;
     }
 
-    if (!_packets.ReadFront(buffer, buffer_len, read)) {
+    if (!packets_.ReadFront(buffer, buffer_len, read)) {
         return rtc::SR_BLOCK;
     }
 
@@ -78,7 +78,7 @@ rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
         size_t* written,
         int* /*error*/) 
 {
-    _ice_channel->send_packet((const char*)data, data_len);
+    ice_channel_->SendPacket((const char*)data, data_len);
     if (written) {
         *written = data_len;
     }
@@ -87,73 +87,73 @@ rtc::StreamResult StreamInterfaceChannel::Write(const void* data,
 }
 
 void StreamInterfaceChannel::Close() {
-    _state = rtc::SS_CLOSED;
-    _packets.Clear();
+    state_ = rtc::SS_CLOSED;
+    packets_.Clear();
 }
 
 DtlsTransport::DtlsTransport(IceTransportChannel* ice_channel) :
-    _ice_channel(ice_channel)
+    ice_channel_(ice_channel)
 {
-    _ice_channel->signal_read_packet.connect(this, &DtlsTransport::_on_read_packet);
-    _ice_channel->signal_writable_state.connect(this, &DtlsTransport::_on_writable_state);
-    _ice_channel->signal_receiving_state.connect(this, &DtlsTransport::_on_receiving_state);
+    ice_channel_->SignalReadPacket.connect(this, &DtlsTransport::OnReadPacket);
+    ice_channel_->SignalWritableState.connect(this, &DtlsTransport::OnWritableState);
+    ice_channel_->SignalReceivingState.connect(this, &DtlsTransport::OnReceivingState);
 
     webrtc::CryptoOptions crypto_options;
-    _srtp_ciphers = crypto_options.GetSupportedDtlsSrtpCryptoSuites();
+    srtp_ciphers_ = crypto_options.GetSupportedDtlsSrtpCryptoSuites();
 }
 
 DtlsTransport::~DtlsTransport() {
 
 }
 
-void DtlsTransport::_on_read_packet(IceTransportChannel* /*channel*/,
+void DtlsTransport::OnReadPacket(IceTransportChannel* /*channel*/,
         const char* buf, size_t len, int64_t ts)
 {
-    switch (_dtls_state) {
-        case DtlsTransportState::k_new:
-            if (_dtls) {
-                RTC_LOG(LS_INFO) << to_string() << ": Received packet before DTLS started.";
+    switch (dtls_state_) {
+        case DtlsTransportState::kNew:
+            if (dtls_) {
+                RTC_LOG(LS_INFO) << ToString() << ": Received packet before DTLS started.";
             } else {
-                RTC_LOG(LS_WARNING) << to_string() << ": Received packet before we know if "
+                RTC_LOG(LS_WARNING) << ToString() << ": Received packet before we know if "
                     << "we are doing DTLS or not";
             }
             
-            if (is_dtls_client_hello_packet(buf, len)) {
-                RTC_LOG(LS_INFO) << to_string() << ": Caching DTLS ClientHello packet until "
+            if (IsDtlsClientHelloPacket(buf, len)) {
+                RTC_LOG(LS_INFO) << ToString() << ": Caching DTLS ClientHello packet until "
                     << "DTLS started";
-                _cached_client_hello.SetData(buf, len);
+                cached_client_hello_.SetData(buf, len);
 
-                if (!_dtls && _local_certificate) {
-                    _setup_dtls();
+                if (!dtls_ && local_certificate_) {
+                    SetupDtls();
                 }
 
             } else {
-                RTC_LOG(LS_WARNING) << to_string() << ": Not a DTLS ClientHello packet, "
+                RTC_LOG(LS_WARNING) << ToString() << ": Not a DTLS ClientHello packet, "
                     << "dropping";
             }
 
             break;
-        case DtlsTransportState::k_connecting:
-        case DtlsTransportState::k_connected:
-            if (is_dtls_packet(buf, len)) { // Dtls包
-                if (!_handle_dtls_packet(buf, len)) {
-                    RTC_LOG(LS_WARNING) << to_string() << ": handle DTLS packet failed";
+        case DtlsTransportState::kConnecting:
+        case DtlsTransportState::kConnected:
+            if (IsDtlsPacket(buf, len)) { // Dtls包
+                if (!HandleDtlsPacket(buf, len)) {
+                    RTC_LOG(LS_WARNING) << ToString() << ": handle DTLS packet failed";
                     return;
                 }
             } else { // RTP/RTCP包
-                if (_dtls_state != DtlsTransportState::k_connected) {
-                    RTC_LOG(LS_WARNING) << to_string() << ": Received non DTLS packet "
+                if (dtls_state_ != DtlsTransportState::kConnected) {
+                    RTC_LOG(LS_WARNING) << ToString() << ": Received non DTLS packet "
                         << "before DTLS complete";
                     return;
                 }
 
-                if (!is_rtp_packet(buf, len)) {
-                    RTC_LOG(LS_WARNING) << to_string() << ": Received unexpected non "
+                if (!IsRtpPacket(buf, len)) {
+                    RTC_LOG(LS_WARNING) << ToString() << ": Received unexpected non "
                         << "DTLS packet";
                     return;
                 }
 
-                signal_read_packet(this, buf, len, ts);
+                SignalReadPacket(this, buf, len, ts);
             }
 
             break;
@@ -162,208 +162,209 @@ void DtlsTransport::_on_read_packet(IceTransportChannel* /*channel*/,
     }
 }
 
-void DtlsTransport::_on_writable_state(IceTransportChannel* channel) {
-    RTC_LOG(LS_INFO) << to_string() << ": IceTransportChannel writable changed to "
+void DtlsTransport::OnWritableState(IceTransportChannel* channel) {
+    RTC_LOG(LS_INFO) << ToString() << ": IceTransportChannel writable changed to "
         << channel->writable();
 
-    if (!_dtls_active) {
-        _set_writable_state(channel->writable());
+    if (!dtls_active_) {
+        set_writable_state(channel->writable());
         return;
     }
 
-    switch (_dtls_state) {
-        case DtlsTransportState::k_new:
-            _maybe_start_dtls();
+    switch (dtls_state_) {
+        case DtlsTransportState::kNew:
+            MaybeStartDtls();
             break;
-        case DtlsTransportState::k_connected:
-            _set_writable_state(channel->writable());
+        case DtlsTransportState::kConnected:
+            set_writable_state(channel->writable());
             break;
         default:
             break;
     }
 }
 
-void DtlsTransport::_on_receiving_state(IceTransportChannel* channel) {
-    _set_receiving(channel->receiving());
+void DtlsTransport::OnReceivingState(IceTransportChannel* channel) {
+    set_receiving(channel->receiving());
 }
 
-void DtlsTransport::_set_receiving(bool receiving) {
-    if (_receiving == receiving) {
+void DtlsTransport::set_receiving(bool receiving) {
+    if (receiving_ == receiving) {
         return;
     }
 
-    RTC_LOG(LS_INFO) << to_string() << ": Change receiving to " << receiving;
-    _receiving = receiving;
-    signal_receiving_state(this);
+    RTC_LOG(LS_INFO) << ToString() << ": Change receiving to " << receiving;
+    receiving_ = receiving;
+    SignalReceivingState(this);
 }
 
-bool DtlsTransport::set_local_certificate(rtc::RTCCertificate* cert) {
-    if (_dtls_active) {
-        if (cert == _local_certificate) {
-            RTC_LOG(LS_INFO) << to_string() << ": Ingnoring identical DTLS cert";
+bool DtlsTransport::SetLocalCertificate(rtc::RTCCertificate* cert) {
+    if (dtls_active_) {
+        if (cert == local_certificate_) {
+            RTC_LOG(LS_INFO) << ToString() << ": Ingnoring identical DTLS cert";
             return true;
         } else {
-            RTC_LOG(LS_WARNING) << to_string() << ": Cannot change cert in this state";
+            RTC_LOG(LS_WARNING) << ToString() << ": Cannot change cert in this state";
             return false;
         }
     }
 
     if (cert) {
-        _local_certificate = cert;
-        _dtls_active = true;
+        local_certificate_ = cert;
+        dtls_active_ = true;
     }
 
     return true;
 }
 
-bool DtlsTransport::set_remote_fingerprint(const std::string& digest_alg,
+bool DtlsTransport::SetRemoteFingerprint(const std::string& digest_alg,
         const uint8_t* digest, size_t digest_len)
 {
     rtc::Buffer remote_fingerprint_value(digest, digest_len);
 
-    if (_dtls_active && _remote_fingerprint_value == remote_fingerprint_value &&
+    if (dtls_active_ && remote_fingerprint_value_ == remote_fingerprint_value &&
             !digest_alg.empty())
     {
-        RTC_LOG(LS_INFO) << to_string() << ": Ignoring identical remote fingerprint";
+        RTC_LOG(LS_INFO) << ToString() << ": Ignoring identical remote fingerprint";
         return true;
     }
 
     if (digest_alg.empty()) {
-        RTC_LOG(LS_WARNING) << to_string() << ": Other sides not support DTLS";
-        _dtls_active = false;
+        RTC_LOG(LS_WARNING) << ToString() << ": Other sides not support DTLS";
+        dtls_active_ = false;
         return false;
     }
 
-    if (!_dtls_active) {
-        RTC_LOG(LS_WARNING) << to_string() << ": Cannot set remote fingerpint in this state";
+    if (!dtls_active_) {
+        RTC_LOG(LS_WARNING) << ToString() << ": Cannot set remote fingerpint in this state";
         return false;
     }
 
-    bool fingerprint_change = _remote_fingerprint_value.size() > 0u;
-    _remote_fingerprint_value = std::move(remote_fingerprint_value);
-    _remote_fingerprint_alg = digest_alg;
+    bool fingerprint_change = remote_fingerprint_value_.size() > 0u;
+    remote_fingerprint_value_ = std::move(remote_fingerprint_value);
+    remote_fingerprint_alg_ = digest_alg;
 
     // ClientHello packet先到，answer sdp后到
-    if (_dtls && !fingerprint_change) {
+    if (dtls_ && !fingerprint_change) {
         rtc::SSLPeerCertificateDigestError err;
-        if (!_dtls->SetPeerCertificateDigest(digest_alg, (const unsigned char*)digest, 
-                    digest_len, &err)) {
-            RTC_LOG(LS_WARNING) << to_string() << ": Failed to set peer certificate digest";
-            _set_dtls_state(DtlsTransportState::k_failed);
+        if (!dtls_->SetPeerCertificateDigest(digest_alg, (const unsigned char*)digest, 
+                    digest_len, &err)) 
+        {
+            RTC_LOG(LS_WARNING) << ToString() << ": Failed to set peer certificate digest";
+            set_dtls_state(DtlsTransportState::kFailed);
             return err == rtc::SSLPeerCertificateDigestError::VERIFICATION_FAILED;
         }
 
         return true;
     }
     
-    if (_dtls && fingerprint_change) {
-        _dtls.reset(nullptr);
-        _set_dtls_state(DtlsTransportState::k_new);
-        _set_writable_state(false);
+    if (dtls_ && fingerprint_change) {
+        dtls_.reset(nullptr);
+        set_dtls_state(DtlsTransportState::kNew);
+        set_writable_state(false);
     }
     
-    if (!_setup_dtls()) {
-        RTC_LOG(LS_WARNING) << to_string() << ": Failed to setup DTLS";
-        _set_dtls_state(DtlsTransportState::k_failed);
+    if (!SetupDtls()) {
+        RTC_LOG(LS_WARNING) << ToString() << ": Failed to setup DTLS";
+        set_dtls_state(DtlsTransportState::kFailed);
         return false;
     }
     
     return true;
 }
 
-void DtlsTransport::_set_dtls_state(DtlsTransportState state) {
-    if (_dtls_state == state) {
+void DtlsTransport::set_dtls_state(DtlsTransportState state) {
+    if (dtls_state_ == state) {
         return;
     }
 
-    RTC_LOG(LS_INFO) << to_string() << ": Change dtls state from " << _dtls_state
+    RTC_LOG(LS_INFO) << ToString() << ": Change dtls state from " << dtls_state_
         << " to " << state;
-    _dtls_state = state;
-    signal_dtls_state(this, state);
+    dtls_state_ = state;
+    SignalDtlsState(this, state);
 }
 
-void DtlsTransport::_set_writable_state(bool writable) {
-    if (_writable == writable) {
+void DtlsTransport::set_writable_state(bool writable) {
+    if (writable_ == writable) {
         return;
     }
 
-    RTC_LOG(LS_INFO) << to_string() << ": set DTLS writable to " << writable;
-    _writable = writable;
-    signal_writable_state(this);
+    RTC_LOG(LS_INFO) << ToString() << ": set DTLS writable to " << writable;
+    writable_ = writable;
+    SignalWritableState(this);
 }
 
-bool DtlsTransport::_setup_dtls() {
-    auto downward = std::make_unique<StreamInterfaceChannel>(_ice_channel); 
+bool DtlsTransport::SetupDtls() {
+    auto downward = std::make_unique<StreamInterfaceChannel>(ice_channel_); 
     StreamInterfaceChannel* downward_ptr = downward.get();
 
-    _dtls = rtc::SSLStreamAdapter::Create(std::move(downward));
-    if (!_dtls) {
-        RTC_LOG(LS_WARNING) << to_string() << ": Failed to create SSLStreamAdapter";
+    dtls_ = rtc::SSLStreamAdapter::Create(std::move(downward));
+    if (!dtls_) {
+        RTC_LOG(LS_WARNING) << ToString() << ": Failed to create SSLStreamAdapter";
         return false;
     }
 
-    _downward = downward_ptr;
+    downward_ = downward_ptr;
     
-    _dtls->SetIdentity(_local_certificate->identity()->Clone());
-    _dtls->SetMode(rtc::SSL_MODE_DTLS);
-    _dtls->SetMaxProtocolVersion(rtc::SSL_PROTOCOL_DTLS_12);
-    _dtls->SetServerRole(rtc::SSL_SERVER);
-    _dtls->SignalEvent.connect(this, &DtlsTransport::_on_dtls_event);
-    _dtls->SignalSSLHandshakeError.connect(this, 
-            &DtlsTransport::_on_dtls_handshake_error);
+    dtls_->SetIdentity(local_certificate_->identity()->Clone());
+    dtls_->SetMode(rtc::SSL_MODE_DTLS);
+    dtls_->SetMaxProtocolVersion(rtc::SSL_PROTOCOL_DTLS_12);
+    dtls_->SetServerRole(rtc::SSL_SERVER);
+    dtls_->SignalEvent.connect(this, &DtlsTransport::OnDtlsEvent);
+    dtls_->SignalSSLHandshakeError.connect(this, 
+            &DtlsTransport::OnDtlsHandshakeError);
 
-    if (_remote_fingerprint_value.size() && !_dtls->SetPeerCertificateDigest(
-                _remote_fingerprint_alg,
-                _remote_fingerprint_value.data(),
-                _remote_fingerprint_value.size()))
+    if (remote_fingerprint_value_.size() && !dtls_->SetPeerCertificateDigest(
+                remote_fingerprint_alg_,
+                remote_fingerprint_value_.data(),
+                remote_fingerprint_value_.size()))
     {
-        RTC_LOG(LS_WARNING) << to_string() << ": Failed to set remote fingerprint";
+        RTC_LOG(LS_WARNING) << ToString() << ": Failed to set remote fingerprint";
         return false;
     }
     
-    if (!_srtp_ciphers.empty()) {
-        if (!_dtls->SetDtlsSrtpCryptoSuites(_srtp_ciphers)) {
-            RTC_LOG(LS_WARNING) << to_string() << ": Failed to set DTLS-SRTP crypto suites";
+    if (!srtp_ciphers_.empty()) {
+        if (!dtls_->SetDtlsSrtpCryptoSuites(srtp_ciphers_)) {
+            RTC_LOG(LS_WARNING) << ToString() << ": Failed to set DTLS-SRTP crypto suites";
             return false;
         }
     } else {
-        RTC_LOG(LS_WARNING) << to_string() << ": Not using DTLS-SRTP";
+        RTC_LOG(LS_WARNING) << ToString() << ": Not using DTLS-SRTP";
     }
 
-    RTC_LOG(LS_INFO) << to_string() << ": Setup DTLS complete";
+    RTC_LOG(LS_INFO) << ToString() << ": Setup DTLS complete";
     
-    _maybe_start_dtls();
+    MaybeStartDtls();
 
     return true;
 }
 
-void DtlsTransport::_on_dtls_event(rtc::StreamInterface* /*dtls*/, int sig, int error) {
+void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* /*dtls*/, int sig, int error) {
     if (sig & rtc::SE_OPEN) {
-        RTC_LOG(LS_INFO) << to_string() << ": DTLS handshake complete.";
-        _set_writable_state(true);
-        _set_dtls_state(DtlsTransportState::k_connected);
+        RTC_LOG(LS_INFO) << ToString() << ": DTLS handshake complete.";
+        set_writable_state(true);
+        set_dtls_state(DtlsTransportState::kConnected);
     }
 
     if (sig & rtc::SE_READ) {
-        char buf[k_max_dtls_packet_len];
+        char buf[kMaxDtlsPacketLen];
         size_t read;
         int read_error;
         rtc::StreamResult ret;
         // 因为一个数据包可能会包含多个DTLS record，需要循环读取
         do {
-            ret = _dtls->Read(buf, sizeof(buf), &read, &read_error);
+            ret = dtls_->Read(buf, sizeof(buf), &read, &read_error);
             if (ret == rtc::SR_SUCCESS) {
             } else if (ret == rtc::SR_EOS) {
-                RTC_LOG(LS_INFO) << to_string() << ": DTLS transport closed by remote.";
-                _set_writable_state(false);
-                _set_dtls_state(DtlsTransportState::k_closed);
-                signal_closed(this);
+                RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed by remote.";
+                set_writable_state(false);
+                set_dtls_state(DtlsTransportState::kClosed);
+                SignalClosed(this);
             } else if (ret == rtc::SR_ERROR) {
-                RTC_LOG(LS_WARNING) << to_string() << ": Closed DTLS transport by remote "
+                RTC_LOG(LS_WARNING) << ToString() << ": Closed DTLS transport by remote "
                     << "with error, code=" << read_error;
-                _set_writable_state(false);
-                _set_dtls_state(DtlsTransportState::k_failed);
-                signal_closed(this);
+                set_writable_state(false);
+                set_dtls_state(DtlsTransportState::kFailed);
+                SignalClosed(this);
             }
 
         } while (ret == rtc::SR_SUCCESS);
@@ -371,100 +372,100 @@ void DtlsTransport::_on_dtls_event(rtc::StreamInterface* /*dtls*/, int sig, int 
 
     if (sig & rtc::SE_CLOSE) {
         if (!error) {
-            RTC_LOG(LS_INFO) << to_string() << ": DTLS transport closed";
-            _set_writable_state(false);
-            _set_dtls_state(DtlsTransportState::k_closed);
+            RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed";
+            set_writable_state(false);
+            set_dtls_state(DtlsTransportState::kClosed);
         } else {
-            RTC_LOG(LS_INFO) << to_string() << ": DTLS transport closed with error, "
+            RTC_LOG(LS_INFO) << ToString() << ": DTLS transport closed with error, "
                 << "code=" << error;
-            _set_writable_state(false);
-            _set_dtls_state(DtlsTransportState::k_failed);
+            set_writable_state(false);
+            set_dtls_state(DtlsTransportState::kFailed);
         }
     }
 }
 
-void DtlsTransport::_on_dtls_handshake_error(rtc::SSLHandshakeError err) {
-    RTC_LOG(LS_WARNING) << to_string() << ": DTLS handshake error=" << (int)err;
+void DtlsTransport::OnDtlsHandshakeError(rtc::SSLHandshakeError err) {
+    RTC_LOG(LS_WARNING) << ToString() << ": DTLS handshake error=" << (int)err;
 }
 
-void DtlsTransport::_maybe_start_dtls() {
-    if (_dtls && _ice_channel->writable()) {
-        if (_dtls->StartSSL()) {
-            RTC_LOG(LS_WARNING) << to_string() << ": Failed to StartSSL.";
-            _set_dtls_state(DtlsTransportState::k_failed);
+void DtlsTransport::MaybeStartDtls() {
+    if (dtls_ && ice_channel_->writable()) {
+        if (dtls_->StartSSL()) {
+            RTC_LOG(LS_WARNING) << ToString() << ": Failed to StartSSL.";
+            set_dtls_state(DtlsTransportState::kFailed);
             return;
         }
 
-        RTC_LOG(LS_INFO) << to_string() << ": Started DTLS.";
-        _set_dtls_state(DtlsTransportState::k_connecting);
+        RTC_LOG(LS_INFO) << ToString() << ": Started DTLS.";
+        set_dtls_state(DtlsTransportState::kConnecting);
 
-        if (_cached_client_hello.size()) {
-            if (!_handle_dtls_packet(_cached_client_hello.data<char>(),
-                        _cached_client_hello.size()))
+        if (cached_client_hello_.size()) {
+            if (!HandleDtlsPacket(cached_client_hello_.data<char>(),
+                        cached_client_hello_.size()))
             {
-                RTC_LOG(LS_WARNING) << to_string() << ": Handling dtls packet failed.";
-                _set_dtls_state(DtlsTransportState::k_failed);
+                RTC_LOG(LS_WARNING) << ToString() << ": Handling dtls packet failed.";
+                set_dtls_state(DtlsTransportState::kFailed);
             }
-            _cached_client_hello.Clear();
+            cached_client_hello_.Clear();
         }
     }
 }
 
-bool DtlsTransport::_handle_dtls_packet(const char* data, size_t size) {
+bool DtlsTransport::HandleDtlsPacket(const char* data, size_t size) {
     const uint8_t* tmp_data = reinterpret_cast<const uint8_t*>(data);
     size_t tmp_size = size;
 
     while (tmp_size > 0) {
-        if (tmp_size < k_dtls_record_header_len) {
+        if (tmp_size < kDtlsRecordHeaderLen) {
             return false;
         }
 
         size_t record_len = (tmp_data[11] << 8) | tmp_data[12];
-        if (record_len + k_dtls_record_header_len > tmp_size) {
+        if (record_len + kDtlsRecordHeaderLen > tmp_size) {
             return false;
         }
 
-        tmp_data += k_dtls_record_header_len + record_len;
-        tmp_size -= k_dtls_record_header_len + record_len;
+        tmp_data += kDtlsRecordHeaderLen + record_len;
+        tmp_size -= kDtlsRecordHeaderLen + record_len;
     }
 
-    return _downward->on_received_packet(data, size);
+    return downward_->OnReceivedPacket(data, size);
 }
 
-std::string DtlsTransport::to_string() {
+std::string DtlsTransport::ToString() {
     std::stringstream ss;
     absl::string_view RECEIVING[2] = {"-", "R"};
     absl::string_view WRITABLE[2] = {"-", "W"};
 
     ss << "DtlsTransport[" << transport_name() << "|"
         << (int)component() << "|"
-        << RECEIVING[_receiving] << "|"
-        << WRITABLE[_writable] << "]";
+        << RECEIVING[receiving_] << "|"
+        << WRITABLE[writable_] << "]";
     return ss.str();
 }
 
-bool DtlsTransport::get_srtp_crypto_suite(int* selected_crypto_suite) {
-    if (_dtls_state != DtlsTransportState::k_connected) {
+bool DtlsTransport::GetSrtpCryptoSuite(int* selected_crypto_suite) {
+    if (dtls_state_ != DtlsTransportState::kConnected) {
         return false;
     }
 
-    return _dtls->GetDtlsSrtpCryptoSuite(selected_crypto_suite);
+    return dtls_->GetDtlsSrtpCryptoSuite(selected_crypto_suite);
 }
 
-bool DtlsTransport::export_keying_material(const std::string& label,
+bool DtlsTransport::ExportKeyingMaterial(const std::string& label,
         const uint8_t* context,
         size_t context_len,
         bool use_context,
         uint8_t* result,
         size_t result_len)
 {
-    return _dtls.get() ? _dtls->ExportKeyingMaterial(label, context, context_len,
+    return dtls_.get() ? dtls_->ExportKeyingMaterial(label, context, context_len,
             use_context, result, result_len) : false;
 }
 
-int DtlsTransport::send_packet(const char* data, size_t len) {
-    if (_ice_channel) {
-        return _ice_channel->send_packet(data, len);
+int DtlsTransport::SendPacket(const char* data, size_t len) {
+    if (ice_channel_) {
+        return ice_channel_->SendPacket(data, len);
     }
 
     return -1;

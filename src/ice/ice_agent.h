@@ -1,5 +1,5 @@
-#ifndef  __ICE_AGENT_H_
-#define  __ICE_AGENT_H_
+#ifndef  __XRTCSERVER_ICE_ICE_AGENT_H_
+#define  __XRTCSERVER_ICE_ICE_AGENT_H_
 
 #include <vector>
 
@@ -13,47 +13,47 @@ public:
     IceAgent(EventLoop* el, PortAllocator* allocator);
     ~IceAgent();
     
-    bool create_channel(EventLoop* el, const std::string& transport_name,
+    bool CreateChannel(EventLoop* el, const std::string& transport_name,
             IceCandidateComponent component);
     
-    IceTransportChannel* get_channel(const std::string& transport_name,
+    IceTransportChannel* GetChannel(const std::string& transport_name,
             IceCandidateComponent component);
    
-    void set_ice_params(const std::string& transport_name,
+    void SetIceParams(const std::string& transport_name,
             IceCandidateComponent component,
             const IceParameters& ice_params);
-    void set_remote_ice_params(const std::string& transport_name,
+    void SetRemoteIceParams(const std::string& transport_name,
             IceCandidateComponent component,
             const IceParameters& ice_params);
 
-    void gathering_candidate();
-    IceTransportState ice_state() { return _ice_state; }
+    void GatheringCandidate();
+    IceTransportState ice_state() { return ice_state_; }
 
     sigslot::signal4<IceAgent*, const std::string&, IceCandidateComponent,
-        const std::vector<Candidate>&> signal_candidate_allocate_done;
-    sigslot::signal2<IceAgent*, IceTransportState> signal_ice_state;
+        const std::vector<Candidate>&> SignalCandidateAllocateDone;
+    sigslot::signal2<IceAgent*, IceTransportState> SignalIceState;
 
 private:
-    std::vector<IceTransportChannel*>::iterator _get_channel(
+    std::vector<IceTransportChannel*>::iterator GetChannelIter(
             const std::string& transport_name,
             IceCandidateComponent component);
     
-    void on_candidate_allocate_done(IceTransportChannel* channel,
+    void OnCandidateAllocateDone(IceTransportChannel* channel,
             const std::vector<Candidate>&);
-    void _on_ice_receiving_state(IceTransportChannel* channel);
-    void _on_ice_writable_state(IceTransportChannel* channel);
-    void _on_ice_state_changed(IceTransportChannel* channel);
-    void _update_state();
+    void OnIceReceivingState(IceTransportChannel* channel);
+    void OnIceWritableState(IceTransportChannel* channel);
+    void OnIceStateChanged(IceTransportChannel* channel);
+    void UpdateState();
 
 private:
-    EventLoop* _el;
-    std::vector<IceTransportChannel*> _channels;
-    PortAllocator* _allocator;
-    IceTransportState _ice_state = IceTransportState::k_new;
+    EventLoop* el_;
+    std::vector<IceTransportChannel*> channels_;
+    PortAllocator* allocator_;
+    IceTransportState ice_state_ = IceTransportState::kNew;
 };
 
 } // namespace xrtc
 
-#endif  //__ICE_AGENT_H_
+#endif  //__XRTCSERVER_ICE_ICE_AGENT_H_
 
 

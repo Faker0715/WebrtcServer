@@ -1,7 +1,5 @@
-
-
-#ifndef  __DTLS_TRANSPORT_H_
-#define  __DTLS_TRANSPORT_H_
+#ifndef  __XRTCSERVER_PC_DTLS_TRANSPORT_H_
+#define  __XRTCSERVER_PC_DTLS_TRANSPORT_H_
 
 #include <memory>
 
@@ -14,19 +12,19 @@
 namespace xrtc {
 
 enum class DtlsTransportState {
-    k_new,
-    k_connecting,
-    k_connected,
-    k_closed,
-    k_failed,
-    k_num_values
+    kNew,
+    kConnecting,
+    kConnected,
+    kClosed,
+    kFailed,
+    kNumValues
 };
 
 class StreamInterfaceChannel : public rtc::StreamInterface {
 public:
     StreamInterfaceChannel(IceTransportChannel* ice_channel);
     
-    bool on_received_packet(const char* data, size_t size);
+    bool OnReceivedPacket(const char* data, size_t size);
 
     rtc::StreamState GetState() const override;
     rtc::StreamResult Read(void* buffer,
@@ -40,9 +38,9 @@ public:
     void Close() override;
 
 private:
-    IceTransportChannel* _ice_channel;
-    rtc::BufferQueue _packets;
-    rtc::StreamState _state = rtc::SS_OPEN;
+    IceTransportChannel* ice_channel_;
+    rtc::BufferQueue packets_;
+    rtc::StreamState state_ = rtc::SS_OPEN;
 };
 
 class DtlsTransport : public sigslot::has_slots<> {
@@ -50,64 +48,64 @@ public:
     DtlsTransport(IceTransportChannel* ice_channel);
     ~DtlsTransport();
     
-    const std::string& transport_name() { return _ice_channel->transport_name(); }
-    IceCandidateComponent component() { return _ice_channel->component(); }
-    IceTransportChannel* ice_channel() { return _ice_channel; }
-    bool is_dtls_active() { return _dtls_active; }
-    bool writable() { return _writable; }
+    const std::string& transport_name() { return ice_channel_->transport_name(); }
+    IceCandidateComponent component() { return ice_channel_->component(); }
+    IceTransportChannel* ice_channel() { return ice_channel_; }
+    bool IsDtlsActive() { return dtls_active_; }
+    bool writable() { return writable_; }
     
-    int send_packet(const char* data, size_t len);
+    int SendPacket(const char* data, size_t len);
 
-    bool set_local_certificate(rtc::RTCCertificate* cert);
-    bool set_remote_fingerprint(const std::string& digest_alg,
+    bool SetLocalCertificate(rtc::RTCCertificate* cert);
+    bool SetRemoteFingerprint(const std::string& digest_alg,
             const uint8_t* digest, size_t digest_len);
-    std::string to_string();
-    DtlsTransportState dtls_state() { return _dtls_state; }
-    bool get_srtp_crypto_suite(int* selected_crypto_suite);
-    bool export_keying_material(const std::string& label,
+    std::string ToString();
+    DtlsTransportState dtls_state() { return dtls_state_; }
+    bool GetSrtpCryptoSuite(int* selected_crypto_suite);
+    bool ExportKeyingMaterial(const std::string& label,
             const uint8_t* context,
             size_t context_len,
             bool use_context,
             uint8_t* result,
             size_t result_len);
 
-    sigslot::signal2<DtlsTransport*, DtlsTransportState> signal_dtls_state;
-    sigslot::signal1<DtlsTransport*> signal_writable_state;
-    sigslot::signal1<DtlsTransport*> signal_receiving_state;
-    sigslot::signal4<DtlsTransport*, const char*, size_t, int64_t> signal_read_packet;
-    sigslot::signal1<DtlsTransport*> signal_closed;
+    sigslot::signal2<DtlsTransport*, DtlsTransportState> SignalDtlsState;
+    sigslot::signal1<DtlsTransport*> SignalWritableState;
+    sigslot::signal1<DtlsTransport*> SignalReceivingState;
+    sigslot::signal4<DtlsTransport*, const char*, size_t, int64_t> SignalReadPacket;
+    sigslot::signal1<DtlsTransport*> SignalClosed;
 
 private:
-    void _on_read_packet(IceTransportChannel* /*channel*/,
+    void OnReadPacket(IceTransportChannel* /*channel*/,
             const char* buf, size_t len, int64_t ts);
-    void _on_dtls_event(rtc::StreamInterface* dtls, int sig, int error);
-    void _on_dtls_handshake_error(rtc::SSLHandshakeError error);
-    void _on_receiving_state(IceTransportChannel* channel);
-    void _on_writable_state(IceTransportChannel* channel);
-    bool _setup_dtls();
-    void _maybe_start_dtls();
-    void _set_dtls_state(DtlsTransportState state);
-    void _set_writable_state(bool writable);
-    void _set_receiving(bool receiving);
-    bool _handle_dtls_packet(const char* data, size_t size);
+    void OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int error);
+    void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
+    void OnReceivingState(IceTransportChannel* channel);
+    void OnWritableState(IceTransportChannel* channel);
+    bool SetupDtls();
+    void MaybeStartDtls();
+    void set_dtls_state(DtlsTransportState state);
+    void set_writable_state(bool writable);
+    void set_receiving(bool receiving);
+    bool HandleDtlsPacket(const char* data, size_t size);
 
 private:
-    IceTransportChannel* _ice_channel;
-    DtlsTransportState _dtls_state = DtlsTransportState::k_new;
-    bool _receiving = false;
-    bool _writable = false;
-    std::unique_ptr<rtc::SSLStreamAdapter> _dtls;
-    StreamInterfaceChannel* _downward = nullptr;
-    rtc::Buffer _cached_client_hello;
-    rtc::RTCCertificate* _local_certificate = nullptr;
-    rtc::Buffer _remote_fingerprint_value;
-    std::string _remote_fingerprint_alg;
-    bool _dtls_active = false;
-    std::vector<int> _srtp_ciphers;
+    IceTransportChannel* ice_channel_;
+    DtlsTransportState dtls_state_ = DtlsTransportState::kNew;
+    bool receiving_ = false;
+    bool writable_ = false;
+    std::unique_ptr<rtc::SSLStreamAdapter> dtls_;
+    StreamInterfaceChannel* downward_ = nullptr;
+    rtc::Buffer cached_client_hello_;
+    rtc::RTCCertificate* local_certificate_ = nullptr;
+    rtc::Buffer remote_fingerprint_value_;
+    std::string remote_fingerprint_alg_;
+    bool dtls_active_ = false;
+    std::vector<int> srtp_ciphers_;
 };
 
 } // namespace xrtc
 
-#endif  //__DTLS_TRANSPORT_H_
+#endif  //__XRTCSERVER_PC_DTLS_TRANSPORT_H_
 
 

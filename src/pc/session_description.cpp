@@ -1,13 +1,13 @@
+#include "pc/session_description.h"
+
 #include <sstream>
 
 #include <rtc_base/logging.h>
 
-#include "pc/session_description.h"
-
 namespace xrtc {
 
-const char k_media_protocol_dtls_savpf[] = "UDP/TLS/RTP/SAVPF";
-const char k_meida_protocol_savpf[] = "RTP/SAVPF";
+const char kMediaProtocolDtlsSavpf[] = "UDP/TLS/RTP/SAVPF";
+const char kMediaProtocolSavpf[] = "RTP/SAVPF";
 
 AudioContentDescription::AudioContentDescription() {
     auto codec = std::make_shared<AudioCodecInfo>();
@@ -23,7 +23,7 @@ AudioContentDescription::AudioContentDescription() {
     codec->codec_param["minptime"] = "10";
     codec->codec_param["useinbandfec"] = "1";
 
-    _codecs.push_back(codec);
+    codecs_.push_back(codec);
 }
 
 VideoContentDescription::VideoContentDescription() {
@@ -31,7 +31,7 @@ VideoContentDescription::VideoContentDescription() {
     codec->id = 107;
     codec->name = "H264";
     codec->clockrate = 90000;
-    _codecs.push_back(codec);
+    codecs_.push_back(codec);
 
     // add feedback param
     codec->feedback_param.push_back(FeedbackParam("goog-remb"));
@@ -52,11 +52,11 @@ VideoContentDescription::VideoContentDescription() {
     
     // add codec param
     rtx_codec->codec_param["apt"] = std::to_string(codec->id);
-    _codecs.push_back(rtx_codec);
+    codecs_.push_back(rtx_codec);
 }
 
-bool ContentGroup::has_content_name(const std::string& content_name) {
-    for (auto name : _content_names) {
+bool ContentGroup::HasContentName(const std::string& content_name) {
+    for (auto name : content_names_) {
         if (name == content_name) {
             return true;
         }
@@ -65,14 +65,14 @@ bool ContentGroup::has_content_name(const std::string& content_name) {
     return false;
 }
 
-void ContentGroup::add_content_name(const std::string& content_name) {
-    if (!has_content_name(content_name)) {
-        _content_names.push_back(content_name);
+void ContentGroup::AddContentName(const std::string& content_name) {
+    if (!HasContentName(content_name)) {
+        content_names_.push_back(content_name);
     }
 }
 
 SessionDescription::SessionDescription(SdpType type) :
-    _sdp_type(type)
+    sdp_type_(type)
 {
 }
 
@@ -80,10 +80,10 @@ SessionDescription::~SessionDescription() {
 
 }
 
-std::shared_ptr<MediaContentDescription> SessionDescription::get_content(
+std::shared_ptr<MediaContentDescription> SessionDescription::GetContent(
         const std::string& mid)
 {
-    for (auto content : _contents) {
+    for (auto content : contents_) {
         if (mid == content->mid()) {
             return content;
         }
@@ -92,19 +92,19 @@ std::shared_ptr<MediaContentDescription> SessionDescription::get_content(
     return nullptr;
 }
 
-void SessionDescription::add_content(std::shared_ptr<MediaContentDescription> content) {
-    _contents.push_back(content);
+void SessionDescription::AddContent(std::shared_ptr<MediaContentDescription> content) {
+    contents_.push_back(content);
 }
 
-void SessionDescription::add_group(const ContentGroup& group) {
-    _content_groups.push_back(group);
+void SessionDescription::AddGroup(const ContentGroup& group) {
+    content_groups_.push_back(group);
 }
 
-std::vector<const ContentGroup*> SessionDescription::get_group_by_name(
+std::vector<const ContentGroup*> SessionDescription::GetGroupByName(
         const std::string& name) const
 {
     std::vector<const ContentGroup*> content_groups;
-    for (const ContentGroup& group : _content_groups) {
+    for (const ContentGroup& group : content_groups_) {
         if (group.semantics() == name) {
             content_groups.push_back(&group);
         }
@@ -113,7 +113,7 @@ std::vector<const ContentGroup*> SessionDescription::get_group_by_name(
     return content_groups;
 }
 
-static std::string connection_role_to_string(ConnectionRole role) {
+static std::string ConnectionRoleToString(ConnectionRole role) {
     switch (role) {
         case ConnectionRole::ACTIVE:
             return "active";
@@ -128,7 +128,7 @@ static std::string connection_role_to_string(ConnectionRole role) {
     }
 }
 
-bool SessionDescription::add_transport_info(const std::string& mid, 
+bool SessionDescription::AddTransportInfo(const std::string& mid, 
         const IceParameters& ice_param,
         rtc::RTCCertificate* certificate)
 {
@@ -145,26 +145,26 @@ bool SessionDescription::add_transport_info(const std::string& mid,
         }
     }
     
-    if (SdpType::k_offer == _sdp_type) {
+    if (SdpType::kOffer == sdp_type_) {
         tdesc->connection_role = ConnectionRole::ACTPASS;
     } else {
         tdesc->connection_role = ConnectionRole::ACTIVE;
     }
 
-    _transport_infos.push_back(tdesc);
+    transport_infos_.push_back(tdesc);
 
     return true;
 }
 
-bool SessionDescription::add_transport_info(std::shared_ptr<TransportDescription> td) {
-    _transport_infos.push_back(td);
+bool SessionDescription::AddTransportInfo(std::shared_ptr<TransportDescription> td) {
+    transport_infos_.push_back(td);
     return true;
 }
 
-std::shared_ptr<TransportDescription> SessionDescription::get_transport_info(
+std::shared_ptr<TransportDescription> SessionDescription::GetTransportInfo(
         const std::string& mid) 
 {
-    for (auto tdesc : _transport_infos) {
+    for (auto tdesc : transport_infos_) {
         if (tdesc->mid == mid) {
             return tdesc;
         }
@@ -173,8 +173,8 @@ std::shared_ptr<TransportDescription> SessionDescription::get_transport_info(
     return nullptr;
 }
 
-bool SessionDescription::is_bundle(const std::string& mid) {
-    auto content_group = get_group_by_name("BUNDLE");
+bool SessionDescription::IsBundle(const std::string& mid) {
+    auto content_group = GetGroupByName("BUNDLE");
     if (content_group.empty()) {
         return false;
     }
@@ -191,8 +191,8 @@ bool SessionDescription::is_bundle(const std::string& mid) {
 }
     
 
-std::string SessionDescription::get_first_bundle_mid() {
-    auto content_group = get_group_by_name("BUNDLE");
+std::string SessionDescription::GetFirstBundleMid() {
+    auto content_group = GetGroupByName("BUNDLE");
     if (content_group.empty()) {
         return "";
     }
@@ -200,7 +200,7 @@ std::string SessionDescription::get_first_bundle_mid() {
     return content_group[0]->content_names()[0];
 }
 
-static void add_rtcp_fb_line(std::shared_ptr<CodecInfo> codec,
+static void AddRtcpFbLine(std::shared_ptr<CodecInfo> codec,
         std::stringstream& ss)
 {
     for (auto param : codec->feedback_param) {
@@ -212,7 +212,7 @@ static void add_rtcp_fb_line(std::shared_ptr<CodecInfo> codec,
     }
 }
 
-static void add_fmtp_line(std::shared_ptr<CodecInfo> codec,
+static void AddFmtpLine(std::shared_ptr<CodecInfo> codec,
         std::stringstream& ss)
 {
     if (!codec->codec_param.empty()) {
@@ -227,10 +227,10 @@ static void add_fmtp_line(std::shared_ptr<CodecInfo> codec,
     }
 }
 
-static void build_rtp_map(std::shared_ptr<MediaContentDescription> content,
+static void BuildRtpMap(std::shared_ptr<MediaContentDescription> content,
         std::stringstream& ss)
 {
-    for (auto codec : content->get_codecs()) {
+    for (auto codec : content->codecs()) {
         ss << "a=rtpmap:" << codec->id << " " << codec->name << "/" << codec->clockrate;
         if (MediaType::MEDIA_TYPE_AUDIO == content->type()) {
             auto audio_codec = codec->as_audio();
@@ -238,22 +238,22 @@ static void build_rtp_map(std::shared_ptr<MediaContentDescription> content,
         }
         ss << "\r\n";
 
-        add_rtcp_fb_line(codec, ss);
-        add_fmtp_line(codec, ss);
+        AddRtcpFbLine(codec, ss);
+        AddFmtpLine(codec, ss);
     }
 }
 
-static void build_rtp_direction(std::shared_ptr<MediaContentDescription> content,
+static void BuildRtpDirection(std::shared_ptr<MediaContentDescription> content,
         std::stringstream& ss)
 {
     switch (content->direction()) {
-        case RtpDirection::k_send_recv:
+        case RtpDirection::kSendRecv:
             ss << "a=sendrecv\r\n";
             break;
-        case RtpDirection::k_send_only:
+        case RtpDirection::kSendOnly:
             ss << "a=sendonly\r\n";
             break;
-        case RtpDirection::k_recv_only:
+        case RtpDirection::kRecvOnly:
             ss << "a=recvonly\r\n";
             break;
         default:
@@ -262,7 +262,7 @@ static void build_rtp_direction(std::shared_ptr<MediaContentDescription> content
     }
 }
 
-static void build_candidates(std::shared_ptr<MediaContentDescription> content,
+static void BuildCandidates(std::shared_ptr<MediaContentDescription> content,
         std::stringstream& ss)
 {
     for (auto c : content->candidates()) {
@@ -277,7 +277,7 @@ static void build_candidates(std::shared_ptr<MediaContentDescription> content,
     }
 }
 
-static void add_ssrc_line(uint32_t ssrc,
+static void AddSsrcLine(uint32_t ssrc,
         const std::string& attribute,
         const std::string& value,
         std::stringstream& ss)
@@ -285,7 +285,7 @@ static void add_ssrc_line(uint32_t ssrc,
     ss << "a=ssrc:" << ssrc << " " << attribute << ":" << value << "\r\n";
 }
 
-static void build_ssrc(std::shared_ptr<MediaContentDescription> content,
+static void BuildSsrc(std::shared_ptr<MediaContentDescription> content,
         std::stringstream& ss)
 {
     for (auto track : content->streams()) {
@@ -303,15 +303,15 @@ static void build_ssrc(std::shared_ptr<MediaContentDescription> content,
     
         std::string msid = track.stream_id + " " + track.id;
         for (auto ssrc : track.ssrcs) {
-            add_ssrc_line(ssrc, "cname", track.cname, ss);
-            add_ssrc_line(ssrc, "msid", msid, ss);
-            add_ssrc_line(ssrc, "mslabel", track.stream_id, ss);
-            add_ssrc_line(ssrc, "lable", track.id, ss);
+            AddSsrcLine(ssrc, "cname", track.cname, ss);
+            AddSsrcLine(ssrc, "msid", msid, ss);
+            AddSsrcLine(ssrc, "mslabel", track.stream_id, ss);
+            AddSsrcLine(ssrc, "lable", track.id, ss);
         }
     }
 }
 
-std::string SessionDescription::to_string() {
+std::string SessionDescription::ToString() {
     std::stringstream ss;
     // version
     ss << "v=0\r\n";
@@ -325,7 +325,7 @@ std::string SessionDescription::to_string() {
 	ss << "t=0 0\r\n";
   
     // BUNDLE
-    std::vector<const ContentGroup*> content_group = get_group_by_name("BUNDLE");
+    std::vector<const ContentGroup*> content_group = GetGroupByName("BUNDLE");
     if (!content_group.empty()) {
         ss << "a=group:BUNDLE";
         for (auto group : content_group) {
@@ -338,29 +338,29 @@ std::string SessionDescription::to_string() {
     
     ss << "a=msid-semantic: WMS\r\n";
 
-    for (auto content : _contents) {
+    for (auto content : contents_) {
         // RFC 4566
         // m=<media> <port> <proto> <fmt>
         std::string fmt;
-        for (auto codec : content->get_codecs()) {
+        for (auto codec : content->codecs()) {
             fmt.append(" ");
             fmt.append(std::to_string(codec->id));
         }
 
-
-        auto transport_info = get_transport_info(content->mid());
-        if(transport_info && transport_info->identity_fingerprint.get()){
-            ss << "m=" << content->mid() << " 9 " << k_media_protocol_dtls_savpf
-               << fmt << "\r\n";
-        }else{
-            ss << "m=" << content->mid() << " 9 " << k_meida_protocol_savpf
-               << fmt << "\r\n";
+        auto transport_info = GetTransportInfo(content->mid());
+        if (transport_info && transport_info->identity_fingerprint.get()) {
+            ss << "m=" << content->mid() << " 9 " << kMediaProtocolDtlsSavpf
+                << fmt << "\r\n";
+        } else {
+            ss << "m=" << content->mid() << " 9 " << kMediaProtocolSavpf
+                << fmt << "\r\n";
         }
 
         ss << "c=IN IP4 0.0.0.0\r\n";
         ss << "a=rtcp:9 IN IP4 0.0.0.0\r\n";
         
-        build_candidates(content, ss);
+        BuildCandidates(content, ss);
+
         if (transport_info) {
             ss << "a=ice-ufrag:" << transport_info->ice_ufrag << "\r\n";
             ss << "a=ice-pwd:" << transport_info->ice_pwd << "\r\n";
@@ -369,20 +369,20 @@ std::string SessionDescription::to_string() {
             if (fp) {
                 ss << "a=fingerprint:" << fp->algorithm << " " << fp->GetRfc4572Fingerprint()
                     << "\r\n";
-                ss << "a=setup:" << connection_role_to_string(
+                ss << "a=setup:" << ConnectionRoleToString(
                         transport_info->connection_role) << "\r\n";
             }
         }
 
         ss << "a=mid:" << content->mid() << "\r\n";
-        build_rtp_direction(content, ss);
+        BuildRtpDirection(content, ss);
 
         if (content->rtcp_mux()) {
             ss << "a=rtcp-mux\r\n";
         }
 
-        build_rtp_map(content, ss);
-        build_ssrc(content, ss);
+        BuildRtpMap(content, ss);
+        BuildSsrc(content, ss);
     }
 
     return ss.str();

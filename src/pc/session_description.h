@@ -1,7 +1,5 @@
-
-
-#ifndef  __SESSION_DESCRIPTION_H_
-#define  __SESSION_DESCRIPTION_H_
+#ifndef  __XRTCSERVER_PC_SESSION_DESCRIPTION_H_
+#define  __XRTCSERVER_PC_SESSION_DESCRIPTION_H_
 
 #include <string>
 #include <vector>
@@ -17,8 +15,8 @@
 namespace xrtc {
 
 enum class SdpType {
-    k_offer = 0,
-    k_answer = 1,
+    kOffer = 0,
+    kAnswer = 1,
 };
 
 enum class MediaType {
@@ -27,10 +25,10 @@ enum class MediaType {
 };
 
 enum class RtpDirection {
-    k_send_recv,
-    k_send_only,
-    k_recv_only,
-    k_inactive
+    kSendRecv,
+    kSendOnly,
+    kRecvOnly,
+    kInactive
 };
 
 class MediaContentDescription {
@@ -39,32 +37,32 @@ public:
     virtual MediaType type() = 0;
     virtual std::string mid() = 0;
     
-    const std::vector<std::shared_ptr<CodecInfo>>& get_codecs() const {
-        return _codecs;
+    const std::vector<std::shared_ptr<CodecInfo>>& codecs() const {
+        return codecs_;
     }
     
-    RtpDirection direction() { return _direction; }
-    void set_direction(RtpDirection direction) { _direction = direction; }
+    RtpDirection direction() { return direction_; }
+    void set_direction(RtpDirection direction) { direction_ = direction; }
     
-    bool rtcp_mux() { return _rtcp_mux; }
-    void set_rtcp_mux(bool mux) { _rtcp_mux = mux; }
+    bool rtcp_mux() { return rtcp_mux_; }
+    void set_rtcp_mux(bool mux) { rtcp_mux_ = mux; }
    
-    const std::vector<Candidate>& candidates() { return _candidates; }
+    const std::vector<Candidate>& candidates() { return candidates_; }
     void add_candidates(const std::vector<Candidate>& candidates) {
-        _candidates = candidates;
+        candidates_ = candidates;
     }
     
-    const std::vector<StreamParams>& streams() { return _send_streams; }
+    const std::vector<StreamParams>& streams() { return send_streams_; }
     void add_stream(const StreamParams& stream) {
-        _send_streams.push_back(stream);
+        send_streams_.push_back(stream);
     }
 
 protected:
-    std::vector<std::shared_ptr<CodecInfo>> _codecs;
-    RtpDirection _direction;
-    bool _rtcp_mux = true;
-    std::vector<Candidate> _candidates;
-    std::vector<StreamParams> _send_streams;
+    std::vector<std::shared_ptr<CodecInfo>> codecs_;
+    RtpDirection direction_;
+    bool rtcp_mux_ = true;
+    std::vector<Candidate> candidates_;
+    std::vector<StreamParams> send_streams_;
 };
 
 class AudioContentDescription : public MediaContentDescription {
@@ -83,17 +81,17 @@ public:
 
 class ContentGroup {
 public:
-    ContentGroup(const std::string& semantics) : _semantics(semantics) {}
+    ContentGroup(const std::string& semantics) : semantics_(semantics) {}
     ~ContentGroup() {}
 
-    std::string semantics() const { return _semantics; }
-    const std::vector<std::string>& content_names() const { return _content_names; }
-    bool has_content_name(const std::string& content_name);
-    void add_content_name(const std::string& content_name);
+    std::string semantics() const { return semantics_; }
+    const std::vector<std::string>& content_names() const { return content_names_; }
+    bool HasContentName(const std::string& content_name);
+    void AddContentName(const std::string& content_name);
 
 private:
-    std::string _semantics;
-    std::vector<std::string> _content_names;
+    std::string semantics_;
+    std::vector<std::string> content_names_;
 };
 
 enum ConnectionRole {
@@ -118,34 +116,34 @@ public:
     SessionDescription(SdpType type);
     ~SessionDescription();
  
-    std::shared_ptr<MediaContentDescription> get_content(const std::string& mid);
-    void add_content(std::shared_ptr<MediaContentDescription> content);
+    std::shared_ptr<MediaContentDescription> GetContent(const std::string& mid);
+    void AddContent(std::shared_ptr<MediaContentDescription> content);
     const std::vector<std::shared_ptr<MediaContentDescription>>& contents() const {
-        return _contents;
+        return contents_;
     }
     
-    void add_group(const ContentGroup& group);
-    std::vector<const ContentGroup*> get_group_by_name(const std::string& name) const;
+    void AddGroup(const ContentGroup& group);
+    std::vector<const ContentGroup*> GetGroupByName(const std::string& name) const;
     
-    bool add_transport_info(const std::string& mid, const IceParameters& ice_param,
+    bool AddTransportInfo(const std::string& mid, const IceParameters& ice_param,
             rtc::RTCCertificate* certificate);
-    bool add_transport_info(std::shared_ptr<TransportDescription> td);
-    std::shared_ptr<TransportDescription> get_transport_info(const std::string& mid);
+    bool AddTransportInfo(std::shared_ptr<TransportDescription> td);
+    std::shared_ptr<TransportDescription> GetTransportInfo(const std::string& mid);
     
-    bool is_bundle(const std::string& mid);
-    std::string get_first_bundle_mid();
+    bool IsBundle(const std::string& mid);
+    std::string GetFirstBundleMid();
 
-    std::string to_string();
+    std::string ToString();
 
 private:
-    SdpType _sdp_type;
-    std::vector<std::shared_ptr<MediaContentDescription>> _contents;
-    std::vector<ContentGroup> _content_groups;
-    std::vector<std::shared_ptr<TransportDescription>> _transport_infos;
+    SdpType sdp_type_;
+    std::vector<std::shared_ptr<MediaContentDescription>> contents_;
+    std::vector<ContentGroup> content_groups_;
+    std::vector<std::shared_ptr<TransportDescription>> transport_infos_;
 };
 
 } // namespace xrtc
 
-#endif  //__SESSION_DESCRIPTION_H_
+#endif  //__XRTCSERVER_PC_SESSION_DESCRIPTION_H_
 
 

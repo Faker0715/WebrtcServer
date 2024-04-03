@@ -1,5 +1,5 @@
-#ifndef  __ICE_CANDIDATE_H_
-#define  __ICE_CANDIDATE_H_
+#ifndef  __XRTCSERVER_ICE_ICE_CANDIDATE_H_
+#define  __XRTCSERVER_ICE_ICE_CANDIDATE_H_
 
 #include <string>
 
@@ -11,11 +11,11 @@ namespace xrtc {
 
 class Candidate {
 public:
-    uint32_t get_priority(uint32_t type_preference,
+    uint32_t GetPriority(uint32_t type_preference,
             int network_adapter_preference,
             int relay_preference);
     
-    std::string to_string() const;
+    std::string ToString() const;
 
 public:
     IceCandidateComponent component;
@@ -31,6 +31,6 @@ public:
 
 } // namespace xrtc
 
-#endif  //__ICE_CANDIDATE_H_
+#endif  //__XRTCSERVER_ICE_ICE_CANDIDATE_H_
 
 

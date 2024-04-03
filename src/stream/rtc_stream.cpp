@@ -1,101 +1,108 @@
-#include <rtc_base/logging.h>
-
 #include "stream/rtc_stream.h"
+
+#include <rtc_base/logging.h>
 
 namespace xrtc {
 
-    const size_t k_ice_timeout = 30000;
-    RtcStream::RtcStream(EventLoop *el, PortAllocator *allocator,
-                         uint64_t uid, const std::string &stream_name,
-                         bool audio, bool video, uint32_t log_id) :
-            el(el), uid(uid), stream_name(stream_name), audio(audio),
-            video(video), log_id(log_id),
-            pc(new PeerConnection(el, allocator)) {
-        pc->signal_connection_state.connect(this, &RtcStream::_on_connection_state);
-        pc->signal_rtp_packet_received.connect(this, &RtcStream::_on_rtp_packet_received);
-        pc->signal_rtcp_packet_received.connect(this, &RtcStream::_on_rtcp_packet_received);
+const size_t kIceTimeout = 30000; // 30s;
+
+RtcStream::RtcStream(EventLoop* el, PortAllocator* allocator,
+        uint64_t uid, const std::string& stream_name,
+        bool audio, bool video, uint32_t log_id):
+    el(el), uid(uid), stream_name(stream_name), audio(audio),
+    video(video), log_id(log_id),
+    pc(new PeerConnection(el, allocator))
+{
+    pc->SignalConnectionState.connect(this, &RtcStream::OnConnectionState);
+    pc->SignalRtpPacketReceived.connect(this, &RtcStream::OnRtpPacketReceived);
+    pc->SignalRtcpPacketReceived.connect(this, &RtcStream::OnRtcpPacketReceived);
+}
+
+RtcStream::~RtcStream() {
+    if (ice_timeout_watcher_) {
+        el->DeleteTimer(ice_timeout_watcher_);
+        ice_timeout_watcher_ = nullptr;
     }
 
-    RtcStream::~RtcStream() {
-        if (_ice_timeout_watcher) {
-            el->delete_timer(_ice_timeout_watcher);
-            _ice_timeout_watcher = nullptr;
-        }
-        pc->destroy();
+    pc->Destroy();
+}
+
+void RtcStream::OnConnectionState(PeerConnection*, PeerConnectionState state) {
+    if (state_ == state) {
+        return;
     }
 
-    void RtcStream::_on_connection_state(PeerConnection *, PeerConnectionState state) {
-        if (_state == state) {
-            return;
-        }
-
-        RTC_LOG(LS_INFO) << to_string() << ": PeerConnectionState change from " << _state
-                         << " to " << state;
-        _state = state;
-        if (_state == PeerConnectionState::k_connected) {
-            if (_ice_timeout_watcher) {
-                el->delete_timer(_ice_timeout_watcher);
-                _ice_timeout_watcher = nullptr;
-            }
-        }
-
-        if (_listener) {
-            _listener->on_connection_state(this, state);
-        }
-    }
-
-    void RtcStream::_on_rtp_packet_received(PeerConnection *,
-                                            rtc::CopyOnWriteBuffer *packet, int64_t /*ts*/) {
-        if (_listener) {
-            _listener->on_rtp_packet_received(this, (const char *) packet->data(), packet->size());
+    RTC_LOG(LS_INFO) << ToString() << ": PeerConnectionState change from " << state_
+        << " to " << state;
+    state_ = state;
+    
+    if (state_ == PeerConnectionState::kConnected) {
+        if (ice_timeout_watcher_) {
+            el->DeleteTimer(ice_timeout_watcher_);
+            ice_timeout_watcher_ = nullptr;
         }
     }
 
-    void RtcStream::_on_rtcp_packet_received(PeerConnection *,
-                                             rtc::CopyOnWriteBuffer *packet, int64_t /*ts*/) {
-        if (_listener) {
-            _listener->on_rtcp_packet_received(this, (const char *) packet->data(), packet->size());
+    if (listener_) {
+        listener_->OnConnectionState(this, state);
+    }
+}
+
+void RtcStream::OnRtpPacketReceived(PeerConnection*, 
+        rtc::CopyOnWriteBuffer* packet, int64_t /*ts*/)
+{
+    if (listener_) {
+        listener_->OnRtpPacketReceived(this, (const char*)packet->data(), packet->size());
+    }
+}
+
+void RtcStream::OnRtcpPacketReceived(PeerConnection*, 
+        rtc::CopyOnWriteBuffer* packet, int64_t /*ts*/)
+{
+    if (listener_) {
+        listener_->OnRtcpPacketReceived(this, (const char*)packet->data(), packet->size());
+    }
+}
+
+void IceTimeoutCb(EventLoop* /*el*/, TimerWatcher* /*w*/, void* data) {
+    RtcStream* stream = (RtcStream*)data;
+    if (stream->state_ != PeerConnectionState::kConnected) {
+        if (stream->listener_) {
+            stream->listener_->OnStreamException(stream);
         }
     }
+}
 
-    void ice_timeout_cb(EventLoop */*el*/, TimerWatcher */*w*/, void *data) {
-        RtcStream *stream = (RtcStream *) data;
-        if (stream->_state != PeerConnectionState::k_connected) {
-            if(stream->_listener){
-                stream->_listener->on_stream_exception(stream);
-            }
-        }
-    }
+int RtcStream::Start(rtc::RTCCertificate* certificate) {
+    ice_timeout_watcher_ = el->CreateTimer(IceTimeoutCb, this, false);
+    el->StartTimer(ice_timeout_watcher_, kIceTimeout * 1000);
 
-    int RtcStream::start(rtc::RTCCertificate *certificate) {
-        _ice_timeout_watcher = el->create_timer(ice_timeout_cb, this, false);
-        el->start_timer(_ice_timeout_watcher, k_ice_timeout * 1000);
-        return pc->init(certificate);
-    }
+    return pc->Init(certificate);
+}
 
-    int RtcStream::set_remote_sdp(const std::string &sdp) {
-        return pc->set_remote_sdp(sdp);
-    }
+int RtcStream::SetRemoteSdp(const std::string& sdp) {
+    return pc->SetRemoteSdp(sdp);
+}
 
-    int RtcStream::send_rtp(const char *data, size_t len) {
-        if (pc) {
-            return pc->send_rtp(data, len);
-        }
-        return -1;
+int RtcStream::SendRtp(const char* data, size_t len) {
+    if (pc) {
+        return pc->SendRtp(data, len);
     }
+    return -1;
+}
 
-    std::string RtcStream::to_string() {
-        std::stringstream ss;
-        ss << "Stream[" << this << "|" << uid << "|" << stream_name << "]";
-        return ss.str();
+int RtcStream::SendRtcp(const char* data, size_t len) {
+    if (pc) {
+        return pc->SendRtcp(data, len);
     }
+    return -1;
+}
 
-    int RtcStream::send_rtcp(const char *data, size_t len) {
-        if (pc) {
-            return pc->send_rtcp(data, len);
-        }
-        return -1;
-    }
+std::string RtcStream::ToString() {
+    std::stringstream ss;
+    ss << "Stream[" << this << "|" << uid << "|" << stream_name << "]";
+    return ss.str();
+}
 
 } // namespace xrtc
 

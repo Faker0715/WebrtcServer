@@ -1,22 +1,3 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file xhead.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
 #ifndef  __BASE_XHEAD_H_
 #define  __BASE_XHEAD_H_
 

@@ -1,5 +1,5 @@
-#ifndef  __TCP_CONNECTION_H_
-#define  __TCP_CONNECTION_H_
+#ifndef  __XRTCSERVER_SERVER_TCP_CONNECTION_H_
+#define  __XRTCSERVER_SERVER_TCP_CONNECTION_H_
 
 #include <list>
 
@@ -39,6 +39,6 @@ public:
 
 } // namespace xrtc
 
-#endif  //__TCP_CONNECTION_H_
+#endif  //__XRTCSERVER_SERVER_TCP_CONNECTION_H_
 
 

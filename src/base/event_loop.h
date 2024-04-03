@@ -1,24 +1,5 @@
-/***************************************************************************
- * 
- * Copyright (c) 2022 str2num.com, Inc. All Rights Reserved
- * $Id$ 
- * 
- **************************************************************************/
- 
- 
- 
-/**
- * @file event_loop.h
- * @author str2num
- * @version $Revision$ 
- * @brief 
- *  
- **/
-
-
-
-#ifndef  __BASE_EVENT_LOOP_H_
-#define  __BASE_EVENT_LOOP_H_
+#ifndef  __XRTCSERVER_BASE_EVENT_LOOP_H_
+#define  __XRTCSERVER_BASE_EVENT_LOOP_H_
 
 struct ev_loop;
 
@@ -41,29 +22,29 @@ public:
     EventLoop(void* owner);
     ~EventLoop();
     
-    void start();
-    void stop();
-    void* owner() { return _owner; }
+    void Start();
+    void Stop();
+    void* owner() { return owner_; }
     unsigned long now();
 
-    IOWatcher* create_io_event(io_cb_t cb, void* data);
-    void start_io_event(IOWatcher* w, int fd, int mask);
-    void stop_io_event(IOWatcher* w, int fd, int mask);
-    void delete_io_event(IOWatcher* w);
+    IOWatcher* CreateIOEvent(io_cb_t cb, void* data);
+    void StartIOEvent(IOWatcher* w, int fd, int mask);
+    void StopIOEvent(IOWatcher* w, int fd, int mask);
+    void DeleteIOEvent(IOWatcher* w);
     
-    TimerWatcher* create_timer(time_cb_t cb, void* data, bool need_repeat);
-    void start_timer(TimerWatcher* w, unsigned int usec);
-    void stop_timer(TimerWatcher* w);
-    void delete_timer(TimerWatcher* w);
+    TimerWatcher* CreateTimer(time_cb_t cb, void* data, bool need_repeat);
+    void StartTimer(TimerWatcher* w, unsigned int usec);
+    void StopTimer(TimerWatcher* w);
+    void DeleteTimer(TimerWatcher* w);
 
 private:
-    void* _owner;
-    struct ev_loop* _loop;
+    void* owner_;
+    struct ev_loop* loop_;
 };
 
 } // namespace xrtc
 
 
-#endif  //__BASE_EVENT_LOOP_H_
+#endif  //__XRTCSERVER_BASE_EVENT_LOOP_H_
 
 

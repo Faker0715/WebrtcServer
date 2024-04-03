@@ -1,6 +1,5 @@
-
-#ifndef  __RTC_STREAM_H_
-#define  __RTC_STREAM_H_
+#ifndef  __XRTCSERVER_STREAM_RTC_STREAM_H_
+#define  __XRTCSERVER_STREAM_RTC_STREAM_H_
 
 #include <string>
 #include <memory>
@@ -21,10 +20,10 @@ enum class RtcStreamType {
 
 class RtcStreamListener {
 public:
-    virtual void on_connection_state(RtcStream* stream, PeerConnectionState state) = 0;
-    virtual void on_rtp_packet_received(RtcStream* stream, const char* data, size_t len) = 0;
-    virtual void on_rtcp_packet_received(RtcStream* stream, const char* data, size_t len) = 0;
-    virtual void on_stream_exception(RtcStream* stream) = 0;
+    virtual void OnConnectionState(RtcStream* stream, PeerConnectionState state) = 0;
+    virtual void OnRtpPacketReceived(RtcStream* stream, const char* data, size_t len) = 0;
+    virtual void OnRtcpPacketReceived(RtcStream* stream, const char* data, size_t len) = 0;
+    virtual void OnStreamException(RtcStream* stream) = 0;
 };
 
 class RtcStream : public sigslot::has_slots<> {
@@ -34,26 +33,26 @@ public:
             uint32_t log_id);
     virtual ~RtcStream();
     
-    int start(rtc::RTCCertificate* certificate);
-    int set_remote_sdp(const std::string& sdp);
-    void register_listener(RtcStreamListener* listener) { _listener = listener; }
+    int Start(rtc::RTCCertificate* certificate);
+    int SetRemoteSdp(const std::string& sdp);
+    void RegisterListener(RtcStreamListener* listener) { listener_ = listener; }
 
-    virtual std::string create_offer() = 0;
+    virtual std::string CreateOffer() = 0;
     virtual RtcStreamType stream_type() = 0;
     
     uint64_t get_uid() { return uid; }
     const std::string& get_stream_name() { return stream_name; }
     
-    int send_rtp(const char* data, size_t len);
-    int send_rtcp(const char* data, size_t len);
+    int SendRtp(const char* data, size_t len);
+    int SendRtcp(const char* data, size_t len);
 
-    std::string to_string();
+    std::string ToString();
 
 private:
-    void _on_connection_state(PeerConnection*, PeerConnectionState);
-    void _on_rtp_packet_received(PeerConnection*, 
+    void OnConnectionState(PeerConnection*, PeerConnectionState);
+    void OnRtpPacketReceived(PeerConnection*, 
         rtc::CopyOnWriteBuffer* packet, int64_t /*ts*/);
-    void _on_rtcp_packet_received(PeerConnection*, 
+    void OnRtcpPacketReceived(PeerConnection*, 
             rtc::CopyOnWriteBuffer* packet, int64_t /*ts*/);
 
 protected:
@@ -65,17 +64,19 @@ protected:
     uint32_t log_id;
 
     PeerConnection* pc;
+    
 private:
-    PeerConnectionState _state = PeerConnectionState::k_new;
-    RtcStreamListener* _listener = nullptr;
-    TimerWatcher* _ice_timeout_watcher = nullptr;
+    PeerConnectionState state_ = PeerConnectionState::kNew;
+    RtcStreamListener* listener_ = nullptr;
+    TimerWatcher* ice_timeout_watcher_ = nullptr;
 
     friend class RtcStreamManager;
-    friend void ice_timeout_cb(EventLoop *el, TimerWatcher *w, void *data);
+    friend void IceTimeoutCb(EventLoop* el, TimerWatcher* w, void* data);
+
 };
 
 } // namespace xrtc
 
-#endif  //__RTC_STREAM_H_
+#endif  //__XRTCSERVER_STREAM_RTC_STREAM_H_
 
 

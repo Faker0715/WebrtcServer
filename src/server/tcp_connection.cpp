@@ -1,6 +1,6 @@
-#include <rtc_base/zmalloc.h>
-
 #include "server/tcp_connection.h"
+
+#include <rtc_base/zmalloc.h>
 
 namespace xrtc {
 
@@ -23,22 +23,5 @@ TcpConnection::~TcpConnection() {
 }
 
 } // namespace xrtc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

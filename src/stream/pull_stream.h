@@ -1,5 +1,5 @@
-#ifndef  __PULL_STREAM_H_
-#define  __PULL_STREAM_H_
+#ifndef  __XRTCSERVER_STREAM_PULL_STREAM_H_
+#define  __XRTCSERVER_STREAM_PULL_STREAM_H_
 
 #include "stream/rtc_stream.h"
 
@@ -12,15 +12,15 @@ public:
             bool audio, bool video, uint32_t log_id);
     ~PullStream() override;
 
-    std::string create_offer() override;
+    std::string CreateOffer() override;
     RtcStreamType stream_type() override { return RtcStreamType::k_pull; }
 
-    void add_audio_source(const std::vector<StreamParams>& source);
-    void add_video_source(const std::vector<StreamParams>& source);
+    void AddAudioSource(const std::vector<StreamParams>& source);
+    void AddVideoSource(const std::vector<StreamParams>& source);
 };
 
 } // namespace xrtc
 
-#endif  //__PULL_STREAM_H_
+#endif  //__XRTCSERVER_STREAM_PULL_STREAM_H_
 
 

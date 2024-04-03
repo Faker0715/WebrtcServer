@@ -1,9 +1,6 @@
 
-
-
-
-#ifndef  __ICE_CREDENTIALS_H_
-#define  __ICE_CREDENTIALS_H_
+#ifndef  __XRTCSERVER_ICE_ICE_CREDENTIALS_H_
+#define  __XRTCSERVER_ICE_ICE_CREDENTIALS_H_
 
 #include <string>
 
@@ -20,12 +17,12 @@ struct IceParameters {
 
 class IceCredentials {
 public:
-    static IceParameters create_random_ice_credentials();
+    static IceParameters CreateRandomIceCredentials();
 };
 
 } // namespace xrtc
 
 
-#endif  //__ICE_CREDENTIALS_H_
+#endif  //__XRTCSERVER_ICE_ICE_CREDENTIALS_H_
 
 

@@ -1,8 +1,9 @@
-#ifndef  __SIGNALING_SERVER_H_
-#define  __SIGNALING_SERVER_H_
+#ifndef  __XRTCSERVER_SERVER_SIGNALING_SERVER_H_
+#define  __XRTCSERVER_SERVER_SIGNALING_SERVER_H_
 
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "base/event_loop.h"
 
@@ -26,42 +27,42 @@ public:
     SignalingServer();
     ~SignalingServer();
     
-    int init(const char* conf_file);
-    bool start();
-    void stop();
-    int notify(int msg);
-    void join();
+    int Init(const char* conf_file);
+    bool Start();
+    void Stop();
+    int Notify(int msg);
+    void Join();
 
-    friend void signaling_server_recv_notify(EventLoop* el, IOWatcher* w, 
+    friend void SignalingServerRecvNotify(EventLoop* el, IOWatcher* w, 
         int fd, int events, void* data);
 
-    friend void accept_new_conn(EventLoop* el, IOWatcher* w, 
+    friend void AcceptNewConn(EventLoop* el, IOWatcher* w, 
             int fd, int events, void* data);
 
 private:
-    void _process_notify(int msg);    
-    void _stop();
-    int _create_worker(int worker_id);
-    void _dispatch_new_conn(int fd);
+    void ProcessNotify(int msg);    
+    void InnerStop();
+    int CreateWorker(int worker_id);
+    void DispatchNewConn(int fd);
 
 private:
-    SignalingServerOptions _options;
-    EventLoop* _el;
-    IOWatcher* _io_watcher = nullptr;
-    IOWatcher* _pipe_watcher = nullptr;
-    int _notify_recv_fd = -1;
-    int _notify_send_fd = -1;
-    std::thread* _thread = nullptr;
+    SignalingServerOptions options_;
+    EventLoop* el_;
+    IOWatcher* io_watcher_ = nullptr;
+    IOWatcher* pipe_watcher_ = nullptr;
+    int notify_recv_fd_ = -1;
+    int notify_send_fd_ = -1;
+    std::thread* thread_ = nullptr;
     
-    int _listen_fd = -1;
-    std::vector<SignalingWorker*> _workers;
-    int _next_worker_index = 0;
+    int listen_fd_ = -1;
+    std::vector<SignalingWorker*> workers_;
+    int next_worker_index_ = 0;
 };
 
 
 } // namespace xrtc
 
 
-#endif  //__SIGNALING_SERVER_H_
+#endif  //__XRTCSERVER_SERVER_SIGNALING_SERVER_H_
 
 

@@ -1,19 +1,19 @@
-#ifndef  __PEER_CONNECTION_DEF_H_
-#define  __PEER_CONNECTION_DEF_H_
+#ifndef  __XRTCSERVER_PC_PEER_CONNECTION_DEF_H_
+#define  __XRTCSERVER_PC_PEER_CONNECTION_DEF_H_
 
 namespace xrtc {
 
 enum class PeerConnectionState {
-    k_new,
-    k_connecting,
-    k_connected,
-    k_disconnected,
-    k_failed,
-    k_closed,
+    kNew,
+    kConnecting,
+    kConnected,
+    kDisconnected,
+    kFailed,
+    kClosed,
 };
 
 } // namespace xrtc
 
-#endif  //__PEER_CONNECTION_DEF_H_
+#endif  //__XRTCSERVER_PC_PEER_CONNECTION_DEF_H_
 
 

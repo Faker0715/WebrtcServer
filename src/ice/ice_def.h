@@ -1,7 +1,6 @@
 
-
-#ifndef  __ICE_DEF_H_
-#define  __ICE_DEF_H_
+#ifndef  __XRTCSERVER_ICE_ICE_DEF_H_
+#define  __XRTCSERVER_ICE_ICE_DEF_H_
 
 namespace xrtc {
 
@@ -35,6 +34,6 @@ enum IcePriorityValue {
 
 };
 
-#endif  //__ICE_DEF_H_
+#endif  //__XRTCSERVER_ICE_ICE_DEF_H_
 
 
