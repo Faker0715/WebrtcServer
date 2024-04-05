@@ -7,30 +7,29 @@
 
 namespace xrtc {
 
-class RtpRtcpImpl {
-public:
-    RtpRtcpImpl(const RtpRtcpConfig& config);
-    ~RtpRtcpImpl();
-    
-    void SetRTCPStatus(webrtc::RtcpMode method);
-    void TimeToSendRTCP();
-    void IncomingRtcpPacket(const uint8_t* data, size_t len);
-    void SetRemoteSsrc(uint32_t ssrc);
+    class RtpRtcpImpl {
+    public:
+        RtpRtcpImpl(const RtpRtcpConfig& config);
+        ~RtpRtcpImpl();
 
-private:
-    RTCPSender::FeedbackState GetFeedbackState();
+        void SetRTCPStatus(webrtc::RtcpMode method);
+        void TimeToSendRTCP();
+        void IncomingRtcpPacket(const uint8_t* data, size_t len);
+        void SetRemoteSsrc(uint32_t ssrc);
+        void SendNack(const std::vector<uint16_t>& nack_list);
 
-private:
-    EventLoop* el_;
-    RTCPSender rtcp_sender_;
-    RTCPReceiver rtcp_receiver_;
+    private:
+        RTCPSender::FeedbackState GetFeedbackState();
 
-    TimerWatcher* rtcp_report_timer_ = nullptr;
-};
+    private:
+        EventLoop* el_;
+        RTCPSender rtcp_sender_;
+        RTCPReceiver rtcp_receiver_;
+
+        TimerWatcher* rtcp_report_timer_ = nullptr;
+    };
 
 } // namespace xrtc
 
 
 #endif  // __XRTCSERVER_MODULES_RTP_RTCP_RTP_RTCP_IMPL_H_
-
-

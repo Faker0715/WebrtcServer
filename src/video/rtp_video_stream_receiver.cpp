@@ -9,8 +9,9 @@ namespace xrtc {
         const int kPacketBufferMaxSize = 2048;
 
         std::unique_ptr<RtpRtcpImpl> CreateRtpRtcpModule(
-                const VideoReceiveStreamConfig &vconf,
-                ReceiveStat *receive_stat) {
+                const VideoReceiveStreamConfig& vconf,
+                ReceiveStat* receive_stat)
+        {
             RtpRtcpConfig config;
             config.el = vconf.el;
             config.clock = vconf.clock;
@@ -25,15 +26,16 @@ namespace xrtc {
 
     } // namespace
 
-    RtpVideoStreamReceiver::RtpVideoStreamReceiver(const VideoReceiveStreamConfig &config,
-                                                   ReceiveStat *rtp_receive_stat) :
+    RtpVideoStreamReceiver::RtpVideoStreamReceiver(const VideoReceiveStreamConfig& config,
+                                                   ReceiveStat* rtp_receive_stat) :
             config_(config),
             rtp_receive_stat_(rtp_receive_stat),
             rtp_rtcp_(CreateRtpRtcpModule(config, rtp_receive_stat)),
             video_rtp_depacketizer_(std::make_unique<webrtc::VideoRtpDepacketizerH264>()),
             packet_buffer_(std::make_unique<webrtc::video_coding::PacketBuffer>(
                     kPacketBufferStartSize, kPacketBufferMaxSize)),
-            nack_module_(std::make_unique<NackRequester>(config.clock, config.el)) {
+            nack_module_(std::make_unique<NackRequester>(config.clock, config.el))
+    {
         rtp_rtcp_->SetRemoteSsrc(config.rtp.remote_ssrc);
         nack_module_->SignalNackSend.connect(this, &RtpVideoStreamReceiver::OnNackSend);
     }
@@ -42,15 +44,15 @@ namespace xrtc {
 
     }
 
-    void RtpVideoStreamReceiver::OnRtpPacket(const webrtc::RtpPacketReceived &packet) {
+    void RtpVideoStreamReceiver::OnRtpPacket(const webrtc::RtpPacketReceived& packet) {
         ReceivePacket(packet);
 
-        if (!packet.recovered()) {
+        if (!packet.recovered())  {
             rtp_receive_stat_->OnRtpPacket(packet);
         }
     }
 
-    void RtpVideoStreamReceiver::ReceivePacket(const webrtc::RtpPacketReceived &packet) {
+    void RtpVideoStreamReceiver::ReceivePacket(const webrtc::RtpPacketReceived& packet) {
         if (0 == packet.payload_size()) {
             return;
         }
@@ -68,11 +70,12 @@ namespace xrtc {
 
     void RtpVideoStreamReceiver::OnReceivedPayloadData(
             rtc::CopyOnWriteBuffer codec_payload,
-            const webrtc::RtpPacketReceived &rtp_packet,
-            const webrtc::RTPVideoHeader &video) {
+            const webrtc::RtpPacketReceived& rtp_packet,
+            const webrtc::RTPVideoHeader& video)
+    {
         auto packet = std::make_unique<webrtc::video_coding::PacketBuffer::Packet>(
                 rtp_packet, video);
-        webrtc::RTPVideoHeader &video_header = packet->video_header;
+        webrtc::RTPVideoHeader& video_header = packet->video_header;
         video_header.is_last_packet_in_frame |= rtp_packet.Marker();
 
         if (nack_module_) {
@@ -89,20 +92,21 @@ namespace xrtc {
     }
 
     void RtpVideoStreamReceiver::OnInsertedPacket(
-            webrtc::video_coding::PacketBuffer::InsertResult result) {
+            webrtc::video_coding::PacketBuffer::InsertResult result)
+    {
         if (result.packets.size() <= 0) {
             return;
         }
 
-        webrtc::video_coding::PacketBuffer::Packet *first_packet = nullptr;
+        webrtc::video_coding::PacketBuffer::Packet* first_packet = nullptr;
 
-        for (auto &packet: result.packets) {
+        for (auto& packet : result.packets) {
             if (packet->is_first_packet_in_frame()) {
                 first_packet = packet.get();
             }
 
             if (packet->is_last_packet_in_frame()) {
-                webrtc::video_coding::PacketBuffer::Packet *last_packet = packet.get();
+                webrtc::video_coding::PacketBuffer::Packet* last_packet = packet.get();
 
                 OnAssembledFrame(std::make_unique<RtpFrameObject>(
                         first_packet->seq_num,
@@ -119,17 +123,22 @@ namespace xrtc {
         }
     }
 
-    void RtpVideoStreamReceiver::OnNackSend(const std::vector<uint16_t> &nack_list) {
+    void RtpVideoStreamReceiver::OnNackSend(const std::vector<uint16_t>& nack_list) {
+        /*
         std::stringstream ss;
-        for (auto seq_num: nack_list) {
+        for (auto seq_num : nack_list) {
             ss << seq_num << ",";
         }
 
         RTC_LOG(LS_WARNING) << "===========nack list: " << ss.str();
+        */
+        rtp_rtcp_->SendNack(nack_list);
     }
 
-    void RtpVideoStreamReceiver::DeliverRtcp(const uint8_t *data, size_t len) {
+    void RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* data, size_t len) {
         rtp_rtcp_->IncomingRtcpPacket(data, len);
     }
 
 } // namespace xrtc
+
+
