@@ -75,7 +75,7 @@ private:
 
     webrtc::MediaType GetMediaType(uint32_t ssrc) const;
     void CreateVideoReceiveStream(VideoContentDescription* video_content);
-    
+    void OnFrame(std::unique_ptr<RtpFrameObject> frame) override;
     friend void DestroyTimerCb(EventLoop* el, TimerWatcher* w, void* data);
 
 private:
