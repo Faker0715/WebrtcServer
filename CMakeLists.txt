@@ -32,7 +32,9 @@ link_directories(
 add_definitions("-g -pipe -W -Wall -fPIC -std=gnu++14 -DWEBRTC_POSIX
 -DWEBRTC_LINUX")
 SET(CMAKE_EXE_LINKER_FLAGS " -no-pie")
-add_executable(xrtcserver ${all_src})
+add_executable(xrtcserver ${all_src}
+        src/modules/video_coding/rtp_frame_object.h
+        src/modules/video_coding/rtp_frame_object.cpp)
 
 target_link_libraries(xrtcserver libyaml-cpp.a librtcbase.a
         libabsl_strings.a libabsl_throw_delegate.a libabsl_bad_optional_access.a
